@@ -1,0 +1,5 @@
+/* Manrope — the brand's primary typeface (Brand Guidelines, p.16).
+   Weights used: 300 Light, 400 Regular, 500 Medium, 600 Semibold, 700 Bold, 800 ExtraBold.
+   Served from Google Fonts; Manrope is the same open-source family named in the guidelines,
+   so this is the genuine brand face, not a substitute. */
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap");

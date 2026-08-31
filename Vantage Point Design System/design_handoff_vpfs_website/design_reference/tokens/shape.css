@@ -1,0 +1,24 @@
+:root{
+/* Corner radii — the mark's single rounded corner sets the language: mostly square,
+   with one generous soft corner. UI radii stay restrained. */
+--radius-0:0px;
+--radius-sm:4px;
+--radius-md:8px;
+--radius-lg:12px;
+--radius-xl:20px;
+--radius-pill:999px;
+--radius-leaf:0 20px 0 20px; /* @kind radius */
+
+--border-width:1px; /* @kind spacing */
+--border-width-thick:2px; /* @kind spacing */
+--rule-accent:3px; /* @kind spacing */
+
+/* Shadows — cool navy-tinted, low spread. Never warm/black. */
+--shadow-none:none;
+--shadow-xs:0 1px 2px rgba(15,48,96,.06);
+--shadow-sm:0 2px 6px rgba(15,48,96,.07);
+--shadow-md:0 8px 24px rgba(15,48,96,.09);
+--shadow-lg:0 20px 48px rgba(15,48,96,.12);
+--shadow-inset-hairline:inset 0 0 0 1px var(--border-hairline);
+--ring-focus:0 0 0 3px rgba(27,67,130,.28);
+}

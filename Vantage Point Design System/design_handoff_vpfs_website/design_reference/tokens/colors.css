@@ -1,0 +1,59 @@
+:root{
+/* Primary — Brand Guidelines p.13 */
+--vp-navy:#0F3060;
+--vp-white:#FFFFFF;
+--vp-charcoal:#494949;
+
+/* Grayscale — Brand Guidelines p.14 */
+--vp-cloud:#EDEFF7;
+--vp-smoke:#D3D6E0;
+--vp-steel:#BCBFCC;
+--vp-space:#9DA2B3;
+--vp-graphite:#6E7180;
+--vp-arsenic:#40424D;
+--vp-phantom:#1E1E24;
+--vp-black:#000000;
+
+/* Derived navy ramp — interaction + tint states only. Not in the printed guidelines;
+   generated from --vp-navy so hover/press/wash states stay on-brand. */
+--vp-navy-wash:#F4F6FA;
+--vp-navy-100:#DCE3EE;
+--vp-navy-300:#8FA3BF;
+--vp-navy-500:#1B4382;
+--vp-navy-600:#0F3060;
+--vp-navy-700:#0B2449;
+--vp-navy-800:#071A35;
+
+/* Semantic — surfaces */
+--surface-page:var(--vp-white);
+--surface-subtle:var(--vp-cloud);
+--surface-card:var(--vp-white);
+--surface-inverse:var(--vp-navy);
+--surface-inverse-alt:var(--vp-charcoal);
+--surface-wash:var(--vp-navy-wash);
+
+/* Semantic — text */
+--text-strong:var(--vp-navy);
+--text-body:var(--vp-arsenic);
+--text-muted:var(--vp-graphite);
+--text-faint:var(--vp-space);
+--text-on-inverse:var(--vp-white);
+--text-on-inverse-muted:var(--vp-smoke);
+
+/* Semantic — lines */
+--border-hairline:var(--vp-smoke);
+--border-strong:var(--vp-steel);
+--border-inverse:rgba(255,255,255,.28);
+
+/* Semantic — interactive */
+--action-primary:var(--vp-navy);
+--action-primary-hover:var(--vp-navy-700);
+--action-primary-press:var(--vp-navy-800);
+--action-secondary-bg:var(--vp-white);
+--action-secondary-hover:var(--vp-navy-wash);
+--focus-ring:var(--vp-navy-500);
+
+/* Semantic — brand accents used in applications */
+--brand-watermark:var(--vp-smoke);
+--brand-watermark-inverse:rgba(255,255,255,.10);
+}
