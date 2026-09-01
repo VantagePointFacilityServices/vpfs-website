@@ -25,7 +25,8 @@
       <a href="contact.html">Contact</a>
     </nav>
     <div class="header-cta">
-      <a class="btn btn-primary btn-sm" href="contact.html">Request a quote</a>
+      <a class="header-phone" href="tel:0422908188"><span class="phone-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.2 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>0422 908 188</a>
+      <a class="btn btn-primary btn-sm" href="contact.html">Book a walkthrough</a>
       <button class="nav-toggle" aria-label="Toggle menu"><span></span><span></span><span></span></button>
     </div>
   </div>
@@ -84,16 +85,16 @@
   <div class="carousel-slide">
     <div class="slide-media">
       <svg viewBox="465 396 84 84" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M505.08,398.1c-20.94,0-37.98,17.04-37.98,37.98v38.21h19.41v-21.57l4.97-2.61,8.02-4.21,8.69-4.57v28.19h-8.69v-17.73l-4.76,2.65v19.84h18.22v-40.84l-13.45,7.07v-21.14l19.46,10.59v40.24l7.38-4.37c9.1-5.38,14.75-15.29,14.75-25.86v-41.89h-36.01ZM536.32,439.99c0,8.89-4.76,17.23-12.41,21.76l-.2.12v-34.72l-28.98-15.77v31.65l-12.99,6.82v19.68h-9.88v-33.44c0-18.32,14.9-33.22,33.22-33.22h31.24v37.13Z"/></svg>
-      <span>A cleaner sweeping a warehouse floor beside stacked pallets</span>
+      <span>A cleaner scrubbing a warehouse floor with a smile</span>
     </div>
     <div class="wrap carousel-content">
       <span class="eyebrow">Services</span>
       <h1>Written scopes, not sales copy</h1>
       <p class="lead">Pick the closest fit and see exactly what a Vantage Point scope covers.</p>
-      <div class="slide-caption">Warehouses and industrial sites, kept safe and compliant</div>
+      <div class="slide-caption">Industrial floors, scheduled around production</div>
     </div>
   </div>
-  <div class="wrap" style="position:relative;z-index:1;">
+  <div class="wrap carousel-dots-wrap">
     <div class="carousel-dots">
       <button class="active" aria-label="Offices"></button>
       <button aria-label="Strata"></button>
@@ -107,11 +108,6 @@
 <!-- ============ TABBED SCOPE DETAIL ============ -->
 <section>
   <div class="wrap">
-    <div class="section-head center">
-      <span class="eyebrow">Scope detail</span>
-      <h2>Exactly what's included</h2>
-    </div>
-
     <div class="tabs-nav" data-tabs-target="scopes">
       <button class="active" data-tab="offices">Offices</button>
       <button data-tab="strata">Strata</button>
@@ -120,158 +116,134 @@
       <button data-tab="industrial">Industrial</button>
     </div>
 
-    <div data-tab-panels="scopes">
+    <div class="scope-detail-grid">
+      <div data-tab-panels="scopes">
       <div class="tab-panel active" data-tab-panel="offices">
-        <div>
-          <div class="scope-badges">
-            <span class="scope-badge">No lock-in contract</span>
-            <span class="scope-badge">Insured &amp; police-checked</span>
-            <span class="scope-badge">Written scope</span>
+        <h3>Offices scope</h3>
+        <ul class="line-item-list">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Workstations and meeting rooms</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Toilets and washrooms</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Kitchens and end-of-trip</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Amenities restock</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Carpet and hard floor care</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>After-hours access management</li>
+        </ul>
+          <div class="tab-badges">
+            <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.35 8.75a1 1 0 0 1-.65.01C8.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>Police checked</span>
+            <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg>Fully insured</span>
+            <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Cleaning report</span>
+            <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>Eco products</span>
           </div>
-          <ul class="line-item-list">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Reception, entry glass and signage wiped down</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Workstations and communal desks cleared and wiped</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Kitchen and breakout areas cleaned and restocked</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Boardrooms reset between bookings</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Bathrooms and amenities cleaned and consumables restocked</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Bins emptied and liners replaced</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Floors vacuumed and hard surfaces mopped</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>High-touch point disinfection</li>
-          </ul>
-        </div>
-        <div class="book-card">
-          <h4>Book a walkthrough</h4>
-          <p>We scope every office in person before quoting &mdash; tell us about your business and we'll arrange a time.</p>
-          <a href="contact.html" class="btn btn-primary btn-block">Book a walkthrough</a>
-        </div>
       </div>
 
       <div class="tab-panel" data-tab-panel="strata">
-        <div>
-          <div class="scope-badges">
-            <span class="scope-badge">No lock-in contract</span>
-            <span class="scope-badge">Insured &amp; police-checked</span>
-            <span class="scope-badge">Written scope</span>
+        <h3>Strata scope</h3>
+        <ul class="line-item-list">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Lobbies and lift wells</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Car park sweeps</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Entry glass and signage</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Common bin rooms</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Shared amenities</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Body corporate reporting</li>
+        </ul>
+          <div class="tab-badges">
+            <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.35 8.75a1 1 0 0 1-.65.01C8.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>Police checked</span>
+            <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg>Fully insured</span>
+            <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Cleaning report</span>
+            <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>Eco products</span>
           </div>
-          <ul class="line-item-list">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Lobbies, lift wells and stairwells cleaned</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Car park sweeps and litter collection</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Glass entry doors and directory signage</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Common bin rooms cleaned and odour-managed</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Shared amenities and BBQ/pool areas maintained</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Reported to the body corporate against a documented scope</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Scheduling coordinated with the on-site manager</li>
-          </ul>
-        </div>
-        <div class="book-card">
-          <h4>Book a walkthrough</h4>
-          <p>We scope the common property with your body corporate manager before quoting.</p>
-          <a href="contact.html" class="btn btn-primary btn-block">Book a walkthrough</a>
-        </div>
       </div>
 
       <div class="tab-panel" data-tab-panel="education">
-        <div>
-          <div class="scope-badges">
-            <span class="scope-badge">Child-safe chemicals</span>
-            <span class="scope-badge">Insured &amp; police-checked</span>
-            <span class="scope-badge">Written scope</span>
+        <h3>Education scope</h3>
+        <ul class="line-item-list">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Classrooms</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Toilets and change areas</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Play and communal areas</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Staff rooms and offices</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Child-safe chemicals</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Sign-off checklist</li>
+        </ul>
+          <div class="tab-badges">
+            <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.35 8.75a1 1 0 0 1-.65.01C8.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>Police checked</span>
+            <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg>Fully insured</span>
+            <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Cleaning report</span>
+            <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>Eco products</span>
           </div>
-          <ul class="line-item-list">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Classrooms cleaned outside class hours</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Toilets and change areas sanitised daily</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Play and communal areas disinfected</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Staff rooms and offices cleaned</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Child-safe, low-odour chemicals used throughout</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Sign-off checklist left on-site for staff review</li>
-          </ul>
-        </div>
-        <div class="book-card">
-          <h4>Book a walkthrough</h4>
-          <p>We scope around your bell times and holiday periods before quoting.</p>
-          <a href="contact.html" class="btn btn-primary btn-block">Book a walkthrough</a>
-        </div>
       </div>
 
       <div class="tab-panel" data-tab-panel="medical">
-        <div>
-          <div class="scope-badges">
-            <span class="scope-badge">Infection-control protocol</span>
-            <span class="scope-badge">Insured &amp; police-checked</span>
-            <span class="scope-badge">Written scope</span>
+        <h3>Medical scope</h3>
+        <ul class="line-item-list">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Treatment rooms and benches</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Waiting rooms and reception</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Clinical-grade disinfectants</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Colour-coded equipment</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Sharps and clinical waste</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Compliance record</li>
+        </ul>
+          <div class="tab-badges">
+            <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.35 8.75a1 1 0 0 1-.65.01C8.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>Police checked</span>
+            <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg>Fully insured</span>
+            <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Cleaning report</span>
+            <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>Eco products</span>
           </div>
-          <ul class="line-item-list">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Treatment rooms and benches disinfected between patients' hours</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Waiting rooms and reception cleaned</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Clinical-grade, hospital-approved disinfectants</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Colour-coded equipment to prevent cross-contamination</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Sharps and clinical waste areas maintained</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Documented compliance record for every visit</li>
-          </ul>
-        </div>
-        <div class="book-card">
-          <h4>Book a walkthrough</h4>
-          <p>We scope your practice's compliance requirements before quoting.</p>
-          <a href="contact.html" class="btn btn-primary btn-block">Book a walkthrough</a>
-        </div>
       </div>
 
       <div class="tab-panel" data-tab-panel="industrial">
-        <div>
-          <div class="scope-badges">
-            <span class="scope-badge">WHS compliant</span>
-            <span class="scope-badge">Insured &amp; police-checked</span>
-            <span class="scope-badge">Written scope</span>
+        <h3>Industrial scope</h3>
+        <ul class="line-item-list">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Amenities and staff facilities</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Site offices and meeting rooms</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>High-traffic floors</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Shift-pattern scheduling</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Site safety induction</li>
+        </ul>
+          <div class="tab-badges">
+            <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.35 8.75a1 1 0 0 1-.65.01C8.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>Police checked</span>
+            <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></svg>Fully insured</span>
+            <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>Cleaning report</span>
+            <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>Eco products</span>
           </div>
-          <ul class="line-item-list">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Amenities and staff facilities cleaned to WHS standard</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Site offices and meeting rooms cleaned</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>High-traffic floors swept and scrubbed</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Scheduling around shift patterns and site access rules</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Crews inducted to site-specific safety requirements</li>
-          </ul>
-        </div>
-        <div class="book-card">
-          <h4>Book a walkthrough</h4>
-          <p>We scope your site's access rules and shift patterns before quoting.</p>
-          <a href="contact.html" class="btn btn-primary btn-block">Book a walkthrough</a>
-        </div>
+      </div>
+      </div>
+      <div class="book-card">
+        <div class="book-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg></div>
+        <h4>Not sure which fits?</h4>
+        <p>Most buildings are a mix. We walk the site, split it into zones and price each one on its own frequency.</p>
+        <a href="contact.html" class="btn btn-primary btn-block">Book a walkthrough<span class="btn-chip"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
       </div>
     </div>
   </div>
 </section>
 
 <!-- ============ FAQ ============ -->
-<section style="background:var(--surface-wash);">
+<section class="faq-section" style="background:var(--surface-wash);">
   <div class="wrap">
-    <div class="section-head center">
+    <div class="section-head">
       <span class="eyebrow">Common questions</span>
-      <h2>Frequently asked questions</h2>
+      <h2>Before you ask</h2>
     </div>
     <div class="faq-list">
       <div class="faq-item open">
-        <button class="faq-q">How is pricing worked out?</button>
-        <div class="faq-a"><p>Pricing depends on facility size, frequency and scope, so we don't publish a generic rate card. Every quote follows a walkthrough of your site so the price reflects your business specifically, not a guess.</p></div>
+        <button class="faq-q">Do you clean after hours?</button>
+        <div class="faq-a"><p>Yes. Most commercial sites are serviced between 6pm and 5am so your team walks into a finished building.</p></div>
       </div>
       <div class="faq-item">
-        <button class="faq-q">Do we need to sign a long contract?</button>
-        <div class="faq-a"><p>No lock-in contracts are required. We'd rather earn your business every month than hold you to a term &mdash; your written scope sets out the arrangement clearly.</p></div>
+        <button class="faq-q">How is quality actually checked?</button>
+        <div class="faq-a"><p>Every site is measured against its written scope during a monthly supervisor audit, with a report you receive directly.</p></div>
       </div>
       <div class="faq-item">
-        <button class="faq-q">What happens if a clean isn't up to standard?</button>
-        <div class="faq-a"><p>Tell us and we'll correct it. Every visit is checked against your written scope, and monthly supervisor audits mean issues are caught early, not discovered by you.</p></div>
+        <button class="faq-q">Do we get the same cleaners each visit?</button>
+        <div class="faq-a"><p>Yes. Your site has a dedicated crew who are briefed on your scope, not a rotating roster.</p></div>
       </div>
       <div class="faq-item">
-        <button class="faq-q">Can you work around our business hours?</button>
-        <div class="faq-a"><p>Yes &mdash; before, during or after hours, whatever suits your operation. Scheduling is confirmed as part of your walkthrough.</p></div>
+        <button class="faq-q">What happens if something is missed?</button>
+        <div class="faq-a"><p>Tell us and we'll fix it. Every visit is measured against your written scope, so issues are easy to identify and correct.</p></div>
       </div>
       <div class="faq-item">
-        <button class="faq-q">Are your cleaners insured and police-checked?</button>
-        <div class="faq-a"><p>Yes. Every crew member working on your site is vetted, and the work is backed by public liability cover, with additional clearances arranged for sites that require them.</p></div>
-      </div>
-      <div class="faq-item">
-        <button class="faq-q">What happens at the walkthrough?</button>
-        <div class="faq-a"><p>We visit your site, understand the layout and your priorities, and propose a written scope and price built around your business &mdash; nothing is quoted sight unseen.</p></div>
+        <button class="faq-q">Which suburbs do you cover?</button>
+        <div class="faq-a"><p>The Gold Coast, from Coomera to Coolangatta &mdash; see our full <a href="areas.html" class="link-arrow">coverage area</a>.</p></div>
       </div>
     </div>
   </div>
@@ -279,19 +251,33 @@
 
 <!-- ============ FOOTER ============ -->
 <footer class="site-footer">
+  <svg class="footer-watermark" viewBox="465 396 84 84" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M505.08,398.1c-20.94,0-37.98,17.04-37.98,37.98v38.21h19.41v-21.57l4.97-2.61,8.02-4.21,8.69-4.57v28.19h-8.69v-17.73l-4.76,2.65v19.84h18.22v-40.84l-13.45,7.07v-21.14l19.46,10.59v40.24l7.38-4.37c9.1-5.38,14.75-15.29,14.75-25.86v-41.89h-36.01ZM536.32,439.99c0,8.89-4.76,17.23-12.41,21.76l-.2.12v-34.72l-28.98-15.77v31.65l-12.99,6.82v19.68h-9.88v-33.44c0-18.32,14.9-33.22,33.22-33.22h31.24v37.13Z"/></svg>
   <div class="wrap">
     <div class="footer-grid">
       <div>
         <a class="footer-logo" href="index.html"><img src="assets/img/logo-white.svg" alt="Vantage Point Facility Services"></a>
-        <p>Commercial cleaning for Gold Coast businesses &mdash; a written scope, audited every month.</p>
+        <p>Commercial cleaning across the Gold Coast, delivered to a written standard and audited every month.</p>
+        <div class="footer-badges">
+          <span class="footer-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.35 8.75a1 1 0 0 1-.65.01C8.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>Fully insured</span>
+          <span class="footer-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>Eco-conscious</span>
+        </div>
       </div>
       <div>
-        <h4>Browse</h4>
+        <h4>Services</h4>
         <ul>
-          <li><a href="index.html">Home</a></li>
-          <li><a href="services.html">Services</a></li>
-          <li><a href="areas.html">Areas</a></li>
+          <li><a href="services.html">Commercial offices</a></li>
+          <li><a href="services.html">Strata &amp; body corporate</a></li>
+          <li><a href="services.html">Education</a></li>
+          <li><a href="services.html">Medical</a></li>
+          <li><a href="services.html">Industrial</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Company</h4>
+        <ul>
           <li><a href="why-us.html">Why us</a></li>
+          <li><a href="index.html#how-it-works">Our process</a></li>
+          <li><a href="#">Careers</a></li>
           <li><a href="contact.html">Contact</a></li>
         </ul>
       </div>
@@ -301,22 +287,15 @@
           <li><a href="tel:0422908188">0422 908 188</a></li>
           <li><a href="mailto:blake@vantagepointfacilityservices.com">blake@vantagepointfacilityservices.com</a></li>
           <li>73/54 Gemvale Road, Reedy Creek QLD 4227</li>
-        </ul>
-      </div>
-      <div>
-        <h4>Hours</h4>
-        <ul>
-          <li>Mon&ndash;Fri: 7:00am &ndash; 5:00pm</li>
-          <li>Sat: By appointment</li>
-          <li>Sun: Closed</li>
+          <li>Mon&ndash;Fri 7am&ndash;5pm</li>
         </ul>
       </div>
     </div>
     <div class="footer-bottom">
-      <span>&copy; 2026 Vantage Point Facility Services Pty Ltd.</span>
+      <span>&copy; 2026 Vantage Point Facility Services Pty Ltd. All rights reserved.</span>
       <div class="legal-links">
-        <a href="#">Privacy Policy</a>
-        <a href="#">Terms &amp; Conditions</a>
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
       </div>
     </div>
   </div>

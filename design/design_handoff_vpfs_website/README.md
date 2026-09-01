@@ -37,7 +37,14 @@ All exact values are in `design_reference/tokens/*.css` — do not re-derive by 
 - No real photography supplied — every photo is a placeholder; source real site photography before launch.
 
 ## Screenshots
-`screenshots/1-home.png` through `5-contact.png` — full-page captures of each live screen, for exact visual reference alongside the layout descriptions above.
+Grouped per screen, each section captured individually (exact element crops, 2x resolution) so nothing is cropped or overlapped:
+- `screenshots/home/` — 1-nav, 2-hero, 3-what-we-clean, 4-how-it-works, 5-cta, 6-footer
+- `screenshots/services/` — 1-nav, 2-hero (carousel), 3-scope-detail, 4-faq, 5-footer
+- `screenshots/areas/` — 1-nav, 2-intro, 3-regions, 4-cta, 5-faq, 6-footer
+- `screenshots/why-us/` — 1-nav, 2-intro, 3-stats, 4-commitments, 5-testimonials, 6-footer
+- `screenshots/contact/` — 1-nav, 2-form-and-details, 3-footer
+- `screenshots/assets/core-components-specimen.png` — Button, Badge, Tag, Card, Stat and Logo specimens (icons render inline in this specimen via the lucide substitution — see Assets below)
+- `screenshots/assets/logos/` — the 8 logo SVGs, copied for quick visual reference
 
 ## Files
 The screens (`ui_kits/website/*.jsx` + `index.html`) and the 24 component primitives (`components/`) live in the source design-system project, not duplicated into this bundle (duplicating them breaks the design system's own build). This handoff includes:
