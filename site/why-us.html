@@ -19,54 +19,39 @@
     <a class="logo" href="index.html"><img src="assets/img/logo-navy.svg" alt="Vantage Point Facility Services"></a>
     <nav class="main-nav">
       <a href="index.html">Home</a>
-      <a href="services.html">Services</a>
-      <a href="areas.html">Areas</a>
+      <div class="nav-item has-dropdown">
+        <a href="services.html" class="nav-dropdown-toggle">Services</a>
+        <button class="nav-dropdown-chevron" aria-expanded="false" aria-controls="nav-services" aria-label="Toggle Services submenu">
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="nav-dropdown-menu" id="nav-services">
+          <a href="services.html#offices">Offices</a>
+          <a href="services.html#strata">Strata</a>
+          <a href="services.html#education">Education</a>
+          <a href="services.html#medical">Medical</a>
+          <a href="services.html#industrial">Industrial</a>
+        </div>
+      </div>
+      <a href="service-areas.html">Areas</a>
       <a href="why-us.html" class="active">Why us</a>
       <a href="contact.html">Contact</a>
     </nav>
     <div class="header-cta">
       <a class="header-phone" href="tel:0422908188"><span class="phone-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.2 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>0422 908 188</a>
-      <a class="btn btn-primary btn-sm" href="contact.html">Book a walkthrough</a>
+      <span class="nav-divider" aria-hidden="true"></span>
+      <a class="btn btn-primary btn-sm" href="contact.html">Book a walkthrough<span class="btn-chip"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
       <button class="nav-toggle" aria-label="Toggle menu"><span></span><span></span><span></span></button>
     </div>
   </div>
 </header>
 
 <!-- ============ WHY US HERO ============ -->
-<section class="hero-light whyus-hero">
-  <div class="wrap hero-light-grid">
-    <div>
-      <span class="eyebrow">Why Vantage Point</span>
-      <h1>Depth, not breadth</h1>
-      <p class="lead">Plenty of companies will clean your building once. The difference shows in month seven &mdash; same team, same checklist, same result.</p>
-    </div>
-    <div class="brand-card">
-      <svg class="slot-mark" viewBox="465 396 84 84" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M505.08,398.1c-20.94,0-37.98,17.04-37.98,37.98v38.21h19.41v-21.57l4.97-2.61,8.02-4.21,8.69-4.57v28.19h-8.69v-17.73l-4.76,2.65v19.84h18.22v-40.84l-13.45,7.07v-21.14l19.46,10.59v40.24l7.38-4.37c9.1-5.38,14.75-15.29,14.75-25.86v-41.89h-36.01ZM536.32,439.99c0,8.89-4.76,17.23-12.41,21.76l-.2.12v-34.72l-28.98-15.77v31.65l-12.99,6.82v19.68h-9.88v-33.44c0-18.32,14.9-33.22,33.22-33.22h31.24v37.13Z"/></svg>
-      <img src="assets/img/logo-navy.svg" alt="Vantage Point Facility Services">
-    </div>
-  </div>
-</section>
-
-<!-- ============ STATS ============ -->
-<section class="stats-band">
+<section class="hero-inverse page-hero hero-match-home">
   <div class="wrap">
-    <div class="stats-grid">
-      <div class="stat-item">
-        <div class="stat-number">120+</div>
-        <p>Sites serviced weekly</p>
-      </div>
-      <div class="stat-item">
-        <div class="stat-number">98%</div>
-        <p>Monthly audit pass rate</p>
-      </div>
-      <div class="stat-item">
-        <div class="stat-number">24hr</div>
-        <p>Response on any issue</p>
-      </div>
-      <div class="stat-item">
-        <div class="stat-number">8yrs</div>
-        <p>Average client tenure</p>
-      </div>
+    <div class="hero-single">
+      <h1 class="eyebrow on-inverse">Commercial Cleaning &middot; Why Us &middot; Gold Coast</h1>
+      <h2>Depth, not breadth</h2>
+      <p class="lead">Plenty of companies will clean your building once. The difference shows in month seven &mdash; same team, same checklist, same result.</p>
     </div>
   </div>
 </section>
@@ -75,9 +60,7 @@
 <section class="commitments-section">
   <div class="wrap">
     <div class="section-head">
-      <span class="eyebrow">What you get</span>
-      <h2>Four commitments, in writing</h2>
-    </div>
+      <span class="eyebrow">What you get</span>    </div>
     <div class="commitment-grid">
       <div class="commitment-card">
         <div class="commitment-head">
@@ -150,9 +133,10 @@
       <div>
         <a class="footer-logo" href="index.html"><img src="assets/img/logo-white.svg" alt="Vantage Point Facility Services"></a>
         <p>Commercial cleaning across the Gold Coast, delivered to a written standard and audited every month.</p>
-        <div class="footer-badges">
-          <span class="footer-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.35 8.75a1 1 0 0 1-.65.01C8.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>Fully insured</span>
-          <span class="footer-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>Eco-conscious</span>
+        <div class="hero-social">
+          <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 9h3V6h-3c-2 0-3 1.2-3 3v2H9v3h2v7h3v-7h3l1-3h-4V9c0-.6.4-1 1-1z"/></svg></a>
+          <a href="#" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1"/></svg></a>
+          <a href="#" aria-label="Google Maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s7-7.4 7-12a7 7 0 1 0-14 0c0 4.6 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg></a>
         </div>
       </div>
       <div>

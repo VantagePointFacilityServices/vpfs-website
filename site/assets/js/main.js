@@ -29,18 +29,71 @@ document.addEventListener('DOMContentLoaded', function () {
     var target = nav.getAttribute('data-tabs-target');
     var panelGroup = document.querySelector('[data-tab-panels="' + target + '"]');
     if (!panelGroup) return;
+
+    function selectTab(name, btn) {
+      nav.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      panelGroup.querySelectorAll('.tab-panel').forEach(function (panel) {
+        panel.classList.toggle('active', panel.getAttribute('data-tab-panel') === name);
+      });
+    }
+
     nav.querySelectorAll('button').forEach(function (btn) {
       btn.addEventListener('click', function () {
-        nav.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-        var name = btn.getAttribute('data-tab');
-        panelGroup.querySelectorAll('.tab-panel').forEach(function (panel) {
-          panel.classList.toggle('active', panel.getAttribute('data-tab-panel') === name);
-        });
+        selectTab(btn.getAttribute('data-tab'), btn);
       });
     });
+
+    // Deep-link support: services.html#offices selects that tab and brings the
+    // whole section into view, so the tab bar's active state is visible too.
+    // Also runs on hashchange, so a submenu link clicked while already on this
+    // page (same-document navigation — no reload, so DOMContentLoaded won't
+    // fire again) still switches tabs.
+    function applyHash() {
+      var hash = window.location.hash.replace('#', '');
+      if (!hash) return;
+      var matchBtn = nav.querySelector('[data-tab="' + hash + '"]');
+      if (matchBtn) {
+        selectTab(hash, matchBtn);
+        var scopeSection = nav.closest('section') || nav;
+        scopeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+    applyHash();
+    window.addEventListener('hashchange', applyHash);
   });
 
+  // Nav dropdown — "Services" is a real link to services.html; on desktop the
+  // submenu also opens on hover (CSS). The chevron button is a separate
+  // disclosure toggle so touch devices (no hover) can still reach it.
+  document.querySelectorAll('.nav-dropdown-chevron').forEach(function (btn) {
+    var item = btn.closest('.has-dropdown');
+    if (!item) return;
+
+    function setOpen(isOpen) {
+      item.classList.toggle('open', isOpen);
+      btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    }
+
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      setOpen(!item.classList.contains('open'));
+    });
+
+    item.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && item.classList.contains('open')) {
+        setOpen(false);
+        btn.focus();
+      }
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!item.contains(e.target)) setOpen(false);
+    });
+    item.addEventListener('focusout', function (e) {
+      if (!item.contains(e.relatedTarget)) setOpen(false);
+    });
+  });
   // Services hero carousel — auto-advance every 5s, opacity crossfade, dot nav
   var carousel = document.querySelector('.carousel');
   if (carousel) {
