@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://www.vantagepointfacilityservices.com.au/sitemap.xml
