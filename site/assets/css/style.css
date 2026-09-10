@@ -222,7 +222,7 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
   backdrop-filter:blur(6px);
   border-bottom:1px solid var(--border-hairline);
 }
-.header-inner{ display:flex; align-items:center; justify-content:space-between; padding:6px 1.6px; gap:var(--space-6); }
+.header-inner{ display:flex; align-items:center; justify-content:space-between; padding:9px 1.6px; gap:var(--space-6); }
 .logo img{ height:48px; width:auto; }
 .main-nav{ display:flex; align-items:center; gap:30px; }
 .main-nav a{
