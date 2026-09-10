@@ -513,8 +513,7 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 
 /* Per-slide caption, text swapped by JS to match the active slide */
 .carousel-caption{ margin-top:var(--space-6); }
-.carousel-caption h2{ font-size:clamp(.95rem,.75rem + .9vw,24px); color:var(--text-on-inverse); margin-bottom:var(--space-2); }
-.carousel-caption p{ color:var(--text-on-inverse-muted); margin:0; font-size:.95rem; }
+.carousel-caption h2{ font-size:clamp(.95rem,.75rem + .9vw,24px); color:var(--text-on-inverse); margin:0; }
 .carousel-dots-wrap{ position:absolute; left:0; right:0; bottom:32px; z-index:2; }
 .carousel-dots{ display:flex; gap:var(--space-2); margin-top:0; justify-content:flex-start; }
 .carousel-dots button{
