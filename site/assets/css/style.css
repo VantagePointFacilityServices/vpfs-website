@@ -320,8 +320,7 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 .hero-grid .contact-form h3{ font-size:1.5rem; white-space:nowrap; text-align:center; }
 .hero-inner{ max-width:640px; display:flex; flex-direction:column; gap:var(--space-5); }
 .hero-inner > *{ margin:0; }
-.hero-inner h1, .hero-single h1, .carousel-content h1, .carousel-content .carousel-heading{ font-size:clamp(1.35rem,1rem + 1.5vw,32px); }
-.carousel-content h2{ font-size:clamp(.95rem,.75rem + .9vw,24px); }
+.hero-inner h1, .hero-single h1{ font-size:clamp(1.35rem,1rem + 1.5vw,32px); }
 .hero-inverse h1, .hero-inverse h2{ color:var(--text-on-inverse); }
 .hero-inverse .lead{ font-size:var(--fs-p1); color:rgba(255,255,255,.82); max-width:560px; }
 .hero-ctas{ display:flex; flex-wrap:wrap; gap:var(--space-4); margin:var(--space-6) 0 var(--space-7); }
@@ -506,14 +505,18 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 .slide-media svg{ width:56px; opacity:.35; }
 .slide-media svg path{ fill:var(--vp-smoke); }
 .slide-media span{ position:absolute; bottom:46%; font-size:var(--fs-caption); color:var(--text-faint); text-align:center; max-width:70%; }
-.carousel-content{ position:relative; z-index:1; padding-top:56px; padding-bottom:48px; width:100%; text-align:left; }
-@media (min-width:901px){ .wrap.carousel-content{ max-width:50%; margin-left:0; margin-right:0; } }
-@media (max-width:720px){ .carousel-content{ padding-top:28px; padding-bottom:24px; } }
-.carousel-content .eyebrow, .carousel-content h1, .carousel-content h2, .carousel-content .lead, .carousel-content .carousel-heading{ color:var(--text-on-inverse); }
-.carousel-heading{ margin:0 0 var(--space-4); font-weight:800; line-height:var(--lh-tight); letter-spacing:var(--ls-heading); }
-.carousel-content .eyebrow::before{ background:var(--text-on-inverse); }
-.carousel-content .lead{ color:var(--text-on-inverse-muted); max-width:620px; margin-inline:0; }
-.slide-caption{ font-size:1.3rem; font-weight:700; color:var(--text-on-inverse); margin-top:var(--space-6); }
+/* Static heading overlay, sits above every slide regardless of which is active */
+.carousel-overlay{ position:absolute; top:0; left:0; right:0; z-index:2; padding-top:56px; text-align:left; }
+@media (max-width:720px){ .carousel-overlay{ padding-top:28px; } }
+.carousel-overlay .hero-single{ max-width:50%; }
+@media (max-width:900px){ .carousel-overlay .hero-single{ max-width:none; } }
+
+/* Per-slide caption, crossfades with its slide's background */
+.carousel-slide-caption{ position:absolute; left:0; right:0; bottom:48px; z-index:1; padding:0 var(--gutter-page-lg); text-align:left; }
+@media (max-width:900px){ .carousel-slide-caption{ padding:0 var(--gutter-page); } }
+@media (min-width:901px){ .carousel-slide-caption{ max-width:50%; } }
+.carousel-slide-caption h2{ font-size:clamp(.95rem,.75rem + .9vw,24px); color:var(--text-on-inverse); margin-bottom:var(--space-2); }
+.carousel-slide-caption p{ color:var(--text-on-inverse-muted); margin:0; font-size:.95rem; }
 .carousel-dots-wrap{ position:absolute; left:0; right:0; bottom:32px; z-index:2; }
 .carousel-dots{ display:flex; gap:var(--space-2); margin-top:0; justify-content:flex-start; }
 .carousel-dots button{
