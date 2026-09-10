@@ -511,12 +511,10 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 .carousel-overlay .hero-single{ max-width:50%; }
 @media (max-width:900px){ .carousel-overlay .hero-single{ max-width:none; } }
 
-/* Per-slide caption, crossfades with its slide's background */
-.carousel-slide-caption{ position:absolute; left:0; right:0; bottom:48px; z-index:1; padding:0 var(--gutter-page-lg); text-align:left; }
-@media (max-width:900px){ .carousel-slide-caption{ padding:0 var(--gutter-page); } }
-@media (min-width:901px){ .carousel-slide-caption{ max-width:50%; } }
-.carousel-slide-caption h2{ font-size:clamp(.95rem,.75rem + .9vw,24px); color:var(--text-on-inverse); margin-bottom:var(--space-2); }
-.carousel-slide-caption p{ color:var(--text-on-inverse-muted); margin:0; font-size:.95rem; }
+/* Per-slide caption, text swapped by JS to match the active slide */
+.carousel-caption{ margin-top:var(--space-6); }
+.carousel-caption h2{ font-size:clamp(.95rem,.75rem + .9vw,24px); color:var(--text-on-inverse); margin-bottom:var(--space-2); }
+.carousel-caption p{ color:var(--text-on-inverse-muted); margin:0; font-size:.95rem; }
 .carousel-dots-wrap{ position:absolute; left:0; right:0; bottom:32px; z-index:2; }
 .carousel-dots{ display:flex; gap:var(--space-2); margin-top:0; justify-content:flex-start; }
 .carousel-dots button{
