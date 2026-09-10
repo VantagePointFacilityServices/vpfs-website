@@ -99,6 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (carousel) {
     var slides = Array.prototype.slice.call(carousel.querySelectorAll('.carousel-slide'));
     var dots = Array.prototype.slice.call(carousel.querySelectorAll('.carousel-dots button'));
+    var overlayHeading = carousel.querySelector('.carousel-overlay h1');
     var captionHeading = carousel.querySelector('.carousel-caption h2');
     var current = 0;
     var timer = null;
@@ -107,7 +108,8 @@ document.addEventListener('DOMContentLoaded', function () {
       slides.forEach(function (s, i) { s.classList.toggle('active', i === index); });
       dots.forEach(function (d, i) { d.classList.toggle('active', i === index); });
       var active = slides[index];
-      if (captionHeading) captionHeading.textContent = active.dataset.caption || '';
+      if (overlayHeading) overlayHeading.textContent = active.dataset.h1 || '';
+      if (captionHeading) captionHeading.textContent = active.dataset.lead || '';
       current = index;
     }
 
