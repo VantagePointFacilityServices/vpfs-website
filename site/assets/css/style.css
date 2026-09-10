@@ -320,8 +320,7 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 .hero-grid .contact-form h3{ font-size:1.5rem; white-space:nowrap; text-align:center; }
 .hero-inner{ max-width:640px; display:flex; flex-direction:column; gap:var(--space-5); }
 .hero-inner > *{ margin:0; }
-.hero-inner h1, .hero-single h1, .carousel-content h1{ font-size:clamp(1.35rem,1rem + 1.5vw,32px); }
-.carousel-content .carousel-heading{ font-size:clamp(.675rem,.5rem + .75vw,16px); }
+.hero-inner h1, .hero-single h1, .carousel-content h1, .carousel-content .carousel-heading{ font-size:clamp(1.35rem,1rem + 1.5vw,32px); }
 .hero-inverse h1, .hero-inverse h2{ color:var(--text-on-inverse); }
 .hero-inverse .lead{ font-size:var(--fs-p1); color:rgba(255,255,255,.82); max-width:560px; }
 .hero-ctas{ display:flex; flex-wrap:wrap; gap:var(--space-4); margin:var(--space-6) 0 var(--space-7); }
