@@ -507,6 +507,7 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 .slide-media svg path{ fill:var(--vp-smoke); }
 .slide-media span{ position:absolute; bottom:46%; font-size:var(--fs-caption); color:var(--text-faint); text-align:center; max-width:70%; }
 .carousel-content{ position:relative; z-index:1; padding-top:56px; padding-bottom:48px; width:100%; text-align:left; }
+@media (min-width:901px){ .wrap.carousel-content{ max-width:50%; margin-left:0; margin-right:0; } }
 @media (max-width:720px){ .carousel-content{ padding-top:28px; padding-bottom:24px; } }
 .carousel-content .eyebrow, .carousel-content h1, .carousel-content h2, .carousel-content .lead, .carousel-content .carousel-heading{ color:var(--text-on-inverse); }
 .carousel-heading{ margin:0 0 var(--space-4); font-weight:800; line-height:var(--lh-tight); letter-spacing:var(--ls-heading); }
