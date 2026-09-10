@@ -99,7 +99,7 @@ document.addEventListener('DOMContentLoaded', function () {
   if (carousel) {
     var slides = Array.prototype.slice.call(carousel.querySelectorAll('.carousel-slide'));
     var dots = Array.prototype.slice.call(carousel.querySelectorAll('.carousel-dots button'));
-    var overlayHeading = carousel.querySelector('.carousel-overlay h1');
+    var overlayHeading = carousel.querySelector('.carousel-bottom h1');
     var captionHeading = carousel.querySelector('.carousel-caption h2');
     var current = 0;
     var timer = null;
