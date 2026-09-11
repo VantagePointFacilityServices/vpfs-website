@@ -1,9 +1,9 @@
-# Desired state for the vantagepointcommercial.com.au zone, applied by
+# Desired state for the vantagepointfacilityservices.com.au zone, applied by
 # sync-dns.mjs against the Cloudflare API. This file is the single source
 # of truth — edit it, then run the sync script (dry-run by default).
 # See dns/README.md for the full field reference (records + redirects).
 
-zone: vantagepointcommercial.com.au
+zone: vantagepointfacilityservices.com.au
 
 records:
   # --- Website (GitHub Pages) — deployed by .github/workflows/deploy-website.yml ---
@@ -15,23 +15,23 @@ records:
   # Cloudflare's SSL/TLS mode to "Full" (not "Flexible"), or you'll get a
   # redirect loop.
   - type: A
-    name: vantagepointcommercial.com.au
+    name: vantagepointfacilityservices.com.au
     content: 185.199.108.153
     proxied: false
   - type: A
-    name: vantagepointcommercial.com.au
+    name: vantagepointfacilityservices.com.au
     content: 185.199.109.153
     proxied: false
   - type: A
-    name: vantagepointcommercial.com.au
+    name: vantagepointfacilityservices.com.au
     content: 185.199.110.153
     proxied: false
   - type: A
-    name: vantagepointcommercial.com.au
+    name: vantagepointfacilityservices.com.au
     content: 185.199.111.153
     proxied: false
   - type: CNAME
-    name: www.vantagepointcommercial.com.au
+    name: www.vantagepointfacilityservices.com.au
     content: vantagepointfacilityservices.github.io
     proxied: false
 
@@ -39,24 +39,24 @@ records:
   # --- Workspace is set up and you have the real values from the admin ---
   # --- console (Admin console > Account > Domains > each domain's setup). ---
   # - type: MX
-  #   name: vantagepointcommercial.com.au
+  #   name: vantagepointfacilityservices.com.au
   #   content: smtp.google.com
   #   priority: 1
   # - type: TXT
-  #   name: vantagepointcommercial.com.au
+  #   name: vantagepointfacilityservices.com.au
   #   content: "v=spf1 include:_spf.google.com ~all"
   # - type: TXT
-  #   name: google._domainkey.vantagepointcommercial.com.au
+  #   name: google._domainkey.vantagepointfacilityservices.com.au
   #   content: "REPLACE_WITH_DKIM_VALUE_FROM_GOOGLE_ADMIN_CONSOLE"
   # - type: TXT
-  #   name: vantagepointcommercial.com.au
+  #   name: vantagepointfacilityservices.com.au
   #   content: "REPLACE_WITH_GOOGLE_SITE_VERIFICATION_TOKEN"
 
   # --- GoHighLevel custom domain for funnels/forms — not built yet, see ---
   # --- tech-stack-execution-plan-and-mvp-checklist.md Phase 2. Get the ---
   # --- target from GHL: Settings > Domains > add custom domain. ---
   # - type: CNAME
-  #   name: go.vantagepointcommercial.com.au
+  #   name: go.vantagepointfacilityservices.com.au
   #   content: "REPLACE_WITH_GHL_TRACKING_DOMAIN_TARGET"
   #   proxied: false
 

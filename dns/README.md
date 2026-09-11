@@ -17,7 +17,7 @@ cp .env.example .env   # fill in CLOUDFLARE_API_TOKEN — see .env.example for s
 
 ```bash
 node --env-file=.env sync-dns.mjs                    # dry run, ALL zones — prints the plan, changes nothing
-node --env-file=.env sync-dns.mjs --zone vantagepointcommercial.com.au   # just one zone's file
+node --env-file=.env sync-dns.mjs --zone vantagepointfacilityservices.com.au   # just one zone's file
 node --env-file=.env sync-dns.mjs --apply             # creates/updates records + redirect rules
 node --env-file=.env sync-dns.mjs --apply --prune     # also deletes DNS records not listed (redirects are always fully synced regardless of --prune — see below)
 ```
@@ -67,7 +67,7 @@ documentation-reserved placeholder IP, `192.0.2.1`).
 
 ## Current zones
 
-- **`vantagepointcommercial.com.au`** — the live commercial site. Apex +
+- **`vantagepointfacilityservices.com.au`** — the live commercial site. Apex +
   `www` point at GitHub Pages (deployed by
   `.github/workflows/deploy-website.yml`; `site/CNAME` tells GitHub which
   custom domain to serve). Google Workspace email and a GoHighLevel
@@ -83,7 +83,7 @@ documentation-reserved placeholder IP, `192.0.2.1`).
   records are added here too.
 
 The Lead Scoring Worker's custom domain (if you ever want one, e.g.
-`api.vantagepointcommercial.com.au`) is deliberately **not** managed
+`api.vantagepointfacilityservices.com.au`) is deliberately **not** managed
 here — configure it as a `routes` custom-domain entry in
 `worker/wrangler.toml` instead. Cloudflare provisions that DNS record
 itself when the Worker deploys; having both this script and Wrangler try
