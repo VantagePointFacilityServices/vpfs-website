@@ -1,34 +1,41 @@
 #!/usr/bin/env node
-// Syncs dns/records.yaml (desired state) to a Cloudflare zone's DNS records
-// (actual state) via the Cloudflare API. See dns/README.md for setup.
+// Syncs dns/zones/*.yaml (desired state) to Cloudflare — DNS records via
+// the standard DNS API, and whole-domain redirects via the Redirect Rules
+// (Rulesets) API. See dns/README.md for setup.
 //
 // Usage:
-//   node --env-file=dns/.env dns/sync-dns.mjs            # dry run (default) — prints the plan, changes nothing
-//   node --env-file=dns/.env dns/sync-dns.mjs --apply     # actually create/update records
-//   node --env-file=dns/.env dns/sync-dns.mjs --apply --prune   # also delete records not in records.yaml
+//   node --env-file=dns/.env dns/sync-dns.mjs                     # dry run (default), all zones
+//   node --env-file=dns/.env dns/sync-dns.mjs --zone <domain>      # only that zone's file
+//   node --env-file=dns/.env dns/sync-dns.mjs --apply              # actually create/update
+//   node --env-file=dns/.env dns/sync-dns.mjs --apply --prune      # also delete DNS records not in the file
 //
-// --prune is dangerous: it deletes ANY record in the zone that isn't listed
-// in records.yaml (including ones set up by hand, e.g. Google Workspace MX
-// before they're added here). It always prints what it would delete first,
+// --prune only ever affects DNS records, never redirect rules (a zone's
+// redirect-rules entrypoint is always replaced wholesale to exactly match
+// the `redirects:` list — see syncRedirects below). --prune is dangerous
+// on its own terms: it deletes ANY DNS record in the zone not listed in
+// that zone's file, including ones set up by hand outside this repo (e.g.
+// existing email records). It always prints what it would delete first,
 // even in dry-run mode, so review that list carefully before adding --apply.
 
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { dirname, join, basename } from "node:path";
 import { parse as parseYaml } from "yaml";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const ZONES_DIR = join(__dirname, "zones");
 
 const API_BASE = "https://api.cloudflare.com/client/v4";
 const SINGLE_VALUE_TYPES = new Set(["CNAME"]); // only one record allowed per name; everything else can coexist
+const REDIRECT_PHASE = "http_request_dynamic_redirect";
 
 const args = process.argv.slice(2);
 const APPLY = args.includes("--apply");
 const PRUNE = args.includes("--prune");
+const zoneArgIndex = args.indexOf("--zone");
+const ONLY_ZONE = zoneArgIndex !== -1 ? args[zoneArgIndex + 1] : null;
 
 const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN;
-const ZONE_NAME = process.env.CLOUDFLARE_ZONE_NAME || "vantagepointcommercial.com.au";
-let ZONE_ID = process.env.CLOUDFLARE_ZONE_ID;
 
 if (!API_TOKEN) {
   console.error(
@@ -53,14 +60,40 @@ async function cf(path, options = {}) {
   return body;
 }
 
-async function resolveZoneId() {
-  if (ZONE_ID) return ZONE_ID;
-  const body = await cf(`/zones?name=${encodeURIComponent(ZONE_NAME)}`);
+async function resolveZoneId(zoneName) {
+  const body = await cf(`/zones?name=${encodeURIComponent(zoneName)}`);
   if (!body.result.length) {
-    throw new Error(`No Cloudflare zone found for "${ZONE_NAME}" — check CLOUDFLARE_ZONE_NAME, or set CLOUDFLARE_ZONE_ID directly.`);
+    throw new Error(`No Cloudflare zone found for "${zoneName}".`);
   }
   return body.result[0].id;
 }
+
+function loadZoneFiles() {
+  const files = readdirSync(ZONES_DIR).filter((f) => f.endsWith(".yaml") || f.endsWith(".yml"));
+  const selected = ONLY_ZONE ? files.filter((f) => basename(f, ".yaml").replace(/\.yml$/, "") === ONLY_ZONE) : files;
+  if (ONLY_ZONE && !selected.length) {
+    throw new Error(`No zone file found for "${ONLY_ZONE}" in dns/zones/.`);
+  }
+  return selected.map((f) => {
+    const text = readFileSync(join(ZONES_DIR, f), "utf8");
+    const parsed = parseYaml(text) || {};
+    return {
+      file: f,
+      zone: parsed.zone,
+      records: (parsed.records || []).map((r) => ({
+        type: r.type,
+        name: r.name,
+        content: String(r.content),
+        ttl: r.ttl ?? 1,
+        proxied: r.proxied ?? false,
+        priority: r.priority,
+      })),
+      redirects: parsed.redirects || [],
+    };
+  });
+}
+
+// ---- DNS records ----------------------------------------------------
 
 async function fetchExistingRecords(zoneId) {
   const records = [];
@@ -72,19 +105,6 @@ async function fetchExistingRecords(zoneId) {
     page += 1;
   }
   return records;
-}
-
-function loadDesiredRecords() {
-  const text = readFileSync(join(__dirname, "records.yaml"), "utf8");
-  const parsed = parseYaml(text) || [];
-  return parsed.map((r) => ({
-    type: r.type,
-    name: r.name,
-    content: String(r.content),
-    ttl: r.ttl ?? 1,
-    proxied: r.proxied ?? false,
-    priority: r.priority,
-  }));
 }
 
 function sameRecord(desired, existing) {
@@ -101,9 +121,8 @@ function needsUpdate(desired, existing) {
   return false;
 }
 
-async function main() {
-  const zoneId = await resolveZoneId();
-  const [desired, existing] = await Promise.all([Promise.resolve(loadDesiredRecords()), fetchExistingRecords(zoneId)]);
+async function syncRecords(zoneId, desired) {
+  const existing = await fetchExistingRecords(zoneId);
 
   const toCreate = [];
   const toUpdate = [];
@@ -126,52 +145,122 @@ async function main() {
 
   const toDelete = PRUNE ? existing.filter((e) => !matchedExistingIds.has(e.id)) : [];
 
-  console.log(`Zone: ${ZONE_NAME} (${zoneId})`);
-  console.log(`Mode: ${APPLY ? "APPLY" : "DRY RUN (pass --apply to make changes)"}${PRUNE ? " + PRUNE" : ""}\n`);
-
-  console.log(`${unchanged.length} record(s) already correct.`);
+  console.log(`  DNS records: ${unchanged.length} already correct.`);
 
   if (toCreate.length) {
-    console.log(`\nCREATE (${toCreate.length}):`);
-    for (const r of toCreate) console.log(`  + ${r.type} ${r.name} -> ${r.content}${r.priority ? ` (priority ${r.priority})` : ""}`);
+    console.log(`  CREATE (${toCreate.length}):`);
+    for (const r of toCreate) console.log(`    + ${r.type} ${r.name} -> ${r.content}${r.priority ? ` (priority ${r.priority})` : ""}`);
   }
-
   if (toUpdate.length) {
-    console.log(`\nUPDATE (${toUpdate.length}):`);
-    for (const { desired: d, existing: e } of toUpdate) {
-      console.log(`  ~ ${d.type} ${d.name}: ${e.content} -> ${d.content}`);
-    }
+    console.log(`  UPDATE (${toUpdate.length}):`);
+    for (const { desired: d, existing: e } of toUpdate) console.log(`    ~ ${d.type} ${d.name}: ${e.content} -> ${d.content}`);
   }
-
   if (PRUNE) {
-    console.log(`\nDELETE (${toDelete.length})${toDelete.length ? " — review carefully:" : ""}`);
-    for (const r of toDelete) console.log(`  - ${r.type} ${r.name} -> ${r.content}`);
+    console.log(`  DELETE (${toDelete.length})${toDelete.length ? " — review carefully:" : ""}`);
+    for (const r of toDelete) console.log(`    - ${r.type} ${r.name} -> ${r.content}`);
   }
 
-  if (!toCreate.length && !toUpdate.length && !toDelete.length) {
-    console.log("\nNothing to do.");
-    return;
-  }
-
-  if (!APPLY) {
-    console.log("\nDry run only — no changes made. Re-run with --apply to execute the plan above.");
-    return;
-  }
+  if (!APPLY) return;
 
   for (const r of toCreate) {
     await cf(`/zones/${zoneId}/dns_records`, { method: "POST", body: JSON.stringify(r) });
-    console.log(`Created ${r.type} ${r.name} -> ${r.content}`);
+    console.log(`  Created ${r.type} ${r.name} -> ${r.content}`);
   }
   for (const { id, desired: r } of toUpdate) {
     await cf(`/zones/${zoneId}/dns_records/${id}`, { method: "PUT", body: JSON.stringify(r) });
-    console.log(`Updated ${r.type} ${r.name} -> ${r.content}`);
+    console.log(`  Updated ${r.type} ${r.name} -> ${r.content}`);
   }
   for (const r of toDelete) {
     await cf(`/zones/${zoneId}/dns_records/${r.id}`, { method: "DELETE" });
-    console.log(`Deleted ${r.type} ${r.name} -> ${r.content}`);
+    console.log(`  Deleted ${r.type} ${r.name} -> ${r.content}`);
+  }
+}
+
+// ---- Redirect rules ---------------------------------------------------
+// The phase entrypoint is a single ordered list — PUT always replaces the
+// whole thing, so "sync" here just means "make it exactly match redirects:".
+// https://developers.cloudflare.com/rules/url-forwarding/single-redirects/create-api/
+// https://developers.cloudflare.com/ruleset-engine/rulesets-api/update/
+
+function toRedirectRule(r) {
+  return {
+    expression: r.expression,
+    description: r.description || "",
+    action: "redirect",
+    action_parameters: {
+      from_value: {
+        target_url: { expression: r.target_expression },
+        status_code: r.status_code ?? 301,
+        preserve_query_string: r.preserve_query_string ?? true,
+      },
+    },
+  };
+}
+
+async function fetchCurrentRedirectRules(zoneId) {
+  const res = await fetch(`${API_BASE}/zones/${zoneId}/rulesets/phases/${REDIRECT_PHASE}/entrypoint`, {
+    headers: { Authorization: `Bearer ${API_TOKEN}` },
+  });
+  if (res.status === 404) return []; // no entrypoint ruleset exists yet for this phase
+  const body = await res.json();
+  if (!res.ok || body.success === false) {
+    throw new Error(`Cloudflare API error fetching redirect rules: ${JSON.stringify(body.errors)}`);
+  }
+  return body.result.rules || [];
+}
+
+function rulesEqual(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+async function syncRedirects(zoneId, desired) {
+  const desiredRules = desired.map(toRedirectRule);
+  const currentRules = await fetchCurrentRedirectRules(zoneId);
+
+  // Compare ignoring fields Cloudflare adds server-side (id, ref, version, last_updated).
+  const currentComparable = currentRules.map(({ expression, description, action, action_parameters }) => ({
+    expression,
+    description,
+    action,
+    action_parameters,
+  }));
+
+  if (rulesEqual(desiredRules, currentComparable)) {
+    console.log(`  Redirect rules: ${desiredRules.length} already correct.`);
+    return;
   }
 
-  console.log("\nDone.");
+  console.log(`  Redirect rules: replacing ${currentRules.length} existing rule(s) with ${desiredRules.length} desired rule(s):`);
+  for (const r of desired) console.log(`    -> ${r.description || r.expression} (${r.status_code ?? 301})`);
+
+  if (!APPLY) return;
+
+  await cf(`/zones/${zoneId}/rulesets/phases/${REDIRECT_PHASE}/entrypoint`, {
+    method: "PUT",
+    body: JSON.stringify({ rules: desiredRules }),
+  });
+  console.log("  Redirect rules updated.");
+}
+
+// ---- Main ---------------------------------------------------------------
+
+async function main() {
+  const zones = loadZoneFiles();
+  console.log(`Mode: ${APPLY ? "APPLY" : "DRY RUN (pass --apply to make changes)"}${PRUNE ? " + PRUNE" : ""}\n`);
+
+  for (const z of zones) {
+    console.log(`=== ${z.zone} (${z.file}) ===`);
+    const zoneId = await resolveZoneId(z.zone);
+    await syncRecords(zoneId, z.records);
+    await syncRedirects(zoneId, z.redirects);
+    console.log("");
+  }
+
+  if (!APPLY) {
+    console.log("Dry run only — no changes made. Re-run with --apply to execute the plan above.");
+  } else {
+    console.log("Done.");
+  }
 }
 
 main().catch((err) => {

@@ -3,16 +3,20 @@ name: Sync DNS
 on:
   pull_request:
     paths:
-      - "dns/records.yaml"
+      - "dns/zones/**"
       - "dns/sync-dns.mjs"
   workflow_dispatch:
     inputs:
+      zone:
+        description: "Only sync this zone's file (leave blank for all zones)"
+        type: string
+        default: ""
       apply:
-        description: "Actually create/update records (unchecked = dry run only)"
+        description: "Actually create/update records and redirect rules (unchecked = dry run only)"
         type: boolean
         default: false
       prune:
-        description: "Also delete records not listed in records.yaml (dangerous — read the plan first)"
+        description: "Also delete DNS records not listed in the zone file (dangerous — read the plan first; never affects redirect rules)"
         type: boolean
         default: false
 
@@ -41,8 +45,11 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           ARGS=""
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.zone }}" ]; then
+            ARGS="--zone ${{ inputs.zone }}"
+          fi
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.apply }}" = "true" ]; then
-            ARGS="--apply"
+            ARGS="$ARGS --apply"
           fi
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.prune }}" = "true" ]; then
             ARGS="$ARGS --prune"

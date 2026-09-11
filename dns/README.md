@@ -1,9 +1,9 @@
-# DNS sync (Cloudflare)
+# Cloudflare config (DNS + redirects)
 
-`records.yaml` is the desired-state list of DNS records for
-`vantagepointcommercial.com.au`. `sync-dns.mjs` diffs it against the live
-Cloudflare zone and applies the difference — plain REST API calls, no
-Terraform install or state file.
+`dns/zones/<domain>.yaml` is the desired state for one Cloudflare zone —
+its DNS records and any whole-domain redirects. `sync-dns.mjs` diffs each
+file against the live zone and applies the difference: plain REST API
+calls, no Terraform install or state file.
 
 ## Setup
 
@@ -16,55 +16,95 @@ cp .env.example .env   # fill in CLOUDFLARE_API_TOKEN — see .env.example for s
 ## Usage
 
 ```bash
-node --env-file=.env sync-dns.mjs            # dry run — prints the plan, changes nothing
-node --env-file=.env sync-dns.mjs --apply    # creates/updates records
-node --env-file=.env sync-dns.mjs --apply --prune   # also deletes records not listed in records.yaml
+node --env-file=.env sync-dns.mjs                    # dry run, ALL zones — prints the plan, changes nothing
+node --env-file=.env sync-dns.mjs --zone vantagepointcommercial.com.au   # just one zone's file
+node --env-file=.env sync-dns.mjs --apply             # creates/updates records + redirect rules
+node --env-file=.env sync-dns.mjs --apply --prune     # also deletes DNS records not listed (redirects are always fully synced regardless of --prune — see below)
 ```
 
 Always run the dry run first and read the plan. `--prune` is the dangerous
-one — it deletes anything in the live zone that isn't in `records.yaml`,
-including records set up by hand outside this file (e.g. Google Workspace
-MX before it's added here). It prints what it would delete even without
-`--apply`, so you can catch a mistake before it does anything.
+one — it deletes any **DNS record** in the live zone that isn't in that
+zone's file, including records set up by hand outside this repo (e.g.
+existing email records). It prints what it would delete even without
+`--apply`, so you can catch a mistake before it does anything. Redirect
+rules aren't affected by `--prune` — a zone's redirect-rules list is always
+replaced wholesale to exactly match its `redirects:` block, since that's
+how Cloudflare's API works for that phase (see below).
 
-## Editing records
+## Zone file format
 
-Add/edit/remove entries in `records.yaml` (it documents its own field
-format), then re-run the sync. A/AAAA/MX/TXT records can have several
-values at the same name (e.g. the four GitHub Pages apex IPs) — each is
-tracked independently. CNAME can only have one value per name and is
-updated in place.
+```yaml
+zone: example.com
 
-## What's live vs. what's commented out
+records:
+  - type: A          # A, AAAA, CNAME, TXT, MX, etc.
+    name: example.com  # fully-qualified hostname — bare domain for the apex, not "@"
+    content: 192.0.2.1
+    ttl: 1             # seconds, or 1 for "Auto" (default: 1)
+    proxied: false     # true = orange-cloud (Cloudflare proxy/CDN/WAF) (default: false)
+    priority: 10       # MX/SRV only
 
-Only the website's GitHub Pages records (apex + `www`) are active — that's
-the one system already built (`.github/workflows/deploy-website.yml`).
-Google Workspace email and a GoHighLevel custom domain are commented out in
-`records.yaml` because they need real values (DKIM key, verification
-token, GHL target) from systems that aren't set up yet per the [MVP
-execution
-plan](../../vpos/commercial/docs/tech-stack-execution-plan-and-mvp-checklist.md) —
-don't guess those values, uncomment once you have them from the source
-system's own setup flow.
+redirects:
+  - description: "Redirect to somewhere else"
+    expression: 'http.host eq "example.com"'          # Cloudflare ruleset expression — what to match
+    target_expression: 'concat("https://elsewhere.com", http.request.uri.path)'  # Cloudflare expression producing the destination URL
+    status_code: 301          # default: 301
+    preserve_query_string: true  # default: true
+```
+
+A/AAAA/MX/TXT/SRV can have several records at the same name (e.g. the four
+GitHub Pages apex IPs in the `.com.au` zone) — each is tracked
+independently by its exact content. CNAME can only have one value per
+name and is updated in place.
+
+**Redirects require a proxied DNS record to work** — Cloudflare only
+evaluates redirect rules for traffic it's proxying. A domain that exists
+purely to redirect elsewhere (no real website of its own) still needs an
+apex A/CNAME record with `proxied: true`; since the redirect matches
+everything, the record's actual content is never reached — see the
+`vantagepointfacilityservices.com` zone file for the pattern (a
+documentation-reserved placeholder IP, `192.0.2.1`).
+
+## Current zones
+
+- **`vantagepointcommercial.com.au`** — the live commercial site. Apex +
+  `www` point at GitHub Pages (deployed by
+  `.github/workflows/deploy-website.yml`; `site/CNAME` tells GitHub which
+  custom domain to serve). Google Workspace email and a GoHighLevel
+  custom domain are documented but commented out, pending real values
+  from those systems' own setup flows (see the [MVP execution
+  plan](../../vpos/commercial/docs/tech-stack-execution-plan-and-mvp-checklist.md)).
+- **`vantagepointfacilityservices.com`** — redirects entirely to
+  `https://vantagepointfacilityservices.com.au`, path and query string
+  preserved. **This domain already has a live mailbox**
+  (`blake@vantagepointfacilityservices.com`) with MX/SPF/DKIM records this
+  config doesn't list — read the warning at the top of that zone file
+  before running `--apply` (and never `--prune`) against it until those
+  records are added here too.
 
 The Lead Scoring Worker's custom domain (if you ever want one, e.g.
-`api.vantagepointcommercial.com.au`) is deliberately **not** managed here —
-configure it as a `routes` custom-domain entry in `worker/wrangler.toml`
-instead. Cloudflare provisions that DNS record itself when the Worker
-deploys; having both this script and Wrangler try to own the same record
-would fight.
+`api.vantagepointcommercial.com.au`) is deliberately **not** managed
+here — configure it as a `routes` custom-domain entry in
+`worker/wrangler.toml` instead. Cloudflare provisions that DNS record
+itself when the Worker deploys; having both this script and Wrangler try
+to own the same record would fight.
 
-## `site/CNAME`
+## API reference used
 
-GitHub Pages needs a `CNAME` file in the published directory to know which
-custom domain to serve — that's `site/CNAME`, committed alongside the site
-source so it survives every deploy. It has to match the DNS records above
-exactly.
+Redirect rules are Cloudflare's "Single Redirects" (Rules > Redirect
+Rules in the dashboard), managed via the zone's `http_request_dynamic_redirect`
+phase entrypoint ruleset:
+[create](https://developers.cloudflare.com/rules/url-forwarding/single-redirects/create-api/),
+[update](https://developers.cloudflare.com/ruleset-engine/rulesets-api/update/).
+`GET`/`PUT /zones/{zone_id}/rulesets/phases/http_request_dynamic_redirect/entrypoint`
+— `PUT` always replaces the entire rule list, which is why `syncRedirects`
+in `sync-dns.mjs` just recomputes the whole list from `redirects:` rather
+than diffing individual rules.
 
 ## CI
 
 `.github/workflows/sync-dns.yml`: dry run automatically on any PR touching
-`dns/records.yaml`; actual apply is manual only (`workflow_dispatch`, with
-an `apply`/`prune` checkbox), never automatic on push — a bad DNS record
-degrades email or the live site with nothing like a test suite to catch it
-first, unlike the worker's deploy gate.
+`dns/zones/**`; actual apply is manual only (`workflow_dispatch`, with an
+`apply`/`prune` checkbox), never automatic on push — a bad DNS record or
+redirect degrades email or a live site with nothing like a test suite to
+catch it first, unlike the worker's deploy gate.

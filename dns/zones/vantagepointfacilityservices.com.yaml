@@ -1,0 +1,44 @@
+# Desired state for the vantagepointfacilityservices.com zone.
+#
+# !! IMPORTANT — READ BEFORE RUNNING sync-dns.mjs AGAINST THIS ZONE !!
+#
+# This domain already has a live mailbox (blake@vantagepointfacilityservices.com),
+# which means it already has real MX/SPF/DKIM records in Cloudflare (or
+# wherever this zone's DNS is currently hosted) that this file does NOT
+# list, because their exact values aren't known here.
+#
+#   - Do NOT run --apply --prune against this zone. Pruning deletes any
+#     live record not listed below, which would take down email.
+#   - Before the first --apply (even without --prune), run a dry run and
+#     check the CREATE/UPDATE list: if an apex A or CNAME record already
+#     exists (e.g. this domain currently hosts a website, not just email),
+#     applying the placeholder record below would silently replace it.
+#     Confirm what it currently points to first.
+#   - Once you've pulled the real MX/SPF/DKIM values from wherever this
+#     domain's email is configured, add them here so this file is a
+#     complete picture of the zone — then --prune becomes safe to use.
+
+zone: vantagepointfacilityservices.com
+
+records:
+  # Proxied placeholder so Cloudflare's edge can intercept requests and
+  # apply the redirect below — the redirect always matches, so this IP is
+  # never actually reached. 192.0.2.1 is a documentation-reserved address
+  # (RFC 5737, TEST-NET-1), not a real destination.
+  - type: A
+    name: vantagepointfacilityservices.com
+    content: 192.0.2.1
+    proxied: true
+  - type: CNAME
+    name: www.vantagepointfacilityservices.com
+    content: vantagepointfacilityservices.com
+    proxied: true
+
+redirects:
+  # Whole-domain 301 to the .com.au site, preserving path and query string
+  # (e.g. /services?ref=x -> https://vantagepointfacilityservices.com.au/services?ref=x).
+  - description: "Redirect to the .com.au domain"
+    expression: 'http.host eq "vantagepointfacilityservices.com" or http.host eq "www.vantagepointfacilityservices.com"'
+    target_expression: 'concat("https://vantagepointfacilityservices.com.au", http.request.uri.path)'
+    status_code: 301
+    preserve_query_string: true
