@@ -495,3 +495,7 @@ async function writeBackToGHL(contactId, values, env) {
 
   return { success: true };
 }
+
+// Exported for unit testing (test/scoring.test.js) — pure, no network
+// dependency, so these can be tested without the workerd runtime.
+export { checkDisqualifiers, calculateGateScore, tierFromScore };

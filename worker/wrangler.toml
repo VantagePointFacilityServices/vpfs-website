@@ -1,0 +1,6 @@
+name = "vpfs-lead-scoring-worker"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+
+# GHL_API_KEY is a runtime secret, not set here:
+#   wrangler secret put GHL_API_KEY
