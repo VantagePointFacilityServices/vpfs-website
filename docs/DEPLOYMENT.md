@@ -11,6 +11,9 @@ issue a GitHub Pages TLS cert before DNS actually points at GitHub).
 
 ## Architecture
 
+See `docs/ARCHITECTURE.md` for diagrams of the domain/DNS setup, the three
+CI/CD workflows, and a visitor request lifecycle. Summary:
+
 - **GoDaddy** — domain *registrar* only, for both domains. DNS management
   is delegated to Cloudflare via nameservers; you won't touch DNS records
   in GoDaddy again after Part 1.
