@@ -101,10 +101,31 @@ phase entrypoint ruleset:
 in `sync-dns.mjs` just recomputes the whole list from `redirects:` rather
 than diffing individual rules.
 
+## Testing
+
+```bash
+npm test   # runs test/sync-dns.test.js with coverage (see vitest.config.js)
+```
+
+`sync-dns.mjs`'s pure logic (`sameRecord`, `needsUpdate`, `toRedirectRule`,
+`rulesEqual`, `loadZoneFiles`) and its API-calling functions (`cf`,
+`resolveZoneId`, `fetchExistingRecords`, `fetchCurrentRedirectRules`,
+`syncRecords`, `syncRedirects`, `main`) all have unit tests, with `fetch`
+mocked so nothing hits the real Cloudflare API. `loadZoneFiles` is also
+tested directly against the real `zones/` directory, so a change that
+breaks either committed zone file's YAML fails the suite too.
+`vitest.config.js` enforces an 80% coverage floor (statements, branches,
+functions, lines) — `npm test` exits non-zero below that, same as the
+worker's suite.
+
 ## CI
 
-`.github/workflows/sync-dns.yml`: dry run automatically on any PR touching
-`dns/zones/**`; actual apply is manual only (`workflow_dispatch`, with an
-`apply`/`prune` checkbox), never automatic on push — a bad DNS record or
-redirect degrades email or a live site with nothing like a test suite to
-catch it first, unlike the worker's deploy gate.
+`.github/workflows/sync-dns.yml` has two jobs: `test` (runs the suite
+above, coverage-gated) always runs first, then `sync` — dry run
+automatically on any PR touching `dns/zones/**`; actual apply is manual
+only (`workflow_dispatch`, with an `apply`/`prune` checkbox), never
+automatic on push. Both a broken script and a bad DNS record/redirect are
+things a plain `--apply` can't undo cleanly, so both gates exist —
+tests catch a broken script before it ever touches the API, the
+dry-run-by-default behavior catches a bad *config* even when the script
+itself is correct.

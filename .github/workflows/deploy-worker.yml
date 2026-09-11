@@ -28,6 +28,8 @@ jobs:
 
       - run: npm ci
 
+      # Fails (and blocks deploy below) if statement/branch/function/line
+      # coverage on worker.js drops below 80% — see worker/vitest.config.js.
       - run: npm test
 
   # Only deploys on a direct push to main, and only once tests above pass —

@@ -274,3 +274,123 @@ describe("POST /outcome", () => {
     expect(res.status).toBe(400);
   });
 });
+
+// The tests above always populate customFields fully. These cover the
+// fallback branches (missing fields, the snake_case customFields key, the
+// untested "standard" tier) that only fire when a payload is sparse.
+describe("field defaults and alternate payload shapes", () => {
+  it("scores a mid-range lead into standard (not priority or nurture)", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/gate", {
+      contact_id: "c13",
+      customFields: {
+        facility_type: "",
+        monthly_budget: "1000",
+        postcode: "4211",
+        cleaning_frequency: "daily",
+      },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(json.tier).toBe("standard");
+    expect(json.sla_flag).toBe("call-same-day");
+  });
+
+  it("accepts custom_fields (snake_case) as an alternative to customFields", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/gate", {
+      contact_id: "c14",
+      custom_fields: { monthly_budget: "3000", cleaning_frequency: "daily", facility_type: "office", postcode: "4211" },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+    expect(json.tier).toBe("priority");
+  });
+
+  it("treats a completely empty customFields object as a qualifying (not disqualified) zero-score lead", async () => {
+    global.fetch = mockGhlOk();
+    // No frequency/budget/facilityType/postcode at all — checkDisqualifiers'
+    // per-field checks all short-circuit false rather than disqualifying,
+    // since an unanswered field isn't the same as a failing one at /gate.
+    const req = makeRequest("/gate", { contact_id: "c15", customFields: {} });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(json.dq_flag).toBe("none");
+    expect(json.score).toBe(0);
+    expect(json.tier).toBe("standard-flagged");
+  });
+
+  it("enrich handles a payload with no customFields and no size_sqm", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/enrich", { contact_id: "c16" });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+    expect(json.tier_bump).toBeNull();
+  });
+
+  it("confirm defaults to the budget path when dq_flag is entirely absent", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/confirm", {
+      contact_id: "c17",
+      customFields: { budget_flexible: "yes", flexible_budget_amount: "2000" },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+    expect(json.dimension).toBe("budget");
+  });
+
+  it("frequency confirm stays in nurture when frequency_flexible is missing (not just 'no')", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/confirm", {
+      contact_id: "c18",
+      customFields: { dq_flag: "nurture-frequency" },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(json.requalified).toBe(false);
+    expect(fieldsFromLastCall(global.fetch).dq_flag).toBe("nurture-frequency-confirmed");
+  });
+
+  it("frequency confirm requalifies with no monthly_budget or facility_type present at all", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/confirm", {
+      contact_id: "c19",
+      customFields: { dq_flag: "nurture-frequency", frequency_flexible: "yes", flexible_frequency: "daily" },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+    expect(json.requalified).toBe(true);
+  });
+
+  it("outcome reads outcome_type from the top-level payload, not just customFields", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/outcome", { contact_id: "c20", outcome_type: "no_show" });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(json.outcome_type).toBe("no_show");
+    expect(fieldsFromLastCall(global.fetch).noshow_attempts).toBe("1"); // defaults to 1 when reschedule_attempts is absent
+  });
+
+  it("outcome defaults loss_reason to 'unspecified' when absent", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/outcome", { contact_id: "c21", customFields: { outcome_type: "lost_at_proposal" } });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(json.loss_reason).toBe("unspecified");
+    expect(fieldsFromLastCall(global.fetch).dq_flag).toBe("nurture-lost-unspecified");
+  });
+});

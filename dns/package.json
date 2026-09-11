@@ -3,9 +3,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "sync": "node --env-file=.env sync-dns.mjs"
+    "sync": "node --env-file=.env sync-dns.mjs",
+    "test": "vitest run"
   },
   "dependencies": {
     "yaml": "^2.5.0"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^2.1.0",
+    "vitest": "^2.1.0"
   }
 }

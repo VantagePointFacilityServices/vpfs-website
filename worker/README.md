@@ -44,8 +44,17 @@ network-free unit tests (`test/scoring.test.js`). All four handlers
 exercised end-to-end through the exported `fetch` entry point in
 `test/handlers.test.js`, with `writeBackToGHL`'s `fetch` call mocked (via
 `global.fetch`) to assert routing, tier/DQ outcomes, and the exact payload
-sent to GHL, without hitting the live API. 24 tests total, run in Node's
-native `fetch`/`Request`/`Response` rather than a real `workerd` runtime —
-`@cloudflare/vitest-pool-workers` would close that gap if worker-specific
-bindings (KV, Durable Objects, etc.) are ever introduced, but isn't needed
-for the plain-fetch logic this Worker currently has.
+sent to GHL, without hitting the live API — including the sparse/missing-field
+and alternate-payload-shape cases (`custom_fields` vs `customFields`, absent
+`dq_flag`/`outcome_type`, etc.), not just the fully-populated happy paths.
+33 tests total, run in Node's native `fetch`/`Request`/`Response` rather
+than a real `workerd` runtime — `@cloudflare/vitest-pool-workers` would
+close that gap if worker-specific bindings (KV, Durable Objects, etc.) are
+ever introduced, but isn't needed for the plain-fetch logic this Worker
+currently has.
+
+**Coverage:** `vitest.config.js` enforces an 80% floor (statements,
+branches, functions, lines) on `worker.js` — `npm test` (and thus
+`deploy-worker.yml`'s `test` job, which gates the `deploy` job) exits
+non-zero if a change drops coverage below that, currently sitting at 100%
+statements/functions/lines and 94% branches.

@@ -21,7 +21,28 @@ on:
         default: false
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dns
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: dns/package-lock.json
+
+      - run: npm ci
+
+      # Fails the job (and blocks sync below) if statement/branch/function/line
+      # coverage on sync-dns.mjs drops below 80% — see dns/vitest.config.js.
+      - run: npm test
+
   sync:
+    needs: test
     runs-on: ubuntu-latest
     defaults:
       run:

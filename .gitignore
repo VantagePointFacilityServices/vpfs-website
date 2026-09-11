@@ -2,6 +2,7 @@
 *.zip
 node_modules/
 .wrangler/
+coverage/
 .env
 .env.*
 !.env.example
