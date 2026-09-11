@@ -96,6 +96,35 @@ records: []
   afterAll(() => rmSync(dir, { recursive: true, force: true }));
 });
 
+describe("loadZoneFiles — file-extension and empty-content edge cases", () => {
+  const dir = mkdtempSync(join(tmpdir(), "dns-zones-edge-"));
+
+  writeFileSync(join(dir, "yml-ext.yml"), "zone: yml-ext.example\nrecords: []\n");
+  writeFileSync(join(dir, "not-a-zone.md"), "# not a zone file, must be ignored\n");
+  writeFileSync(join(dir, "blank.yaml"), "   \n"); // parses to null, not an object
+  writeFileSync(join(dir, "no-records.example.yaml"), "zone: no-records.example\n"); // no records: key at all
+
+  it("picks up .yml as well as .yaml, and ignores non-YAML files", () => {
+    const zones = loadZoneFiles(dir, null);
+    const names = zones.map((z) => z.zone).sort();
+    expect(names).toEqual(["no-records.example", "yml-ext.example", undefined].sort()); // blank.yaml has no `zone:` key
+  });
+
+  it("treats a blank YAML file as an empty zone rather than throwing", () => {
+    const zones = loadZoneFiles(dir, null);
+    const blank = zones.find((z) => z.zone === undefined);
+    expect(blank.records).toEqual([]);
+    expect(blank.redirects).toEqual([]);
+  });
+
+  it("defaults records to [] when the key is missing entirely, not just empty", () => {
+    const [zone] = loadZoneFiles(dir, "no-records.example");
+    expect(zone.records).toEqual([]);
+  });
+
+  afterAll(() => rmSync(dir, { recursive: true, force: true }));
+});
+
 describe("loadZoneFiles against the real zones/ directory", () => {
   // Doubles as a regression check that the committed zone files stay parseable.
   it("parses both real zone files", () => {
@@ -256,6 +285,11 @@ describe("fetchCurrentRedirectRules", () => {
     global.fetch = vi.fn().mockResolvedValue(jsonResponse({ success: false, errors: ["bad"] }, 500));
     await expect(fetchCurrentRedirectRules("token", "zone123")).rejects.toThrow(/Cloudflare API error/);
   });
+
+  it("defaults to an empty array when result.rules is missing", async () => {
+    global.fetch = vi.fn().mockResolvedValue(jsonResponse({ success: true, result: {} }));
+    await expect(fetchCurrentRedirectRules("token", "zone123")).resolves.toEqual([]);
+  });
 });
 
 describe("syncRecords", () => {
@@ -356,6 +390,27 @@ describe("syncRecords", () => {
     expect(plan.toDelete).toEqual([]);
     expect(global.fetch.mock.calls.some(([, options]) => options?.method === "DELETE")).toBe(false);
   });
+
+  it("logs an empty DELETE list when prune is true but nothing is unmatched", async () => {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ success: true, result: [], result_info: { total_pages: 1 } }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, result: { id: "new" } }));
+    const plan = await syncRecords("token", "zone123", desired, { apply: true, prune: true });
+    expect(plan.toDelete).toEqual([]);
+  });
+
+  it("includes priority in the CREATE plan and log line for MX records", async () => {
+    const mxDesired = [{ type: "MX", name: "example.com", content: "smtp.example.com", ttl: 1, proxied: false, priority: 10 }];
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ success: true, result: [], result_info: { total_pages: 1 } }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, result: { id: "new" } }));
+    const plan = await syncRecords("token", "zone123", mxDesired, { apply: true });
+    expect(plan.toCreate[0].priority).toBe(10);
+    const [, postOptions] = global.fetch.mock.calls[1];
+    expect(JSON.parse(postOptions.body).priority).toBe(10);
+  });
 });
 
 describe("syncRedirects", () => {
@@ -393,6 +448,18 @@ describe("syncRedirects", () => {
     expect(url).toBe(`${API_BASE}/zones/zone123/rulesets/phases/http_request_dynamic_redirect/entrypoint`);
     expect(options.method).toBe("PUT");
     expect(JSON.parse(options.body).rules).toEqual(desired.map(toRedirectRule));
+  });
+
+  it("falls back to the expression in the change log when description is missing", async () => {
+    const noDescription = [
+      {
+        expression: 'http.host eq "example.com"',
+        target_expression: '"https://elsewhere.com"',
+      },
+    ];
+    global.fetch = vi.fn().mockResolvedValue(new Response("not found", { status: 404 }));
+    const result = await syncRedirects("token", "zone123", noDescription, { apply: false });
+    expect(result.changed).toBe(true);
   });
 });
 
@@ -443,6 +510,20 @@ redirects: []
     await main(["--apply"], { CLOUDFLARE_API_TOKEN: "token" }, dir);
 
     expect(global.fetch.mock.calls.some(([, options]) => options?.method === "POST")).toBe(true);
+  });
+
+  it("passes --prune through to a full apply run", async () => {
+    global.fetch = vi.fn().mockImplementation((url) => {
+      const u = String(url);
+      if (u.includes("/zones?name=")) return Promise.resolve(jsonResponse({ success: true, result: [{ id: "zone123" }] }));
+      if (u.includes("/dns_records") && !String(url).match(/dns_records\/.+/)) {
+        return Promise.resolve(jsonResponse({ success: true, result: [], result_info: { total_pages: 1 } }));
+      }
+      if (u.includes("/rulesets/phases/")) return Promise.resolve(new Response("not found", { status: 404 }));
+      return Promise.resolve(jsonResponse({ success: true, result: { id: "new" } }));
+    });
+
+    await expect(main(["--apply", "--prune"], { CLOUDFLARE_API_TOKEN: "token" }, dir)).resolves.not.toThrow();
   });
 
   it("scopes to a single zone with --zone", async () => {

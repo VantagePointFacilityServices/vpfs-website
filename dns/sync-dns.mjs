@@ -276,7 +276,11 @@ export async function main(argv, env, zonesDir = DEFAULT_ZONES_DIR) {
 }
 
 // Only run when executed directly (`node sync-dns.mjs`), not when imported
-// by tests.
+// by tests. Exercised by every manual `node sync-dns.mjs` run, not by the
+// test suite itself (there's nothing meaningful to assert on process
+// bootstrap), so excluded from the coverage count rather than faked with a
+// subprocess-spawning test.
+/* v8 ignore next 6 */
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   main(process.argv.slice(2), process.env).catch((err) => {
     console.error(err.message);

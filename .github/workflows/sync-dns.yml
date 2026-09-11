@@ -38,7 +38,7 @@ jobs:
       - run: npm ci
 
       # Fails the job (and blocks sync below) if statement/branch/function/line
-      # coverage on sync-dns.mjs drops below 80% — see dns/vitest.config.js.
+      # coverage on sync-dns.mjs drops below 95% — see dns/vitest.config.js.
       - run: npm test
 
   sync:

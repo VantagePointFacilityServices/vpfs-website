@@ -393,4 +393,42 @@ describe("field defaults and alternate payload shapes", () => {
     expect(json.loss_reason).toBe("unspecified");
     expect(fieldsFromLastCall(global.fetch).dq_flag).toBe("nurture-lost-unspecified");
   });
+
+  it("confirm accepts custom_fields (snake_case) too", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/confirm", {
+      contact_id: "c22",
+      custom_fields: { dq_flag: "nurture-budget", budget_flexible: "yes", flexible_budget_amount: "2000" },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+    expect(json.requalified).toBe(true);
+  });
+
+  it("budget confirm stays in nurture when budget_flexible/flexible_budget_amount are entirely absent", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/confirm", {
+      contact_id: "c23",
+      customFields: { dq_flag: "nurture-budget" },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(json.requalified).toBe(false);
+    expect(fieldsFromLastCall(global.fetch).dq_flag).toBe("nurture-budget-confirmed");
+  });
+
+  it("outcome accepts custom_fields (snake_case) too", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/outcome", {
+      contact_id: "c24",
+      custom_fields: { outcome_type: "no_show" },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+    expect(json.outcome_type).toBe("no_show");
+  });
 });

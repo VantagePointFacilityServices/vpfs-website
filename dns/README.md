@@ -114,9 +114,9 @@ npm test   # runs test/sync-dns.test.js with coverage (see vitest.config.js)
 mocked so nothing hits the real Cloudflare API. `loadZoneFiles` is also
 tested directly against the real `zones/` directory, so a change that
 breaks either committed zone file's YAML fails the suite too.
-`vitest.config.js` enforces an 80% coverage floor (statements, branches,
+`vitest.config.js` enforces a 95% coverage floor (statements, branches,
 functions, lines) — `npm test` exits non-zero below that, same as the
-worker's suite.
+worker's suite. Currently at 100% across all four.
 
 ## CI
 
