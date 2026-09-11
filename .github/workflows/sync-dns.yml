@@ -1,0 +1,50 @@
+name: Sync DNS
+
+on:
+  pull_request:
+    paths:
+      - "dns/records.yaml"
+      - "dns/sync-dns.mjs"
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Actually create/update records (unchecked = dry run only)"
+        type: boolean
+        default: false
+      prune:
+        description: "Also delete records not listed in records.yaml (dangerous — read the plan first)"
+        type: boolean
+        default: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dns
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: dns/package-lock.json
+
+      - run: npm ci
+
+      # PRs always dry-run, regardless of the flags above (those only apply
+      # to a manual workflow_dispatch run) — DNS changes never auto-apply
+      # from a pull request.
+      - name: Sync DNS
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          ARGS=""
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.apply }}" = "true" ]; then
+            ARGS="--apply"
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.prune }}" = "true" ]; then
+            ARGS="$ARGS --prune"
+          fi
+          node sync-dns.mjs $ARGS

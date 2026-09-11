@@ -1,0 +1,83 @@
+# Desired-state DNS records for vantagepointcommercial.com.au, applied by
+# sync-dns.mjs against the Cloudflare API. This file is the single source
+# of truth — edit it, then run the sync script (dry-run by default).
+#
+# Fields per record:
+#   type      - A, AAAA, CNAME, TXT, MX, etc.
+#   name      - fully-qualified hostname. Use the bare domain for the apex
+#               (not "@" — this script doesn't expand shorthand).
+#   content   - record value
+#   ttl       - seconds, or 1 for "Auto" (default: 1)
+#   proxied   - true = orange-cloud (Cloudflare proxy/CDN/WAF), false = grey-
+#               cloud (DNS only). Default: false. See the GitHub Pages note
+#               below before turning this on for the website records.
+#   priority  - MX/SRV only
+#
+# A/AAAA/MX/TXT/SRV can have several records at the same name (e.g. the four
+# GitHub Pages apex IPs below) — each is tracked independently by its exact
+# content. CNAME can only have one value per name, so it's updated in place.
+#
+# Commented-out blocks below are real records this domain will eventually
+# need, held back because they require values from a system that isn't set
+# up yet. Uncomment and fill in when that system is live — don't guess the
+# values.
+
+# --- Website (GitHub Pages) — deployed by .github/workflows/deploy-website.yml ---
+# DNS-only (proxied: false) at apex/www: GitHub issues its own TLS cert for
+# the custom domain and needs to see the real GitHub IPs to do that. A
+# `site/CNAME` file (committed alongside this) tells GitHub which custom
+# domain to serve. Only switch proxied to true after GitHub's custom-domain
+# HTTPS check has gone green in repo Settings > Pages — and if you do, set
+# Cloudflare's SSL/TLS mode to "Full" (not "Flexible"), or you'll get a
+# redirect loop.
+- type: A
+  name: vantagepointcommercial.com.au
+  content: 185.199.108.153
+  proxied: false
+- type: A
+  name: vantagepointcommercial.com.au
+  content: 185.199.109.153
+  proxied: false
+- type: A
+  name: vantagepointcommercial.com.au
+  content: 185.199.110.153
+  proxied: false
+- type: A
+  name: vantagepointcommercial.com.au
+  content: 185.199.111.153
+  proxied: false
+- type: CNAME
+  name: www.vantagepointcommercial.com.au
+  content: vantagepointfacilityservices.github.io
+  proxied: false
+
+# --- Google Workspace email (Volume 4, Section 2.4) — uncomment once ---
+# --- Workspace is set up and you have the real values from the admin ---
+# --- console (Admin console > Account > Domains > each domain's setup). ---
+# - type: MX
+#   name: vantagepointcommercial.com.au
+#   content: smtp.google.com
+#   priority: 1
+# - type: TXT
+#   name: vantagepointcommercial.com.au
+#   content: "v=spf1 include:_spf.google.com ~all"
+# - type: TXT
+#   name: google._domainkey.vantagepointcommercial.com.au
+#   content: "REPLACE_WITH_DKIM_VALUE_FROM_GOOGLE_ADMIN_CONSOLE"
+# - type: TXT
+#   name: vantagepointcommercial.com.au
+#   content: "REPLACE_WITH_GOOGLE_SITE_VERIFICATION_TOKEN"
+
+# --- GoHighLevel custom domain for funnels/forms — not built yet, see ---
+# --- tech-stack-execution-plan-and-mvp-checklist.md Phase 2. Get the ---
+# --- target from GHL: Settings > Domains > add custom domain. ---
+# - type: CNAME
+#   name: go.vantagepointcommercial.com.au
+#   content: "REPLACE_WITH_GHL_TRACKING_DOMAIN_TARGET"
+#   proxied: false
+
+# --- Lead Scoring Worker custom domain — deliberately NOT managed here. ---
+# --- Configure it as a `routes` custom_domain entry in worker/wrangler.toml ---
+# --- instead; Cloudflare provisions that DNS record itself when the Worker ---
+# --- deploys, and having two systems both try to own the same record will ---
+# --- fight each other. ---
