@@ -172,10 +172,13 @@ declares.
    (It also runs automatically on every push to `main` touching `site/**`.)
 
 3. **Set the custom domain.** Repo → **Settings → Pages → Custom domain**
-   → enter `vantagepointfacilityservices.com.au` → Save. (`site/CNAME` is
-   already committed with this value, but the Settings field is what
-   actually triggers GitHub's DNS ownership check and cert issuance —
-   entering it here is required even though the file already matches.)
+   → enter `www.vantagepointfacilityservices.com.au` (the canonical host
+   — matches every page's `<link rel="canonical">`/`og:url` and
+   `sitemap.xml`; the bare apex is what redirects *to* this, not the
+   other way round) → Save. (`site/CNAME` is already committed with this
+   value, but the Settings field is what actually triggers GitHub's DNS
+   ownership check and cert issuance — entering it here is required even
+   though the file already matches.)
 
 4. Wait for the domain check to go green (DNS must already be applied
    from Part 6 for this to succeed — GitHub checks the live A/CNAME
@@ -188,15 +191,17 @@ declares.
 ## Part 8 — Verify
 
 ```bash
-# Site resolves and serves over HTTPS
-curl -I https://vantagepointfacilityservices.com.au
-
-# www also works
+# Canonical host serves over HTTPS
 curl -I https://www.vantagepointfacilityservices.com.au
 
-# .com redirects to .com.au, path preserved
+# Bare apex redirects to www (GitHub Pages side, not Cloudflare)
+curl -I https://vantagepointfacilityservices.com.au
+# expect: 301 Location: https://www.vantagepointfacilityservices.com.au/
+
+# .com redirects to .com.au apex, path preserved (Cloudflare Redirect Rule)
 curl -I https://vantagepointfacilityservices.com/services.html
 # expect: HTTP/2 301, location: https://vantagepointfacilityservices.com.au/services.html
+# — which itself then redirects to https://www.vantagepointfacilityservices.com.au/services.html
 
 # Existing email on the .com domain still works — send yourself a test
 # message to confirm the DNS apply in Part 6 didn't disturb MX/SPF/DKIM.

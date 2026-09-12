@@ -2,7 +2,7 @@
 
 Vantage Point Facility Services delivers professional, consistent, and quality-controlled commercial cleaning, building trust through strong relationships, proven partners, social proof and genuine word of mouth.
 
-**Live at:** [vantagepointfacilityservices.com.au](https://vantagepointfacilityservices.com.au) — `vantagepointfacilityservices.com` redirects there. See `docs/ARCHITECTURE.md` for how.
+**Live at:** [www.vantagepointfacilityservices.com.au](https://www.vantagepointfacilityservices.com.au) — the bare apex (`vantagepointfacilityservices.com.au`) and `vantagepointfacilityservices.com` both redirect there. See `docs/ARCHITECTURE.md` for how.
 
 This repo holds three independent pieces: the marketing site (`site/`), the
 lead-scoring Cloudflare Worker behind its gate form (`worker/`), and the
@@ -35,7 +35,7 @@ site/                                      the website (plain HTML/CSS/JS, no bu
   branding/                              client-supplied brand guidelines and source logo files
   dev-server.js                          local dev server with live reload (see below)
   robots.txt, sitemap.xml                SEO crawl/index directives (see SEO section below)
-  CNAME                                  GitHub Pages custom domain — vantagepointfacilityservices.com.au
+  CNAME                                  GitHub Pages custom domain — www.vantagepointfacilityservices.com.au (canonical; apex redirects here)
 serve.sh                                  runs the local dev server for site/ (see below)
 
 worker/                                   Cloudflare Worker — lead-scoring webhook receiver for the site's gate form
@@ -105,8 +105,39 @@ which copy and numbers are placeholders pending client confirmation.
 
 ## SEO
 
-`site/robots.txt` and `site/sitemap.xml` are served as static files. Every page also
-carries a canonical link, Open Graph/Twitter Card tags, and a JSON-LD `LocalBusiness`
-schema block in its `<head>` — when adding a page, copy that block from an existing
-page and update the title/description/canonical URL, and add the new URL to
-`sitemap.xml`.
+`site/robots.txt` and `site/sitemap.xml` are served as static files at the site root
+(`https://www.vantagepointfacilityservices.com.au/robots.txt`,
+`.../sitemap.xml`) — nothing generates them, they're committed directly and
+must be kept in sync by hand when pages change.
+
+**Canonical domain:** `www.vantagepointfacilityservices.com.au` — this has
+to match exactly across four places, or search engines get mixed signals
+about which URL is authoritative:
+
+1. `site/CNAME` (what GitHub Pages actually serves as canonical; the bare
+   apex and `vantagepointfacilityservices.com` both redirect here — see
+   `docs/ARCHITECTURE.md`)
+2. Every page's `<link rel="canonical">` and `og:url` tag
+3. Every `<loc>` in `sitemap.xml`
+4. The `Sitemap:` line in `robots.txt`
+
+If you ever change the canonical domain, all four need updating together —
+`grep -rn "vantagepointfacilityservices" site/` to find every occurrence.
+
+**`site/robots.txt`:** `Allow: /` for all user agents, plus a `Sitemap:`
+pointer. No pages are currently disallowed — there's nothing here worth
+hiding from crawlers (no admin area, no staging path served from this
+repo).
+
+**`site/sitemap.xml`:** one `<url>` entry per page, each with a `<loc>` and
+a `<priority>` reflecting its role in the funnel — `index.html` at `1.0`
+(entry point), `services.html`/`service-areas.html`/`contact.html` at
+`0.8` (high-intent conversion pages), `why-us.html`/`about.html` at `0.6`
+(consideration-stage). **When adding a page:** add its `<url>` block here
+using the same priority convention, matching its position in the funnel
+above.
+
+**Per-page `<head>` block** (canonical link, Open Graph/Twitter Card tags,
+JSON-LD `LocalBusiness` schema) — when adding a page, copy this block from
+an existing page and update the title/description/canonical URL/`og:url`
+to match, then add the page to `sitemap.xml` per above.

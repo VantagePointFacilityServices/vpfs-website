@@ -67,16 +67,20 @@ documentation-reserved placeholder IP, `192.0.2.1`).
 
 ## Current zones
 
-- **`vantagepointfacilityservices.com.au`** — the live commercial site. Apex +
-  `www` point at GitHub Pages (deployed by
-  `.github/workflows/deploy-website.yml`; `site/CNAME` tells GitHub which
-  custom domain to serve). Google Workspace email and a GoHighLevel
-  custom domain are documented but commented out, pending real values
-  from those systems' own setup flows (see the [MVP execution
+- **`vantagepointfacilityservices.com.au`** — the live commercial site.
+  Apex and `www` both point at GitHub Pages, but `www` is canonical —
+  `site/CNAME` is `www.vantagepointfacilityservices.com.au`, matching
+  every page's `<link rel="canonical">`/`og:url` and `sitemap.xml`, so
+  GitHub redirects the bare apex to `www` rather than the other way
+  round (deployed by `.github/workflows/deploy-website.yml`). Google
+  Workspace email and a GoHighLevel custom domain are documented but
+  commented out, pending real values from those systems' own setup
+  flows (see the [MVP execution
   plan](../../vpos/commercial/docs/tech-stack-execution-plan-and-mvp-checklist.md)).
 - **`vantagepointfacilityservices.com`** — redirects entirely to
-  `https://vantagepointfacilityservices.com.au`, path and query string
-  preserved. **This domain already has a live mailbox**
+  `https://vantagepointfacilityservices.com.au` (which itself then
+  redirects apex → `www` on the GitHub Pages side), path and query
+  string preserved. **This domain already has a live mailbox**
   (`blake@vantagepointfacilityservices.com`) with MX/SPF/DKIM records this
   config doesn't list — read the warning at the top of that zone file
   before running `--apply` (and never `--prune`) against it until those

@@ -30,7 +30,7 @@ flowchart TD
     Visitor(("Visitor")) -- "https://...com.au/*" --> Z1
     Visitor -- "https://...com/*" --> Z2
     Z2 -. "edge fires Redirect Rule\nbefore any origin contact" .-> Z1
-    Z1 -- "resolves to" --> GHP["GitHub Pages\nsite/ — served via\n.github/workflows/deploy-website.yml"]
+    Z1 -- "resolves to (DNS only,\napex and www both)" --> GHP["GitHub Pages\nsite/ — served via\n.github/workflows/deploy-website.yml\nsite/CNAME = www (canonical);\nGitHub 301s bare apex -> www"]
 
     GHP -- "Stage 1 gate form\n(embedded GHL JS widget)" --> GHL["GoHighLevel"]
     GHL -- "webhook on submit/booking/outcome" --> W["Cloudflare Worker\nworker/worker.js\n/gate /enrich /confirm /outcome"]
@@ -77,6 +77,11 @@ shape tests before it ships.
 
 ## Request lifecycle: a visitor hitting the `.com` domain
 
+Three redirect hops from the `.com` domain to the final page — worth
+knowing if this ever shows up as a Lighthouse/PageSpeed warning, or if a
+paid-ad landing URL should just use the canonical `www.…com.au` host
+directly to avoid the extra round trips.
+
 ```mermaid
 sequenceDiagram
     participant V as Visitor
@@ -90,7 +95,10 @@ sequenceDiagram
     V->>CF1: GET https://vantagepointfacilityservices.com.au/services.html
     Note over CF1: DNS-only (grey cloud) — Cloudflare<br/>doesn't proxy this request, just resolves it
     CF1-->>V: (resolves to GitHub Pages IP)
-    V->>GH: GET /services.html (direct, GitHub's own TLS cert)
+    V->>GH: GET /services.html (bare apex host)
+    Note over GH: site/CNAME is the www host, not apex —<br/>GitHub redirects apex requests to canonical
+    GH-->>V: 301 Location: https://www.vantagepointfacilityservices.com.au/services.html
+    V->>GH: GET /services.html (www host, GitHub's own TLS cert)
     GH-->>V: 200 OK, page content
 ```
 
@@ -101,6 +109,6 @@ sequenceDiagram
 | GoDaddy | Domain registrar for both domains | Nameservers only — no DNS records managed here after initial handoff |
 | Cloudflare DNS | Authoritative DNS for both zones | `dns/zones/*.yaml`, applied by `dns/sync-dns.mjs` |
 | Cloudflare Redirect Rules | `.com` → `.com.au` 301 | `dns/zones/vantagepointfacilityservices.com.yaml`'s `redirects:` block |
-| GitHub Pages | Hosts the static site | `site/`, `site/CNAME`, `.github/workflows/deploy-website.yml` |
+| GitHub Pages | Hosts the static site; redirects bare apex → `www` | `site/`, `site/CNAME` (= `www.vantagepointfacilityservices.com.au`), `.github/workflows/deploy-website.yml` |
 | Cloudflare Workers | Lead-scoring webhook receiver | `worker/worker.js`, `worker/wrangler.toml`, `.github/workflows/deploy-worker.yml` |
 | GoHighLevel | CRM — sends webhooks to the Worker, receives writes back | External; field structure documented in the `vpos` repo |
