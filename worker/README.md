@@ -26,11 +26,15 @@ targets, per Volume 4 Section 2.5c:
   Worker.
 - `deploy-worker.yml` — runs `npm test`, then (on push to `main`, and only
   if tests pass) `wrangler deploy`, authenticated via the
-  `CLOUDFLARE_API_TOKEN` repo secret.
+  `CLOUDFLARE_WORKER_API_TOKEN` repo secret. Deliberately a separate secret
+  from the DNS sync workflow's `CLOUDFLARE_API_TOKEN` — least privilege,
+  see `docs/DEPLOYMENT.md` Part 4.
 
 **Before the worker workflow can deploy successfully:**
-- Add the `CLOUDFLARE_API_TOKEN` repo secret (GitHub → Settings → Secrets
-  and variables → Actions).
+- Add the `CLOUDFLARE_WORKER_API_TOKEN` repo secret (GitHub → Settings →
+  Secrets and variables → Actions), scoped to just
+  `Account:Workers Scripts:Edit` for this account — it needs no zone-level
+  or DNS permissions.
 - Set the `GHL_API_KEY` Worker secret directly with Wrangler (not a GitHub
   secret — this is the Worker's own runtime credential):
   `wrangler secret put GHL_API_KEY`.

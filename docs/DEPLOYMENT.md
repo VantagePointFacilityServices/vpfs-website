@@ -79,10 +79,13 @@ For **each** domain, once Active:
 
 Cloudflare dashboard → **My Profile → API Tokens → Create Token**.
 
-- Template: **Edit zone DNS**.
-- Permissions: add both `Zone:DNS:Edit` and `Zone:Zone:Read` (the
-  template includes DNS:Edit; add Zone:Read too — `sync-dns.mjs` looks up
-  each zone by name).
+- Template: **Custom token** — the built-in "Edit zone DNS" template
+  isn't enough on its own; add all three of these permissions:
+  - `Zone:Zone:Read` — `sync-dns.mjs` looks up each zone by name.
+  - `Zone:DNS:Edit` — syncs DNS records.
+  - `Zone:Single Redirect:Edit` — syncs whole-domain redirects via the
+    Rulesets API (Part 6 below); easy to miss since it's not part of the
+    DNS template.
 - Zone Resources: **Specific zone** → select both
   `vantagepointfacilityservices.com.au` and
   `vantagepointfacilityservices.com` (or "All zones" if you'd rather not
