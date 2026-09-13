@@ -214,6 +214,14 @@ describe("rulesEqual", () => {
   it("is false when contents differ", () => {
     expect(rulesEqual([{ a: 1 }], [{ a: 2 }])).toBe(false);
   });
+
+  it("is true when nested object keys are in a different order", () => {
+    // Reproduces what Cloudflare actually returns: action_parameters.from_value
+    // comes back with keys reordered relative to what toRedirectRule builds.
+    const built = [{ a: { x: 1, y: 2, z: 3 } }];
+    const fromApi = [{ a: { z: 3, x: 1, y: 2 } }];
+    expect(rulesEqual(built, fromApi)).toBe(true);
+  });
 });
 
 function jsonResponse(body, status = 200) {

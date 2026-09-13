@@ -211,8 +211,26 @@ export async function fetchCurrentRedirectRules(apiToken, zoneId) {
   return body.result.rules || [];
 }
 
+// Cloudflare doesn't preserve the key order we send in a rule's nested
+// objects (e.g. action_parameters.from_value comes back with its keys in
+// a different order than toRedirectRule builds them in) — plain
+// JSON.stringify comparison is key-order-sensitive, so without this every
+// rule would look "changed" forever even when nothing actually differs.
+function canonicalize(value) {
+  if (Array.isArray(value)) return value.map(canonicalize);
+  if (value && typeof value === "object") {
+    return Object.keys(value)
+      .sort()
+      .reduce((acc, key) => {
+        acc[key] = canonicalize(value[key]);
+        return acc;
+      }, {});
+  }
+  return value;
+}
+
 export function rulesEqual(a, b) {
-  return JSON.stringify(a) === JSON.stringify(b);
+  return JSON.stringify(canonicalize(a)) === JSON.stringify(canonicalize(b));
 }
 
 export async function syncRedirects(apiToken, zoneId, desired, { apply = false } = {}) {
