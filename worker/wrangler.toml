@@ -4,3 +4,9 @@ compatibility_date = "2024-09-23"
 
 # GHL_API_KEY is a runtime secret, not set here:
 #   wrangler secret put GHL_API_KEY
+
+# Cloudflare provisions and manages the DNS record for this automatically
+# on deploy — do not also add it to dns/zones/*.yaml (see dns/README.md).
+[[routes]]
+pattern = "worker.vantagepointfacilityservices.com.au"
+custom_domain = true
