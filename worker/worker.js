@@ -1,7 +1,7 @@
 /**
- * Vantage Point — GHL Lead Scoring Worker (v2, two-stage form)
+ * Vantage Point — GHL Lead Scoring Worker (v3, two-stage lead gate + two-stage applicant funnel)
  *
- * Four endpoints, routed by path, all triggered by GHL webhooks:
+ * Six endpoints, routed by path, all triggered by GHL webhooks:
  *
  *   POST /gate     — fires on the SHORT qualifying form (contact
  *                    details + facility_type + monthly_budget +
@@ -14,13 +14,16 @@
  *
  *   POST /enrich   — fires on the OPTIONAL post-booking facility
  *                    detail survey (bathrooms, kitchens, meeting
- *                    rooms, etc. — sent to Priority/Standard leads
- *                    after they've already booked). Adds detail
- *                    fields to the contact and refines the score,
- *                    but never re-triggers DQ or changes tier
- *                    downward — it only informs walkthrough prep and
- *                    can bump Standard -> Priority if the extra
- *                    detail justifies it.
+ *                    rooms, current contract renewal date, etc. —
+ *                    sent to Priority/Standard leads after they've
+ *                    already booked). Adds detail fields to the
+ *                    contact and refines the score, but never
+ *                    re-triggers DQ or changes tier downward — it
+ *                    only informs walkthrough prep and can bump
+ *                    Standard -> Priority if the extra detail
+ *                    justifies it (a large facility, or an existing
+ *                    contract renewing soon enough that the prospect
+ *                    is actually free to switch providers).
  *
  *   POST /confirm  — fires on the MANDATORY budget/frequency
  *                    confirmation follow-up sent to disqualified
@@ -37,10 +40,36 @@
  *                    segment, distinct from gate-stage DQ segments,
  *                    since these leads already passed qualification.
  *
+ *   POST /apply    — fires on the CAREERS PAGE Stage 1 capture form
+ *                    (site/careers.html — name, phone, email,
+ *                    postcode only). Checks the one DQ knowable this
+ *                    early (service-area postcode) and, if it clears,
+ *                    writes applicant_stage: "screening_survey_sent"
+ *                    so a GHL workflow can send the mandatory Stage 2
+ *                    screening survey. No fit score is calculated
+ *                    here. An out-of-area applicant is routed straight
+ *                    to Unsuccessful without ever seeing the survey.
+ *
+ *   POST /apply-screen — fires on the MANDATORY Stage 2 screening
+ *                    survey (sent by SMS/email after /apply clears).
+ *                    Scores a job applicant against hard eligibility
+ *                    gates (minimum experience, right to work, police
+ *                    check) plus a fit score (experience, availability,
+ *                    transport, physical capability, attitude), and
+ *                    routes the contact into one of three GHL
+ *                    recruitment pipelines: Priority, Standard, or
+ *                    Unsuccessful. Also captures Blue Card and subcontractor-
+ *                    insurance status as non-scoring enrichment signals
+ *                    (applicant_blue_card_eligible, applicant_subcontractor_ready)
+ *                    for downstream HR decisions. Unsuccessful applicants
+ *                    are still recorded (not deleted) — see the "why
+ *                    capture unsuccessful applicants at all" note below.
+ *
  * Mirrors the structure of the existing Xero <-> GHL sync worker.
  *
  * Field keys and stage semantics are documented in the vpos repo:
- * commercial/docs/lead-scoring-and-two-stage-gate-form.md
+ * commercial/docs/lead-scoring-and-two-stage-gate-form.md (leads)
+ * commercial/docs/recruitment-scoring-and-application-form.md (applicants)
  */
 
 // ---- CONFIG ---------------------------------------------------------
@@ -49,7 +78,15 @@ const MIN_MONTHLY_SPEND = 800; // adjust to your actual floor
 const MIN_WEEKLY_CLEANS = 3; // hard floor — anything under this is DQ'd
 const SERVICE_POSTCODES = ["4227", "4226", "4211", "4212"]; // Gold Coast coverage zone — extend as needed
 const CAPABLE_FACILITY_TYPES = ["office", "strata", "construction"]; // subcontractor bench currently supports these
-// add "education", "medical" once WWCC / clinical-cert bench is ready
+// add "education", "medical" once Blue Card / clinical-cert bench is ready
+
+// A lead's EXISTING cleaning contract (with another provider) renewing
+// within this many months means they're actually free to switch soon —
+// worth prioritising ahead of leads locked into a longer term, even if
+// otherwise similarly scored. Stage 2a only (see handleEnrich) — never
+// gates Stage 1 booking, since not knowing this yet (or not having an
+// existing contract at all) isn't a reason to deprioritise anyone.
+const CONTRACT_RENEWAL_PRIORITY_THRESHOLD_MONTHS = 6;
 
 const GHL_API_BASE = "https://services.leadconnectorhq.com";
 const GHL_API_VERSION = "2021-07-28";
@@ -60,6 +97,39 @@ const FREQUENCY_TO_WEEKLY = {
   few_times_week: 3,
   weekly: 1,
   fortnightly: 0.5,
+};
+
+// ---- CAREERS APPLICATION SCORING CONFIG --------------------------------
+// Applicants share the same SERVICE_POSTCODES gate as leads — a cleaner
+// who can't reasonably reach a Gold Coast site is a hard DQ the same way
+// an out-of-area client site is, just from the other direction. The
+// postcode gate is checked at Stage 1 (/apply); everything else below is
+// checked at Stage 2 (/apply-screen).
+
+// Cross-checked against standard AU commercial-cleaning recruitment
+// practice: under 1 year of experience is now a hard floor, not just a
+// low scoring band — see commercial/docs/recruitment-scoring-and-application-form.md
+// ("Why a hard floor on experience now") in the vpos repo.
+const MIN_EXPERIENCE_LEVELS = ["none", "under_1_year"]; // any of these -> hard DQ
+
+const EXPERIENCE_SCORE = {
+  none: 0,
+  under_1_year: 0,
+  "1_to_3_years": 25,
+  "3_plus_years": 40,
+};
+
+const AVAILABILITY_SCORE = {
+  weekends_only: 5,
+  business_hours: 10,
+  after_hours: 20,
+  flexible: 25,
+};
+
+const PASSION_SCORE = {
+  just_a_job: 0,
+  take_pride: 5,
+  genuinely_passionate: 10,
 };
 
 // ---- ENTRY POINT ------------------------------------------------------
@@ -94,6 +164,12 @@ export default {
     }
     if (url.pathname === "/outcome") {
       return handleOutcome(contactId, payload, env);
+    }
+    if (url.pathname === "/apply") {
+      return handleApply(contactId, payload, env);
+    }
+    if (url.pathname === "/apply-screen") {
+      return handleApplyScreen(contactId, payload, env);
     }
 
     return new Response("Unknown route", { status: 404 });
@@ -232,6 +308,8 @@ function tierFromScore(score) {
 async function handleEnrich(contactId, payload, env) {
   const cf = payload.customFields || payload.custom_fields || {};
 
+  const monthsUntilRenewal = monthsUntilContractRenewal(cf.contract_renewal_date);
+
   const detailFields = {
     size_sqm: cf.size_sqm,
     headcount: cf.headcount,
@@ -244,14 +322,34 @@ async function handleEnrich(contactId, payload, env) {
     special_requests: cf.special_requests,
     supplies_provided: cf.supplies_provided,
     equipment_needed: cf.equipment_needed,
+    // Raw date kept for the walkthrough team's reference; the rounded
+    // months-out figure is what GHL views/reports can actually sort or
+    // filter on to prioritise the closest renewals first.
+    contract_renewal_date: cf.contract_renewal_date,
+    contract_renewal_months_out:
+      monthsUntilRenewal === null ? undefined : Math.round(monthsUntilRenewal),
   };
 
-  // Optional score bump: a large facility can justify Standard -> Priority
+  // Optional score bump: either a large facility OR an existing cleaning
+  // contract (with another provider) renewing soon can independently
+  // justify Standard -> Priority. A near-term renewal means the prospect
+  // is actually free to switch providers soon — the whole reason this
+  // signal is worth reprioritising for, same as size_sqm already does for
+  // facility scale. Neither DQ's nor demotes; DQ was already decided at
+  // the gate.
   const sizeSqm = Number(cf.size_sqm) || 0;
-  let tierBump = null;
+  const bumpReasons = [];
   if (sizeSqm >= 2000) {
-    tierBump = "priority";
+    bumpReasons.push("large-facility");
   }
+  if (
+    monthsUntilRenewal !== null &&
+    monthsUntilRenewal >= 0 &&
+    monthsUntilRenewal <= CONTRACT_RENEWAL_PRIORITY_THRESHOLD_MONTHS
+  ) {
+    bumpReasons.push("near-term-contract-renewal");
+  }
+  const tierBump = bumpReasons.length > 0 ? "priority" : null;
 
   const updates = { ...stripUndefined(detailFields) };
   if (tierBump) {
@@ -260,7 +358,27 @@ async function handleEnrich(contactId, payload, env) {
 
   const result = await writeBackToGHL(contactId, updates, env);
 
-  return jsonResponse({ contactId, stage: "enrich", tier_bump: tierBump, ghl_update: result });
+  return jsonResponse({
+    contactId,
+    stage: "enrich",
+    tier_bump: tierBump,
+    bump_reasons: bumpReasons,
+    ghl_update: result,
+  });
+}
+
+// Months (fractional) between now and a stated contract renewal date —
+// negative if the date has already passed. Returns null for a missing or
+// unparseable date rather than throwing, since this field is optional and
+// free-text-adjacent (a date picker on the form, but the payload is still
+// just a string). `now` is injectable so this stays a pure, deterministic
+// function for testing rather than depending on the real clock.
+function monthsUntilContractRenewal(dateStr, now = new Date()) {
+  if (!dateStr) return null;
+  const target = new Date(dateStr);
+  if (Number.isNaN(target.getTime())) return null;
+  const msPerMonth = 1000 * 60 * 60 * 24 * 30.4375; // average month length — fine for a threshold comparison
+  return (target.getTime() - now.getTime()) / msPerMonth;
 }
 
 // ---- /confirm — MANDATORY CONFIRMATION FOR DISQUALIFIED LEADS ----------
@@ -455,6 +573,173 @@ async function handleOutcome(contactId, payload, env) {
   return new Response("Unknown outcome_type", { status: 400 });
 }
 
+// ---- /apply — CAREERS PAGE STAGE 1 CAPTURE FORM ------------------------
+// Short capture form (name/phone/email/postcode) — the only thing checked
+// here is the postcode gate, since it's the one DQ knowable this early and
+// there's no reason to send a full screening survey (with document
+// uploads) to someone who can't be rostered regardless of fit. Everyone
+// who clears gets no score yet — that happens at /apply-screen once the
+// Stage 2 survey comes back.
+async function handleApply(contactId, payload, env) {
+  const f = extractApplyStartFields(payload);
+
+  const dq = checkApplicantAreaDisqualifier(f);
+
+  const writeback = dq.disqualified
+    ? {
+        applicant_tier: "unsuccessful",
+        applicant_dq_flag: dq.reason,
+        applicant_captured_at: new Date().toISOString(),
+      }
+    : {
+        applicant_stage: "screening_survey_sent",
+        applicant_dq_flag: "none",
+        applicant_captured_at: new Date().toISOString(),
+      };
+
+  const result = await writeBackToGHL(contactId, { postcode: f.postcode, ...writeback }, env);
+
+  return jsonResponse({
+    contactId,
+    stage: "apply",
+    applicant_stage: dq.disqualified ? "unsuccessful" : "screening_survey_sent",
+    tier: dq.disqualified ? "unsuccessful" : "pending",
+    dq_flag: dq.reason || "none",
+    ghl_update: result,
+  });
+}
+
+function extractApplyStartFields(payload) {
+  const cf = payload.customFields || payload.custom_fields || {};
+  return {
+    firstName: cf.first_name || "",
+    lastName: cf.last_name || "",
+    phone: cf.phone || "",
+    email: cf.email || "",
+    postcode: cf.postcode || "",
+  };
+}
+
+// The one Stage 1 disqualifier — mirrors the lead gate's own Stage 1
+// postcode DQ. No flex path (there's no "confirm" follow-up for this; an
+// applicant who's genuinely out of area re-applies from scratch if they
+// relocate).
+function checkApplicantAreaDisqualifier(f) {
+  if (f.postcode && !SERVICE_POSTCODES.includes(f.postcode)) {
+    return { disqualified: true, reason: "unsuccessful-out-of-area" };
+  }
+
+  return { disqualified: false, reason: null };
+}
+
+// ---- /apply-screen — MANDATORY STAGE 2 SCREENING SURVEY -----------------
+// Same shape as /gate: hard disqualifiers first, then a fit score for
+// everyone who clears them. A failed hard disqualifier here still gets a
+// fit score run for the record (see checkApplicantDisqualifiers) since
+// none of these is a spectrum the applicant can flex on later — but we
+// still want the fit data captured in case circumstances change and they
+// re-apply down the track.
+async function handleApplyScreen(contactId, payload, env) {
+  const f = extractApplicantScreenFields(payload);
+
+  const dq = checkApplicantDisqualifiers(f);
+  const score = calculateApplicantScore(f);
+  const tier = dq.disqualified ? "unsuccessful" : applicantTierFromScore(score);
+
+  const blueCardEligible = f.blueCardStatus === "current_blue_card_held" || f.blueCardStatus === "willing_to_obtain";
+  const subcontractorReady = f.hasOwnInsuranceAndAbn === "yes";
+
+  const result = await writeBackToGHL(
+    contactId,
+    {
+      applicant_score: score,
+      applicant_tier: tier,
+      applicant_dq_flag: dq.disqualified ? dq.reason : "none",
+      applicant_screened_at: new Date().toISOString(),
+      applicant_blue_card_eligible: blueCardEligible,
+      applicant_subcontractor_ready: subcontractorReady,
+      police_check_document: f.policeCheckDocument,
+      blue_card_document: f.blueCardDocument,
+      insurance_certificate: f.insuranceCertificate,
+      start_availability: f.startAvailability,
+    },
+    env
+  );
+
+  return jsonResponse({
+    contactId,
+    stage: "apply-screen",
+    score,
+    tier,
+    dq_flag: dq.reason || "none",
+    blue_card_eligible: blueCardEligible,
+    subcontractor_ready: subcontractorReady,
+    ghl_update: result,
+  });
+}
+
+function extractApplicantScreenFields(payload) {
+  const cf = payload.customFields || payload.custom_fields || {};
+  return {
+    experience: (cf.cleaning_experience || "").toLowerCase(),
+    rightToWork: (cf.right_to_work || "").toLowerCase(),
+    policeCheckStatus: (cf.police_check_status || "").toLowerCase(),
+    policeCheckDocument: cf.police_check_document || "",
+    blueCardStatus: (cf.blue_card_status || "").toLowerCase(),
+    blueCardDocument: cf.blue_card_document || "",
+    hasOwnInsuranceAndAbn: (cf.has_own_insurance_and_abn || "").toLowerCase(),
+    insuranceCertificate: cf.insurance_certificate || "",
+    availability: (cf.availability || "").toLowerCase(),
+    startAvailability: (cf.start_availability || "").toLowerCase(),
+    reliableTransport: (cf.reliable_transport || "").toLowerCase(),
+    physicalCapability: (cf.physical_capability || "").toLowerCase(),
+    passion: (cf.passion_rating || "").toLowerCase(),
+  };
+}
+
+// Hard gates only — legal/access/experience requirements with no flex
+// path (there's no "confirm" follow-up for these; a "no" here is final
+// unless the applicant's circumstances change and they re-apply).
+// Availability/transport/attitude are scoring inputs, not gates — an
+// applicant who clears the floor but is light on other fit dimensions
+// should still be reachable in Standard, not auto-rejected. Blue Card and
+// insurance/ABN status are captured elsewhere but deliberately never
+// checked here — see the parent scoring doc's "Why Blue Card and insurance/
+// ABN aren't hard disqualifiers" note.
+function checkApplicantDisqualifiers(f) {
+  if (MIN_EXPERIENCE_LEVELS.includes(f.experience)) {
+    return { disqualified: true, reason: "unsuccessful-insufficient-experience" };
+  }
+
+  if (f.rightToWork === "no") {
+    return { disqualified: true, reason: "unsuccessful-no-right-to-work" };
+  }
+
+  if (f.policeCheckStatus === "not_willing") {
+    return { disqualified: true, reason: "unsuccessful-no-police-check" };
+  }
+
+  return { disqualified: false, reason: null };
+}
+
+function calculateApplicantScore(f) {
+  let score = 0;
+
+  score += EXPERIENCE_SCORE[f.experience] ?? 0;
+  score += AVAILABILITY_SCORE[f.availability] ?? 0;
+  score += PASSION_SCORE[f.passion] ?? 0;
+  if (f.reliableTransport === "yes") score += 15;
+  if (f.physicalCapability === "yes") score += 10;
+
+  return Math.min(score, 100);
+}
+
+function applicantTierFromScore(score) {
+  if (score >= 70) return "priority";
+  if (score >= 30) return "standard";
+  return "unsuccessful"; // cleared the hard gates but too weak a fit to actively pursue right now
+}
+
 // ---- SHARED HELPERS -----------------------------------------------------
 
 function stripUndefined(obj) {
@@ -498,4 +783,13 @@ async function writeBackToGHL(contactId, values, env) {
 
 // Exported for unit testing (test/scoring.test.js) — pure, no network
 // dependency, so these can be tested without the workerd runtime.
-export { checkDisqualifiers, calculateGateScore, tierFromScore };
+export {
+  checkDisqualifiers,
+  calculateGateScore,
+  tierFromScore,
+  monthsUntilContractRenewal,
+  checkApplicantAreaDisqualifier,
+  checkApplicantDisqualifiers,
+  calculateApplicantScore,
+  applicantTierFromScore,
+};

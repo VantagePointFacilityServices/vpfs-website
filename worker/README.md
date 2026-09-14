@@ -1,19 +1,28 @@
 # Lead Scoring Worker
 
 Cloudflare Worker that scores and routes leads from the two-stage gate form
-embedded on this site (and on paid-traffic landing pages). Receives GHL
-webhooks on four endpoints — `/gate`, `/enrich`, `/confirm`, `/outcome` — and
-writes `lead_tier`/`dq_flag`/score fields back to the GHL contact.
+embedded on this site (and on paid-traffic landing pages), and separately
+scores job applicants from a two-stage careers funnel. Receives GHL webhooks
+on six endpoints — `/gate`, `/enrich`, `/confirm`, `/outcome` (leads) and
+`/apply`, `/apply-screen` (applicants) — and writes score/tier/DQ fields
+back to the GHL contact.
+
+`/apply` (Stage 1, `careers.html`'s short capture form) only checks the
+service-area postcode gate and, if cleared, hands off to a mandatory Stage 2
+GHL Survey; `/apply-screen` (Stage 2) is what actually runs the remaining
+hard disqualifiers, calculates the fit score, and sets `applicant_tier`.
 
 Field structure, scoring rules, and DQ/nurture routing are documented in the
-vpos repo: `commercial/docs/lead-scoring-and-two-stage-gate-form.md`.
+vpos repo: `commercial/docs/lead-scoring-and-two-stage-gate-form.md` (leads)
+and `commercial/docs/recruitment-scoring-and-application-form.md`
+(applicants).
 
 ## Local development
 
 ```bash
 cd worker
 npm install
-npm test      # runs the Vitest suite (test/scoring.test.js, test/handlers.test.js)
+npm test      # runs the Vitest suite (test/scoring.test.js, test/applicant-scoring.test.js, test/handlers.test.js)
 npm run deploy  # wrangler deploy — requires CLOUDFLARE_API_TOKEN auth locally
 ```
 
@@ -42,23 +51,27 @@ targets, per Volume 4 Section 2.5c:
   workflow's dependency cache and `npm ci` step work.
 
 **Status:** both testing priorities from the field-structure doc are covered.
-`checkDisqualifiers`, `calculateGateScore`, and `tierFromScore` have pure,
-network-free unit tests (`test/scoring.test.js`). All four handlers
-(`handleGate`, `handleEnrich`, `handleConfirm`, `handleOutcome`) are
-exercised end-to-end through the exported `fetch` entry point in
-`test/handlers.test.js`, with `writeBackToGHL`'s `fetch` call mocked (via
-`global.fetch`) to assert routing, tier/DQ outcomes, and the exact payload
-sent to GHL, without hitting the live API — including the sparse/missing-field
-and alternate-payload-shape cases (`custom_fields` vs `customFields`, absent
-`dq_flag`/`outcome_type`, etc.), not just the fully-populated happy paths.
-36 tests total, run in Node's native `fetch`/`Request`/`Response` rather
-than a real `workerd` runtime — `@cloudflare/vitest-pool-workers` would
-close that gap if worker-specific bindings (KV, Durable Objects, etc.) are
-ever introduced, but isn't needed for the plain-fetch logic this Worker
-currently has.
+`checkDisqualifiers`/`calculateGateScore`/`tierFromScore`/
+`monthsUntilContractRenewal` (leads) and
+`checkApplicantAreaDisqualifier`/`checkApplicantDisqualifiers`/
+`calculateApplicantScore`/`applicantTierFromScore` (applicants) have pure,
+network-free unit tests (`test/scoring.test.js`,
+`test/applicant-scoring.test.js`). All six handlers (`handleGate`,
+`handleEnrich`, `handleConfirm`, `handleOutcome`, `handleApply`,
+`handleApplyScreen`) are exercised end-to-end through the exported `fetch`
+entry point in `test/handlers.test.js`, with `writeBackToGHL`'s `fetch`
+call mocked (via `global.fetch`) to assert routing, tier/DQ outcomes, and
+the exact payload sent to GHL, without hitting the live API — including the
+sparse/missing-field and alternate-payload-shape cases (`custom_fields` vs
+`customFields`, absent `dq_flag`/`outcome_type`, etc.), not just the
+fully-populated happy paths, not just the happy path. 81 tests total, run
+in Node's native `fetch`/`Request`/`Response` rather than a real `workerd`
+runtime — `@cloudflare/vitest-pool-workers` would close that gap if
+worker-specific bindings (KV, Durable Objects, etc.) are ever introduced,
+but isn't needed for the plain-fetch logic this Worker currently has.
 
 **Coverage:** `vitest.config.js` enforces a 95% floor (statements,
 branches, functions, lines) on `worker.js` — `npm test` (and thus
 `deploy-worker.yml`'s `test` job, which gates the `deploy` job) exits
 non-zero if a change drops coverage below that, currently sitting at 100%
-statements/functions/lines and 96.87% branches.
+statements/functions/lines and 97.04% branches.

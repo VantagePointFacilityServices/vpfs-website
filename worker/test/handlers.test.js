@@ -152,6 +152,85 @@ describe("POST /enrich", () => {
     const json = await res.json();
 
     expect(json.tier_bump).toBeNull();
+    expect(json.bump_reasons).toEqual([]);
+  });
+
+  it("bumps standard to priority when the existing contract renews soon", async () => {
+    global.fetch = mockGhlOk();
+    const soon = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // ~2 months out
+    const req = makeRequest("/enrich", {
+      contact_id: "c25",
+      customFields: { size_sqm: "300", contract_renewal_date: soon.toISOString().slice(0, 10) },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(json.tier_bump).toBe("priority");
+    expect(json.bump_reasons).toEqual(["near-term-contract-renewal"]);
+    const fields = fieldsFromLastCall(global.fetch);
+    expect(fields.lead_tier).toBe("priority");
+    expect(fields.contract_renewal_months_out).toBe("2");
+  });
+
+  it("does not bump tier for a contract renewing over a year out", async () => {
+    global.fetch = mockGhlOk();
+    const farOut = new Date(Date.now() + 400 * 24 * 60 * 60 * 1000); // > 12 months out
+    const req = makeRequest("/enrich", {
+      contact_id: "c26",
+      customFields: { contract_renewal_date: farOut.toISOString().slice(0, 10) },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(json.tier_bump).toBeNull();
+    expect(json.bump_reasons).toEqual([]);
+  });
+
+  it("does not bump tier for a contract renewal date already in the past", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/enrich", {
+      contact_id: "c27",
+      customFields: { contract_renewal_date: "2020-01-01" },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(json.tier_bump).toBeNull();
+    expect(json.bump_reasons).toEqual([]);
+  });
+
+  it("ignores an unparseable contract_renewal_date rather than bumping or erroring", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/enrich", {
+      contact_id: "c28",
+      customFields: { contract_renewal_date: "not-a-real-date" },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.tier_bump).toBeNull();
+    const fields = fieldsFromLastCall(global.fetch);
+    expect(fields.contract_renewal_months_out).toBeUndefined();
+  });
+
+  it("reports both bump reasons when a large facility AND a near-term renewal both apply", async () => {
+    global.fetch = mockGhlOk();
+    const soon = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const req = makeRequest("/enrich", {
+      contact_id: "c29",
+      customFields: { size_sqm: "2200", contract_renewal_date: soon.toISOString().slice(0, 10) },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(json.tier_bump).toBe("priority");
+    expect(json.bump_reasons).toEqual(["large-facility", "near-term-contract-renewal"]);
   });
 });
 
@@ -430,5 +509,337 @@ describe("field defaults and alternate payload shapes", () => {
     const res = await worker.fetch(req, env);
     const json = await res.json();
     expect(json.outcome_type).toBe("no_show");
+  });
+});
+
+describe("POST /apply (Stage 1 — careers.html capture form)", () => {
+  it("clears an in-area applicant to the screening survey stage, unscored", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/apply", {
+      contact_id: "a1",
+      customFields: {
+        first_name: "Sam",
+        last_name: "Lee",
+        phone: "0400000000",
+        email: "sam@example.com",
+        postcode: "4211",
+      },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.applicant_stage).toBe("screening_survey_sent");
+    expect(json.tier).toBe("pending");
+    expect(json.dq_flag).toBe("none");
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    const [url, options] = global.fetch.mock.calls[0];
+    expect(url).toBe("https://services.leadconnectorhq.com/contacts/a1");
+    expect(options.method).toBe("PUT");
+
+    const fields = fieldsFromLastCall(global.fetch);
+    expect(fields.applicant_stage).toBe("screening_survey_sent");
+    expect(fields.applicant_dq_flag).toBe("none");
+    expect(fields.postcode).toBe("4211");
+    expect(fields.applicant_tier).toBeUndefined();
+  });
+
+  it("routes an out-of-area applicant straight to unsuccessful without sending a survey", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/apply", {
+      contact_id: "a2",
+      customFields: { first_name: "Jo", phone: "0400000000", email: "jo@example.com", postcode: "9999" },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(json.applicant_stage).toBe("unsuccessful");
+    expect(json.tier).toBe("unsuccessful");
+    expect(json.dq_flag).toBe("unsuccessful-out-of-area");
+
+    const fields = fieldsFromLastCall(global.fetch);
+    expect(fields.applicant_tier).toBe("unsuccessful");
+    expect(fields.applicant_dq_flag).toBe("unsuccessful-out-of-area");
+    expect(fields.applicant_stage).toBeUndefined();
+  });
+
+  it("accepts custom_fields (snake_case) as an alternative to customFields", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/apply", {
+      contact_id: "a3",
+      custom_fields: { first_name: "Sam", phone: "0400000000", email: "sam@example.com", postcode: "4211" },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+    expect(json.applicant_stage).toBe("screening_survey_sent");
+  });
+
+  it("treats a completely empty customFields object as clearing the (missing) postcode gate", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/apply", { contact_id: "a4", customFields: {} });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(json.dq_flag).toBe("none");
+    expect(json.applicant_stage).toBe("screening_survey_sent");
+  });
+
+  it("surfaces a failed GHL write without throwing", async () => {
+    global.fetch = vi.fn().mockResolvedValue(new Response("server error", { status: 500 }));
+    const req = makeRequest("/apply", {
+      contact_id: "a5",
+      customFields: { first_name: "Sam", phone: "0400000000", email: "sam@example.com", postcode: "4211" },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.ghl_update.success).toBe(false);
+    expect(json.ghl_update.status).toBe(500);
+  });
+});
+
+describe("POST /apply-screen (Stage 2 — mandatory screening survey)", () => {
+  it("qualifies a strong applicant into priority", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/apply-screen", {
+      contact_id: "b1",
+      customFields: {
+        cleaning_experience: "3_plus_years",
+        right_to_work: "yes",
+        police_check_status: "current_check_held",
+        police_check_document: "https://files.example.com/npc.pdf",
+        blue_card_status: "not_applicable",
+        has_own_insurance_and_abn: "no",
+        availability: "flexible",
+        start_availability: "immediately",
+        reliable_transport: "yes",
+        physical_capability: "yes",
+        passion_rating: "genuinely_passionate",
+      },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.tier).toBe("priority");
+    expect(json.dq_flag).toBe("none");
+    expect(json.score).toBe(100);
+    expect(json.blue_card_eligible).toBe(false);
+    expect(json.subcontractor_ready).toBe(false);
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    const [url, options] = global.fetch.mock.calls[0];
+    expect(url).toBe("https://services.leadconnectorhq.com/contacts/b1");
+    expect(options.method).toBe("PUT");
+
+    const fields = fieldsFromLastCall(global.fetch);
+    expect(fields.applicant_tier).toBe("priority");
+    expect(fields.applicant_score).toBe("100");
+    expect(fields.applicant_dq_flag).toBe("none");
+    expect(fields.police_check_document).toBe("https://files.example.com/npc.pdf");
+  });
+
+  it("scores a mid-range applicant into standard", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/apply-screen", {
+      contact_id: "b2",
+      customFields: {
+        cleaning_experience: "1_to_3_years",
+        right_to_work: "yes",
+        police_check_status: "willing_no_current_check",
+        availability: "business_hours",
+        reliable_transport: "yes",
+        physical_capability: "no",
+        passion_rating: "take_pride",
+      },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(json.tier).toBe("standard");
+    expect(json.dq_flag).toBe("none");
+  });
+
+  it("routes an under-1-year-experience applicant straight to unsuccessful without a fit gate", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/apply-screen", {
+      contact_id: "b3",
+      customFields: {
+        cleaning_experience: "under_1_year",
+        right_to_work: "yes",
+        police_check_status: "willing_no_current_check",
+        availability: "flexible",
+        reliable_transport: "yes",
+        physical_capability: "yes",
+        passion_rating: "genuinely_passionate",
+      },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(json.tier).toBe("unsuccessful");
+    expect(json.dq_flag).toBe("unsuccessful-insufficient-experience");
+    // Fit score is still calculated and recorded even though the tier is
+    // forced to unsuccessful, so the applicant's data isn't discarded.
+    const fields = fieldsFromLastCall(global.fetch);
+    expect(fields.applicant_score).toBe("60");
+    expect(fields.applicant_tier).toBe("unsuccessful");
+  });
+
+  it("routes a no-right-to-work applicant to unsuccessful", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/apply-screen", {
+      contact_id: "b4",
+      customFields: {
+        cleaning_experience: "3_plus_years",
+        right_to_work: "no",
+        police_check_status: "willing_no_current_check",
+      },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(json.dq_flag).toBe("unsuccessful-no-right-to-work");
+    expect(json.tier).toBe("unsuccessful");
+  });
+
+  it("routes a police-check refusal to unsuccessful", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/apply-screen", {
+      contact_id: "b5",
+      customFields: {
+        cleaning_experience: "3_plus_years",
+        right_to_work: "yes",
+        police_check_status: "not_willing",
+      },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(json.dq_flag).toBe("unsuccessful-no-police-check");
+    expect(json.tier).toBe("unsuccessful");
+  });
+
+  it("the weakest-possible applicant who still clears the hard gates lands at the Standard floor, not Unsuccessful", async () => {
+    // With the 1-year experience floor now a hard DQ, the lowest score any
+    // eligible applicant can post is 25 (min experience) + 5 (min
+    // availability) + 0 + 0 + 0 = 30 — exactly Standard's floor. An
+    // eligible-but-weak applicant can no longer land in Unsuccessful via
+    // fit score alone; only a hard DQ routes there now. See the parent
+    // scoring doc's feedback-loop note on this consequence.
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/apply-screen", {
+      contact_id: "b6",
+      customFields: {
+        cleaning_experience: "1_to_3_years",
+        right_to_work: "yes",
+        police_check_status: "willing_no_current_check",
+        availability: "weekends_only",
+        reliable_transport: "no",
+        physical_capability: "no",
+        passion_rating: "just_a_job",
+      },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(json.score).toBe(30);
+    expect(json.tier).toBe("standard");
+    expect(json.dq_flag).toBe("none");
+  });
+
+  it("flags Blue-Card-eligible and subcontractor-ready enrichment signals without affecting score or tier", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/apply-screen", {
+      contact_id: "b7",
+      customFields: {
+        cleaning_experience: "1_to_3_years",
+        right_to_work: "yes",
+        police_check_status: "willing_no_current_check",
+        blue_card_status: "willing_to_obtain",
+        has_own_insurance_and_abn: "yes",
+        insurance_certificate: "https://files.example.com/coc.pdf",
+        availability: "business_hours",
+        reliable_transport: "yes",
+        physical_capability: "no",
+        passion_rating: "take_pride",
+      },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(json.tier).toBe("standard");
+    expect(json.blue_card_eligible).toBe(true);
+    expect(json.subcontractor_ready).toBe(true);
+
+    const fields = fieldsFromLastCall(global.fetch);
+    expect(fields.applicant_blue_card_eligible).toBe("true");
+    expect(fields.applicant_subcontractor_ready).toBe("true");
+    expect(fields.insurance_certificate).toBe("https://files.example.com/coc.pdf");
+  });
+
+  it("accepts custom_fields (snake_case) as an alternative to customFields", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/apply-screen", {
+      contact_id: "b8",
+      custom_fields: {
+        cleaning_experience: "3_plus_years",
+        right_to_work: "yes",
+        police_check_status: "willing_no_current_check",
+        availability: "flexible",
+        reliable_transport: "yes",
+        physical_capability: "yes",
+        passion_rating: "genuinely_passionate",
+      },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+    expect(json.tier).toBe("priority");
+  });
+
+  it("treats a completely empty customFields object as a qualifying zero-score applicant", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/apply-screen", { contact_id: "b9", customFields: {} });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(json.dq_flag).toBe("none");
+    expect(json.score).toBe(0);
+    expect(json.tier).toBe("unsuccessful");
+  });
+
+  it("surfaces a failed GHL write without throwing", async () => {
+    global.fetch = vi.fn().mockResolvedValue(new Response("server error", { status: 500 }));
+    const req = makeRequest("/apply-screen", {
+      contact_id: "b10",
+      customFields: {
+        cleaning_experience: "3_plus_years",
+        right_to_work: "yes",
+        police_check_status: "willing_no_current_check",
+      },
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.ghl_update.success).toBe(false);
+    expect(json.ghl_update.status).toBe(500);
   });
 });
