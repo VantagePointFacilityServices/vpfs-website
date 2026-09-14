@@ -131,11 +131,11 @@ button{ font-family:var(--font-core); }
 
 section{ padding:var(--section-y-lg) 0; }
 @media (max-width:720px){ section{ padding:var(--section-y) 0; } }
-.what-we-clean{ padding-top:calc(var(--section-y-lg) / 4); padding-bottom:calc(var(--section-y-lg) / 4); }
-.what-we-clean .section-head-row{ margin-bottom:calc(var(--section-y-lg) / 4); }
+.section-compact{ padding-top:calc(var(--section-y-lg) / 4); padding-bottom:calc(var(--section-y-lg) / 4); }
+.section-compact .section-head-row{ margin-bottom:calc(var(--section-y-lg) / 4); }
 @media (max-width:720px){
-  .what-we-clean{ padding-top:calc(var(--section-y) / 4); padding-bottom:calc(var(--section-y) / 4); }
-  .what-we-clean .section-head-row{ margin-bottom:calc(var(--section-y) / 4); }
+  .section-compact{ padding-top:calc(var(--section-y) / 4); padding-bottom:calc(var(--section-y) / 4); }
+  .section-compact .section-head-row{ margin-bottom:calc(var(--section-y) / 4); }
 }
 #how-it-works{ padding-top:calc(var(--section-y-lg) / 4); padding-bottom:calc(var(--section-y-lg) / 4); }
 @media (max-width:720px){ #how-it-works{ padding-top:calc(var(--section-y) / 4); padding-bottom:calc(var(--section-y) / 4); } }
@@ -402,15 +402,15 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 .section-head-row .section-head p{ color:var(--text-muted); }
 @media (max-width:720px){ .section-head-row{ align-items:flex-start; } }
 
-/* ===== Scope cards (Home: five scopes) ===== */
-.scope-grid{ display:grid; grid-template-columns:1fr; gap:var(--space-5); }
-@media (min-width:641px){ .scope-grid{ grid-template-columns:repeat(2,1fr); } }
-@media (min-width:1140px){ .scope-grid{ grid-template-columns:repeat(5,1fr); } }
+/* ===== Info card grid (Home: five "what we clean" scopes; Careers: six benefit cards) ===== */
+.card-grid{ display:grid; grid-template-columns:1fr; gap:var(--space-5); }
+@media (min-width:641px){ .card-grid{ grid-template-columns:repeat(2,1fr); } }
+@media (min-width:1140px){ .card-grid{ grid-template-columns:repeat(5,1fr); } }
 
 /* Careers: six cards, three per row instead of the home page's five-across layout */
-@media (min-width:641px){ .scope-grid.scope-grid-careers{ grid-template-columns:repeat(3,1fr); } }
-@media (min-width:1140px){ .scope-grid.scope-grid-careers{ grid-template-columns:repeat(3,1fr); } }
-.scope-card{
+@media (min-width:641px){ .card-grid.card-grid-careers{ grid-template-columns:repeat(3,1fr); } }
+@media (min-width:1140px){ .card-grid.card-grid-careers{ grid-template-columns:repeat(3,1fr); } }
+.info-card{
   display:flex; flex-direction:column;
   background:var(--surface-card);
   border:1px solid var(--border-hairline);
@@ -418,15 +418,15 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
   box-shadow:var(--shadow-sm);
   transition:transform var(--dur-base) var(--ease-standard), box-shadow var(--dur-base) var(--ease-standard);
 }
-.scope-card:hover{ transform:translateY(-4px); box-shadow:var(--shadow-md); }
-.scope-card .scope-body{ padding:var(--space-5); display:flex; flex-direction:column; flex:1; }
-.scope-icon{ background:transparent; color:var(--vp-navy); display:flex; margin-bottom:var(--space-4); }
-.scope-icon svg{ width:30px; height:30px; }
-.scope-card h4{ margin-bottom:var(--space-2); font-size:1.15rem; }
-.scope-card p{ font-size:.95rem; margin:0 0 var(--space-4); color:var(--text-muted); }
-.scope-card .image-slot{ aspect-ratio:1/1.05; align-items:flex-start; padding-top:18px; margin-top:auto; }
-.scope-card .image-slot .slot-mark{ width:22%; }
-.scope-card .image-slot .slot-caption{ left:14px; right:14px; bottom:12px; font-size:11px; line-height:1.35; }
+.info-card:hover{ transform:translateY(-4px); box-shadow:var(--shadow-md); }
+.info-card .card-body{ padding:var(--space-5); display:flex; flex-direction:column; flex:1; }
+.card-icon{ background:transparent; color:var(--vp-navy); display:flex; margin-bottom:var(--space-4); }
+.card-icon svg{ width:30px; height:30px; }
+.info-card h4{ margin-bottom:var(--space-2); font-size:1.15rem; }
+.info-card p{ font-size:.95rem; margin:0 0 var(--space-4); color:var(--text-muted); }
+.info-card .image-slot{ aspect-ratio:1/1.05; align-items:flex-start; padding-top:18px; margin-top:auto; }
+.info-card .image-slot .slot-mark{ width:22%; }
+.info-card .image-slot .slot-caption{ left:14px; right:14px; bottom:12px; font-size:11px; line-height:1.35; }
 
 /* ===== Process steps ===== */
 .process-wrap{ display:grid; grid-template-columns:1.1fr .9fr; gap:var(--space-8); align-items:center; }
