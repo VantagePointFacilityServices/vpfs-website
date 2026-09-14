@@ -406,6 +406,10 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 .scope-grid{ display:grid; grid-template-columns:1fr; gap:var(--space-5); }
 @media (min-width:641px){ .scope-grid{ grid-template-columns:repeat(2,1fr); } }
 @media (min-width:1140px){ .scope-grid{ grid-template-columns:repeat(5,1fr); } }
+
+/* Careers: six cards, three per row instead of the home page's five-across layout */
+@media (min-width:641px){ .scope-grid.scope-grid-careers{ grid-template-columns:repeat(3,1fr); } }
+@media (min-width:1140px){ .scope-grid.scope-grid-careers{ grid-template-columns:repeat(3,1fr); } }
 .scope-card{
   display:flex; flex-direction:column;
   background:var(--surface-card);
