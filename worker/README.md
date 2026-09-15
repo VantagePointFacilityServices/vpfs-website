@@ -2,10 +2,14 @@
 
 Cloudflare Worker that scores and routes leads from the two-stage gate form
 embedded on this site (and on paid-traffic landing pages), and separately
-scores job applicants from a two-stage careers funnel. Receives GHL webhooks
-on six endpoints — `/gate`, `/enrich`, `/confirm`, `/outcome` (leads) and
-`/apply`, `/apply-screen` (applicants) — and writes score/tier/DQ fields
-back to the GHL contact.
+scores job applicants from a two-stage careers funnel. Six endpoints —
+`/gate`, `/enrich`, `/confirm`, `/outcome` (leads) and `/apply`,
+`/apply-screen` (applicants) — write score/tier/DQ fields back to the GHL
+contact. Most are reached via GHL workflow webhooks, but `/gate` is also
+called directly — by the AI Receptionist live on a call, and by the
+website's own booking-gate JS — so every endpoint responds with CORS
+headers restricted to an explicit origin allowlist (see `ALLOWED_ORIGINS`
+in `worker.js`) rather than trusting only server-to-server callers.
 
 `/apply` (Stage 1, `careers.html`'s short capture form) only checks the
 service-area postcode gate and, if cleared, hands off to a mandatory Stage 2

@@ -3,13 +3,16 @@ import worker from "../worker.js";
 
 const env = { GHL_API_KEY: "test-key" };
 
-function makeRequest(path, body, { method = "POST" } = {}) {
+function makeRequest(path, body, { method = "POST", headers } = {}) {
   const init = { method };
-  if (method !== "GET" && method !== "HEAD") {
+  if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") {
     init.body = typeof body === "string" ? body : JSON.stringify(body);
   }
+  if (headers) init.headers = headers;
   return new Request(`https://example.com${path}`, init);
 }
+
+const ALLOWED_ORIGIN = "https://www.vantagepointfacilityservices.com.au";
 
 function mockGhlOk() {
   return vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
@@ -841,5 +844,65 @@ describe("POST /apply-screen (Stage 2 — mandatory screening survey)", () => {
     expect(res.status).toBe(200);
     expect(json.ghl_update.success).toBe(false);
     expect(json.ghl_update.status).toBe(500);
+  });
+});
+
+describe("CORS", () => {
+  it("answers an OPTIONS preflight for /gate from an allowed origin", async () => {
+    const req = makeRequest("/gate", null, {
+      method: "OPTIONS",
+      headers: { Origin: ALLOWED_ORIGIN },
+    });
+
+    const res = await worker.fetch(req, env);
+
+    expect(res.status).toBe(204);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(ALLOWED_ORIGIN);
+    expect(res.headers.get("Access-Control-Allow-Methods")).toContain("POST");
+    expect(res.headers.get("Access-Control-Allow-Methods")).toContain("OPTIONS");
+    expect(res.headers.get("Access-Control-Allow-Headers")).toContain("Content-Type");
+  });
+
+  it("includes Access-Control-Allow-Origin on an actual /gate response from an allowed origin", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest(
+      "/gate",
+      {
+        contact_id: "c-cors-1",
+        customFields: {
+          facility_type: "office",
+          monthly_budget: "3000",
+          postcode: "4211",
+          cleaning_frequency: "daily",
+        },
+      },
+      { headers: { Origin: ALLOWED_ORIGIN, "Content-Type": "application/json" } }
+    );
+
+    const res = await worker.fetch(req, env);
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(ALLOWED_ORIGIN);
+  });
+
+  it("does not echo back a disallowed origin", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest(
+      "/gate",
+      {
+        contact_id: "c-cors-2",
+        customFields: {
+          facility_type: "office",
+          monthly_budget: "3000",
+          postcode: "4211",
+          cleaning_frequency: "daily",
+        },
+      },
+      { headers: { Origin: "https://evil.example.com", "Content-Type": "application/json" } }
+    );
+
+    const res = await worker.fetch(req, env);
+
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
   });
 });

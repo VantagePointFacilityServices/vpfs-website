@@ -134,47 +134,87 @@ const PASSION_SCORE = {
 
 // ---- ENTRY POINT ------------------------------------------------------
 
+// Endpoints are now called directly by the public browser (the website's
+// booking gate), not just by trusted server-to-server callers (GHL
+// workflow webhooks, the AI Receptionist's live /gate call) — so
+// responses need an explicit CORS allowlist rather than none at all.
+const ALLOWED_ORIGINS = [
+  "https://www.vantagepointfacilityservices.com.au",
+  "https://vantagepointfacilityservices.com.au",
+];
+
+function corsHeaders(request) {
+  const headers = {
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+  };
+  const origin = request.headers.get("Origin");
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    headers["Access-Control-Allow-Origin"] = origin;
+  }
+  return headers;
+}
+
+// Applied to every response this Worker returns (not just /gate's) so any
+// future browser-facing endpoint gets the same allowlisted-origin behavior
+// for free.
+function withCors(request, response) {
+  const headers = new Headers(response.headers);
+  for (const [key, value] of Object.entries(corsHeaders(request))) {
+    headers.set(key, value);
+  }
+  return new Response(response.body, { status: response.status, headers });
+}
+
 export default {
   async fetch(request, env) {
-    if (request.method !== "POST") {
-      return new Response("Method not allowed", { status: 405 });
+    if (request.method === "OPTIONS") {
+      return new Response(null, { status: 204, headers: corsHeaders(request) });
     }
 
-    const url = new URL(request.url);
-    let payload;
-    try {
-      payload = await request.json();
-    } catch (err) {
-      return new Response("Invalid JSON", { status: 400 });
-    }
-
-    const contactId = payload.contact_id || payload.contactId;
-    if (!contactId) {
-      return new Response("Missing contact_id", { status: 400 });
-    }
-
-    if (url.pathname === "/gate") {
-      return handleGate(contactId, payload, env);
-    }
-    if (url.pathname === "/enrich") {
-      return handleEnrich(contactId, payload, env);
-    }
-    if (url.pathname === "/confirm") {
-      return handleConfirm(contactId, payload, env);
-    }
-    if (url.pathname === "/outcome") {
-      return handleOutcome(contactId, payload, env);
-    }
-    if (url.pathname === "/apply") {
-      return handleApply(contactId, payload, env);
-    }
-    if (url.pathname === "/apply-screen") {
-      return handleApplyScreen(contactId, payload, env);
-    }
-
-    return new Response("Unknown route", { status: 404 });
+    return withCors(request, await route(request, env));
   },
 };
+
+async function route(request, env) {
+  if (request.method !== "POST") {
+    return new Response("Method not allowed", { status: 405 });
+  }
+
+  const url = new URL(request.url);
+  let payload;
+  try {
+    payload = await request.json();
+  } catch (err) {
+    return new Response("Invalid JSON", { status: 400 });
+  }
+
+  const contactId = payload.contact_id || payload.contactId;
+  if (!contactId) {
+    return new Response("Missing contact_id", { status: 400 });
+  }
+
+  if (url.pathname === "/gate") {
+    return handleGate(contactId, payload, env);
+  }
+  if (url.pathname === "/enrich") {
+    return handleEnrich(contactId, payload, env);
+  }
+  if (url.pathname === "/confirm") {
+    return handleConfirm(contactId, payload, env);
+  }
+  if (url.pathname === "/outcome") {
+    return handleOutcome(contactId, payload, env);
+  }
+  if (url.pathname === "/apply") {
+    return handleApply(contactId, payload, env);
+  }
+  if (url.pathname === "/apply-screen") {
+    return handleApplyScreen(contactId, payload, env);
+  }
+
+  return new Response("Unknown route", { status: 404 });
+}
 
 // ---- /gate — SHORT QUALIFYING FORM -------------------------------------
 
