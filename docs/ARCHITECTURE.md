@@ -33,8 +33,9 @@ flowchart TD
     Z1 -- "resolves to (DNS only,\napex and www both)" --> GHP["GitHub Pages\nsite/ — served via\n.github/workflows/deploy-website.yml\nsite/CNAME = www (canonical);\nGitHub 301s bare apex -> www"]
 
     GHP -- "Stage 1 gate form\n(embedded GHL JS widget)" --> GHL["GoHighLevel"]
-    GHL -- "webhook on submit/booking/outcome" --> W["Cloudflare Worker\nworker/worker.js\n/gate /enrich /confirm /outcome"]
-    W -- "writes lead_tier / dq_flag / score" --> GHL
+    GHP -- "careers.html application form\n(embedded GHL JS widget)" --> GHL
+    GHL -- "webhook on submit/booking/outcome/application" --> W["Cloudflare Worker\nworker/worker.js\n/gate /enrich /confirm /outcome /apply"]
+    W -- "writes lead_tier / dq_flag / score\nor applicant_tier / applicant_dq_flag / applicant_score" --> GHL
 ```
 
 `dns/sync-dns.mjs` is what actually creates/updates the records and the
@@ -110,5 +111,5 @@ sequenceDiagram
 | Cloudflare DNS | Authoritative DNS for both zones | `dns/zones/*.yaml`, applied by `dns/sync-dns.mjs` |
 | Cloudflare Redirect Rules | `.com` → `.com.au` 301 | `dns/zones/vantagepointfacilityservices.com.yaml`'s `redirects:` block |
 | GitHub Pages | Hosts the static site; redirects bare apex → `www` | `site/`, `site/CNAME` (= `www.vantagepointfacilityservices.com.au`), `.github/workflows/deploy-website.yml` |
-| Cloudflare Workers | Lead-scoring webhook receiver | `worker/worker.js`, `worker/wrangler.toml`, `.github/workflows/deploy-worker.yml` |
-| GoHighLevel | CRM — sends webhooks to the Worker, receives writes back | External; field structure documented in the `vpos` repo |
+| Cloudflare Workers | Lead-scoring and applicant-scoring webhook receiver | `worker/worker.js`, `worker/wrangler.toml`, `.github/workflows/deploy-worker.yml` |
+| GoHighLevel | CRM — sends webhooks to the Worker, receives writes back; also hosts the 3 recruitment pipelines (Priority/Standard/Unsuccessful) | External; field structure documented in the `vpos` repo |

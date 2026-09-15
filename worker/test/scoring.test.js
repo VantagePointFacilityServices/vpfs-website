@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { checkDisqualifiers, calculateGateScore, tierFromScore } from "../worker.js";
+import {
+  checkDisqualifiers,
+  calculateGateScore,
+  tierFromScore,
+  monthsUntilContractRenewal,
+} from "../worker.js";
 
 describe("checkDisqualifiers", () => {
   it("passes a lead that clears every gate", () => {
@@ -74,5 +79,40 @@ describe("calculateGateScore / tierFromScore", () => {
     const score = calculateGateScore({ monthlyBudget: 800, frequency: "few_times_week", facilityType: "" });
     expect(score).toBe(25);
     expect(tierFromScore(score)).toBe("standard-flagged");
+  });
+});
+
+describe("monthsUntilContractRenewal", () => {
+  const now = new Date("2026-09-15T00:00:00Z");
+
+  it("returns null for a missing date", () => {
+    expect(monthsUntilContractRenewal("", now)).toBeNull();
+    expect(monthsUntilContractRenewal(undefined, now)).toBeNull();
+  });
+
+  it("returns null for an unparseable date", () => {
+    expect(monthsUntilContractRenewal("not-a-date", now)).toBeNull();
+  });
+
+  it("returns a small positive number for a renewal a couple months out", () => {
+    const months = monthsUntilContractRenewal("2026-11-15", now);
+    expect(months).toBeGreaterThan(1.8);
+    expect(months).toBeLessThan(2.2);
+  });
+
+  it("returns a large positive number for a renewal over a year out", () => {
+    const months = monthsUntilContractRenewal("2028-09-15", now);
+    expect(months).toBeGreaterThan(23);
+  });
+
+  it("returns a negative number for a renewal date already in the past", () => {
+    const months = monthsUntilContractRenewal("2026-01-15", now);
+    expect(months).toBeLessThan(0);
+  });
+
+  it("defaults `now` to the real clock when not provided", () => {
+    // Any date far in the future stays far in the future regardless of when the suite runs.
+    const months = monthsUntilContractRenewal("2099-01-01");
+    expect(months).toBeGreaterThan(0);
   });
 });

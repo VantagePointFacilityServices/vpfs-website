@@ -28,7 +28,8 @@ docs/                                      cross-cutting docs — architecture, 
 
 site/                                      the website (plain HTML/CSS/JS, no build step)
   index.html, services.html, service-areas.html,
-  why-us.html, about.html, contact.html  the six pages (see Page & section map below)
+  why-us.html, about.html, contact.html,
+  careers.html                           the seven pages (see Page & section map below)
   assets/css/style.css                   shared stylesheet (design tokens + components)
   assets/js/main.js                      nav toggle, carousel, tabs, FAQ, form handling
   assets/img/                            logo SVGs
@@ -38,7 +39,7 @@ site/                                      the website (plain HTML/CSS/JS, no bu
   CNAME                                  GitHub Pages custom domain — www.vantagepointfacilityservices.com.au (canonical; apex redirects here)
 serve.sh                                  runs the local dev server for site/ (see below)
 
-worker/                                   Cloudflare Worker — lead-scoring webhook receiver for the site's gate form
+worker/                                   Cloudflare Worker — lead-scoring and applicant-scoring webhook receiver
   worker.js, wrangler.toml, package.json, test/   see worker/README.md
 
 dns/                                       Cloudflare DNS + redirect-rule config, applied via the Cloudflare API
@@ -63,9 +64,9 @@ and how to dry-run/apply DNS changes) is in `docs/DEVELOPMENT.md`.
 
 ## Page & section map
 
-Five of the six pages come from the original design handoff (see Design reference
-below); `about.html` was added after launch and follows the same design system rather
-than a design-handoff screen, so no screenshots exist for it.
+Five of the seven pages come from the original design handoff (see Design reference
+below); `about.html` and `careers.html` were added after launch and follow the same
+design system rather than a design-handoff screen, so no screenshots exist for either.
 
 | Page | Purpose | Sections |
 |---|---|---|
@@ -75,6 +76,7 @@ than a design-handoff screen, so no screenshots exist for it.
 | `why-us.html` | Comparison-shopping page — makes the case to pick Vantage Point over another cleaner. Service-level: what you get in the engagement. | Hero → Differentiators (written scope, same faces, monthly audit, right-fit products) → Client testimonials |
 | `about.html` | Trust-building page — who is actually behind the business. Company-level: why it exists and how it's staffed. Deliberately avoids repeating Why Us's service-level claims (see note below). | Hero (cross-links to Why Us) → Founder story → Core values (4 cards) → Our people / workforce model → Final CTA |
 | `contact.html` | Lead capture. | Contact form (service type, add-ons, message) → Phone/email/address details |
+| `careers.html` | Applicant capture — recruits commercial cleaners. | Hero (headline + application form with DQ questions) → Why cleaners choose us (4 cards) → How it works (4-step process) → Final CTA |
 
 **Why Us vs. About — keep these distinct:** Why Us answers "why pick you?" with service
 mechanics (scope, audit, consistency) aimed at a comparison shopper. About answers "who
@@ -92,6 +94,21 @@ via GHL's JS widget, gated and scored by the Worker in `worker/`. Full field
 structure and scoring rules are documented in the `vpos` repo:
 `commercial/docs/lead-scoring-and-two-stage-gate-form.md`. Architecture
 summary: `docs/ARCHITECTURE.md`.
+
+## Recruitment: the careers application gate
+
+`careers.html`'s application form is a single-stage equivalent of the lead
+gate above, aimed at job applicants instead of clients — collects name,
+email, phone, plus a set of DQ questions (right to work, police-check
+consent, service-area postcode, experience, availability, transport,
+physical capability, attitude), gated and scored by the Worker's `/apply`
+endpoint. Applicants route into one of three GHL recruitment pipelines —
+Priority, Standard, or Unsuccessful — with Unsuccessful applicants still
+recorded rather than discarded, so a currently-unsuitable applicant can be
+re-engaged later if they become qualified (same rationale as the lead
+gate's nurture pool). Full field structure, DQ criteria, and scoring rules
+are documented in the `vpos` repo:
+`commercial/docs/recruitment-scoring-and-application-form.md`.
 
 ## Design reference
 
