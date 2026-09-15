@@ -706,6 +706,13 @@ input:focus,select:focus,textarea:focus{ outline:none; border-color:var(--vp-nav
 .booking-step-2.show{ display:block; }
 .booking-error{ display:none; background:#FBEAE9; border:1px solid #B3261E; color:#B3261E; border-radius:var(--radius-sm); padding:var(--space-3); font-size:.85rem; margin-bottom:var(--space-4); }
 .booking-error.show{ display:block; }
+.form-fields.hide-after-step1{ display:none; }
+.booking-step-2-questions.hide-after-step2{ display:none; }
+.booking-result{ display:none; }
+.booking-result.show{ display:block; }
+.booking-result > div{ display:none; }
+.booking-result > div.show{ display:block; }
+.booking-calendar-embed{ min-height:420px; }
 .hp-field{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
 .field-help{ margin-top:-10px; margin-bottom:var(--space-4); font-size:.8rem; color:var(--text-faint); }
 .input-icon-wrap{ position:relative; }

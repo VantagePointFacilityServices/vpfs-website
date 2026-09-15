@@ -141,26 +141,8 @@
             </div>
           </div>
           <p class="field-help">Street, suburb and postcode</p>
-          <div class="form-row">
-            <div>
-              <label for="property-type">Property type</label>
-              <select id="property-type" name="property_type">
-                <option value="">Select a property type</option>
-                <option>Commercial offices</option>
-                <option>Strata &amp; body corporate</option>
-                <option>Education</option>
-                <option>Medical</option>
-                <option>Industrial</option>
-                <option>Other</option>
-              </select>
-            </div>
+          <div class="form-row single">
             <div><label for="floor-area">Approx. floor area</label><input id="floor-area" name="floor_area" type="text" placeholder="e.g. 1,800 m&sup2;"></div>
-          </div>
-          <label>Cleaning frequency</label>
-          <div class="radio-row">
-            <label class="radio-option"><input type="radio" name="frequency" value="Daily" checked>Daily</label>
-            <label class="radio-option"><input type="radio" name="frequency" value="5 x week">5 &times; week</label>
-            <label class="radio-option"><input type="radio" name="frequency" value="3 x week">3 &times; week</label>
           </div>
           <label>Add-ons</label>
           <div class="check-row-desc">
@@ -201,9 +183,50 @@
           <button type="submit" class="btn btn-primary">Send request<span class="btn-chip"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
           <p class="form-note" style="text-align:left;">No obligation. We reply within one business day.</p>
         </div>
-        <!-- Populated by a follow-up module (DQ questions + tier-based
-             calendar/message) once the contact is created above. -->
-        <div class="booking-step-2 contact-form"></div>
+        <div class="booking-step-2 contact-form">
+          <div class="booking-step-2-questions">
+            <h3 class="mt-0">Just a couple more details</h3>
+            <div class="booking-error" role="alert"></div>
+            <div class="form-row">
+              <div>
+                <label for="contact-facility-type">Facility type</label>
+                <select id="contact-facility-type" name="facility_type" required>
+                  <option value="">Select a facility type</option>
+                  <option value="office">Office</option>
+                  <option value="strata">Strata &amp; body corporate</option>
+                  <option value="education">Education</option>
+                  <option value="medical">Medical</option>
+                  <option value="construction">Construction / industrial</option>
+                </select>
+              </div>
+              <div><label for="contact-postcode">Postcode</label><input id="contact-postcode" name="postcode" type="text" inputmode="numeric" placeholder="4211" required></div>
+            </div>
+            <div class="form-row single">
+              <div><label for="contact-monthly-budget">Approx. monthly cleaning budget</label><input id="contact-monthly-budget" name="monthly_budget" type="number" min="0" placeholder="e.g. 1800" required></div>
+            </div>
+            <label>Cleaning frequency required</label>
+            <div class="radio-row">
+              <label class="radio-option"><input type="radio" name="cleaning_frequency" value="daily">Daily</label>
+              <label class="radio-option"><input type="radio" name="cleaning_frequency" value="few_times_week">A few times a week</label>
+              <label class="radio-option"><input type="radio" name="cleaning_frequency" value="weekly">Weekly</label>
+              <label class="radio-option"><input type="radio" name="cleaning_frequency" value="fortnightly">Fortnightly</label>
+            </div>
+            <button type="button" class="btn btn-primary step2-submit">See availability</button>
+          </div>
+          <div class="booking-result">
+            <div id="calendar-priority" class="booking-calendar-embed">
+              <!-- Priority GHL calendar embed script — added in a follow-up issue. -->
+            </div>
+            <div id="calendar-standard" class="booking-calendar-embed">
+              <!-- Standard GHL calendar embed script — added in a follow-up issue. -->
+            </div>
+            <div id="no-calendar-message" class="form-success" style="padding:var(--space-3) 0;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+              <h3>Thanks &mdash; we&rsquo;ll be in touch</h3>
+              <p class="small" style="color:var(--text-muted);">Based on what you&rsquo;ve told us, one of the team will reach out directly rather than booking a walkthrough right away.</p>
+            </div>
+          </div>
+        </div>
         <div class="form-success contact-form">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
           <h3>Request received</h3>

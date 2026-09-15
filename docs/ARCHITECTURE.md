@@ -32,11 +32,20 @@ flowchart TD
     Z2 -. "edge fires Redirect Rule\nbefore any origin contact" .-> Z1
     Z1 -- "resolves to (DNS only,\napex and www both)" --> GHP["GitHub Pages\nsite/ — served via\n.github/workflows/deploy-website.yml\nsite/CNAME = www (canonical);\nGitHub 301s bare apex -> www"]
 
-    GHP -- "Stage 1 gate form\n(embedded GHL JS widget)" --> GHL["GoHighLevel"]
+    GHP -- "Step 1: name/email/phone\n(assets/js/booking-gate.js)" --> W["Cloudflare Worker\nworker/worker.js\n/lead /gate /enrich /confirm /outcome /apply /apply-screen"]
+    W -- "creates contact, returns contact_id" --> GHP
+    GHP -- "Step 2: facility/budget/frequency/postcode\n(same booking-gate.js, direct /gate call)" --> W
+    W -- "writes lead_tier / dq_flag / score,\nreturns tier synchronously" --> GHP
+    GHP -- "tier decides: Priority calendar,\nStandard calendar, or no-calendar message" --> GHL["GoHighLevel"]
     GHP -- "careers.html application form\n(embedded GHL JS widget)" --> GHL
-    GHL -- "webhook on submit/booking/outcome/application" --> W["Cloudflare Worker\nworker/worker.js\n/gate /enrich /confirm /outcome /apply"]
-    W -- "writes lead_tier / dq_flag / score\nor applicant_tier / applicant_dq_flag / applicant_score" --> GHL
+    GHL -- "webhook on booking/outcome/application" --> W
+    W -- "writes applicant_tier / applicant_dq_flag / applicant_score" --> GHL
 ```
+
+`/lead` and `/gate` are called directly by the browser (not via a GHL-hosted
+embedded form) — see `worker/README.md` and `assets/js/booking-gate.js` for
+the two-step gate this implements. `careers.html`'s application form is
+unrelated and still uses the original GHL-embedded-widget pattern.
 
 `dns/sync-dns.mjs` is what actually creates/updates the records and the
 redirect rule shown above — see `dns/README.md` for the zone-file format.
