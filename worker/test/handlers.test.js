@@ -50,6 +50,109 @@ describe("routing and request validation", () => {
   });
 });
 
+describe("POST /lead", () => {
+  it("creates a GHL contact and returns its contact_id", async () => {
+    global.fetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ contact: { id: "new-contact-1" } }), { status: 200 })
+    );
+
+    const req = makeRequest("/lead", {
+      first_name: "Alex",
+      last_name: "Rowe",
+      email: "alex@example.com",
+      phone: "0400000000",
+      channel: "website-homepage",
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.contact_id).toBe("new-contact-1");
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    const [url, options] = global.fetch.mock.calls[0];
+    expect(url).toBe("https://services.leadconnectorhq.com/contacts/");
+    expect(options.method).toBe("POST");
+    expect(options.headers.Authorization).toBe("Bearer test-key");
+
+    const sentBody = JSON.parse(options.body);
+    expect(sentBody.firstName).toBe("Alex");
+    expect(sentBody.lastName).toBe("Rowe");
+    expect(sentBody.email).toBe("alex@example.com");
+    expect(sentBody.phone).toBe("0400000000");
+  });
+
+  it("writes channel as a custom field on the created contact", async () => {
+    global.fetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ contact: { id: "new-contact-2" } }), { status: 200 })
+    );
+
+    const req = makeRequest("/lead", {
+      first_name: "Jamie",
+      last_name: "Lee",
+      email: "jamie@example.com",
+      phone: "0411111111",
+      channel: "website-contact",
+    });
+
+    await worker.fetch(req, env);
+
+    const [, options] = global.fetch.mock.calls[0];
+    const sentBody = JSON.parse(options.body);
+    const channelField = sentBody.customFields.find((f) => f.key === "channel");
+    expect(channelField.field_value).toBe("website-contact");
+  });
+
+  it("does not call the GHL API when the honeypot field is filled", async () => {
+    global.fetch = vi.fn();
+
+    const req = makeRequest("/lead", {
+      first_name: "Bot",
+      last_name: "Bot",
+      email: "bot@example.com",
+      phone: "0400000000",
+      url: "http://spam.example.com",
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(json.contact_id).toBeNull();
+  });
+
+  it("rejects a submission missing email or phone", async () => {
+    const req = makeRequest("/lead", {
+      first_name: "Alex",
+      last_name: "Rowe",
+    });
+
+    const res = await worker.fetch(req, env);
+
+    expect(res.status).toBe(400);
+  });
+
+  it("surfaces a failed GHL contact-creation call without throwing", async () => {
+    global.fetch = vi.fn().mockResolvedValue(new Response("server error", { status: 500 }));
+
+    const req = makeRequest("/lead", {
+      first_name: "Alex",
+      last_name: "Rowe",
+      email: "alex@example.com",
+      phone: "0400000000",
+    });
+
+    const res = await worker.fetch(req, env);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.contact_id).toBeNull();
+    expect(json.ghl_error).toBe("server error");
+  });
+});
+
 describe("POST /gate", () => {
   it("qualifies a strong lead into priority with a 15-min SLA flag", async () => {
     global.fetch = mockGhlOk();

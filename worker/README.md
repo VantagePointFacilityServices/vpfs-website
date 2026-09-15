@@ -2,14 +2,20 @@
 
 Cloudflare Worker that scores and routes leads from the two-stage gate form
 embedded on this site (and on paid-traffic landing pages), and separately
-scores job applicants from a two-stage careers funnel. Six endpoints —
-`/gate`, `/enrich`, `/confirm`, `/outcome` (leads) and `/apply`,
+scores job applicants from a two-stage careers funnel. Seven endpoints —
+`/lead`, `/gate`, `/enrich`, `/confirm`, `/outcome` (leads) and `/apply`,
 `/apply-screen` (applicants) — write score/tier/DQ fields back to the GHL
-contact. Most are reached via GHL workflow webhooks, but `/gate` is also
-called directly — by the AI Receptionist live on a call, and by the
-website's own booking-gate JS — so every endpoint responds with CORS
-headers restricted to an explicit origin allowlist (see `ALLOWED_ORIGINS`
-in `worker.js`) rather than trusting only server-to-server callers.
+contact. Most are reached via GHL workflow webhooks, but `/lead` and
+`/gate` are also called directly by the public browser — the website's
+own two-step booking-gate JS — and `/gate` is additionally called live by
+the AI Receptionist mid-call, so every endpoint responds with CORS headers
+restricted to an explicit origin allowlist (see `ALLOWED_ORIGINS` in
+`worker.js`) rather than trusting only server-to-server callers.
+
+`/lead` (Step 1 of the website's booking gate — name/email/phone) creates
+the GHL contact and returns its `contact_id`, which the browser then
+carries into Step 2's `/gate` call; no DQ fields exist yet at Step 1, so
+this endpoint never scores anything.
 
 `/apply` (Stage 1, `careers.html`'s short capture form) only checks the
 service-area postcode gate and, if cleared, hands off to a mandatory Stage 2
@@ -60,8 +66,8 @@ targets, per Volume 4 Section 2.5c:
 `checkApplicantAreaDisqualifier`/`checkApplicantDisqualifiers`/
 `calculateApplicantScore`/`applicantTierFromScore` (applicants) have pure,
 network-free unit tests (`test/scoring.test.js`,
-`test/applicant-scoring.test.js`). All six handlers (`handleGate`,
-`handleEnrich`, `handleConfirm`, `handleOutcome`, `handleApply`,
+`test/applicant-scoring.test.js`). All seven handlers (`handleLead`,
+`handleGate`, `handleEnrich`, `handleConfirm`, `handleOutcome`, `handleApply`,
 `handleApplyScreen`) are exercised end-to-end through the exported `fetch`
 entry point in `test/handlers.test.js`, with `writeBackToGHL`'s `fetch`
 call mocked (via `global.fetch`) to assert routing, tier/DQ outcomes, and

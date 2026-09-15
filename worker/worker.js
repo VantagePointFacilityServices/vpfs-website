@@ -1,7 +1,18 @@
 /**
  * Vantage Point — GHL Lead Scoring Worker (v3, two-stage lead gate + two-stage applicant funnel)
  *
- * Six endpoints, routed by path, all triggered by GHL webhooks:
+ * Seven endpoints, routed by path. Most fire on GHL workflow webhooks, but
+ * /lead and /gate are also called directly by the public browser (the
+ * website's own two-step booking-gate JS), and /gate is additionally
+ * called live by the AI Receptionist mid-call — see corsHeaders()/
+ * withCors() below for the resulting origin-allowlist requirement:
+ *
+ *   POST /lead     — fires on the website's SHORT Step 1 capture form
+ *                    (first/last name, email, phone only — no DQ fields
+ *                    yet). Creates the GHL contact and returns its
+ *                    contact_id, which the browser carries into /gate.
+ *                    Never scores anything; channel is a pass-through
+ *                    tag only.
  *
  *   POST /gate     — fires on the SHORT qualifying form (contact
  *                    details + facility_type + monthly_budget +
@@ -189,6 +200,10 @@ async function route(request, env) {
     return new Response("Invalid JSON", { status: 400 });
   }
 
+  if (url.pathname === "/lead") {
+    return handleLead(payload, env);
+  }
+
   const contactId = payload.contact_id || payload.contactId;
   if (!contactId) {
     return new Response("Missing contact_id", { status: 400 });
@@ -214,6 +229,55 @@ async function route(request, env) {
   }
 
   return new Response("Unknown route", { status: 404 });
+}
+
+// ---- /lead — STEP 1 CONTACT CAPTURE ------------------------------------
+// Called directly by the browser (not a GHL webhook) when the website's
+// short "Book a Walkthrough" form (name/email/phone) is submitted. No DQ
+// fields exist yet at this point — this endpoint only creates the GHL
+// contact and returns its id, which the browser then carries into the
+// Step 2 DQ questions and passes to /gate. See
+// commercial/docs/lead-scoring-and-two-stage-gate-form.md in the vpos repo.
+async function handleLead(payload, env) {
+  const f = extractLeadFields(payload);
+
+  if (f.honeypot) {
+    // Bot filled the invisible field — respond as if successful without
+    // ever calling the GHL API, so nothing is created and the bot isn't
+    // tipped off that it was caught.
+    return jsonResponse({ contact_id: null });
+  }
+
+  if (!f.email || !f.phone) {
+    return new Response("Missing required field: email and phone are required", { status: 400 });
+  }
+
+  const result = await createContactInGHL(f, env);
+
+  if (!result.success) {
+    return jsonResponse({ contact_id: null, ghl_error: result.error });
+  }
+
+  return jsonResponse({ contact_id: result.contactId });
+}
+
+function extractLeadFields(payload) {
+  return {
+    firstName: payload.first_name || "",
+    lastName: payload.last_name || "",
+    email: payload.email || "",
+    phone: payload.phone || "",
+    // Pass-through tag only — identifies which form/page the lead came
+    // from (website-homepage, website-contact, ...). Never a DQ input;
+    // checkDisqualifiers()/calculateGateScore() never read it.
+    channel: payload.channel || "",
+    honeypot: payload.url || "",
+    utm_source: payload.utm_source,
+    utm_medium: payload.utm_medium,
+    utm_campaign: payload.utm_campaign,
+    utm_term: payload.utm_term,
+    utm_content: payload.utm_content,
+  };
 }
 
 // ---- /gate — SHORT QUALIFYING FORM -------------------------------------
@@ -793,6 +857,49 @@ function jsonResponse(body) {
     status: 200,
     headers: { "Content-Type": "application/json" },
   });
+}
+
+// Creates a new GHL contact — distinct from writeBackToGHL below, which
+// only PUTs updates onto a contact that already exists. GHL upserts by
+// email/phone, so a duplicate Step 1 submission from the same person
+// doesn't create a second contact.
+async function createContactInGHL(f, env) {
+  const url = `${GHL_API_BASE}/contacts/`;
+
+  const customFields = Object.entries({
+    channel: f.channel,
+    utm_source: f.utm_source,
+    utm_medium: f.utm_medium,
+    utm_campaign: f.utm_campaign,
+    utm_term: f.utm_term,
+    utm_content: f.utm_content,
+  })
+    .filter(([, value]) => value)
+    .map(([key, value]) => ({ key, field_value: String(value) }));
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.GHL_API_KEY}`,
+      "Content-Type": "application/json",
+      Version: GHL_API_VERSION,
+    },
+    body: JSON.stringify({
+      firstName: f.firstName,
+      lastName: f.lastName,
+      email: f.email,
+      phone: f.phone,
+      customFields,
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    return { success: false, status: res.status, error: errText };
+  }
+
+  const data = await res.json();
+  return { success: true, contactId: data.contact?.id };
 }
 
 async function writeBackToGHL(contactId, values, env) {
