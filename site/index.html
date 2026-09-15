@@ -107,9 +107,10 @@
           100% Satisfaction Guarantee
         </div>
       </div>
-      <form class="assessment-form">
+      <form class="assessment-form" data-channel="website-homepage">
         <div class="form-fields contact-form">
           <h3 class="mt-0">Book a Walkthrough</h3>
+          <div class="booking-error" role="alert"></div>
           <div class="form-row">
             <div><label for="hero-fname">First name</label><input id="hero-fname" name="first_name" type="text" autocomplete="given-name" required></div>
             <div><label for="hero-lname">Last name</label><input id="hero-lname" name="last_name" type="text" autocomplete="family-name" required></div>
@@ -128,6 +129,9 @@
           <button type="submit" class="btn btn-primary btn-block">Start Walkthrough Booking</button>
           <p class="form-note">The booking is instant and confirmed via sms.</p>
         </div>
+        <!-- Populated by a follow-up module (DQ questions + tier-based
+             calendar/message) once the contact is created above. -->
+        <div class="booking-step-2 contact-form"></div>
         <div class="form-success contact-form">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
           <h3>Request received</h3>
@@ -302,6 +306,7 @@
   </div>
 </footer>
 
+<script type="module" src="assets/js/booking-gate.js"></script>
 <script src="assets/js/main.js"></script>
 </body>
 </html>
