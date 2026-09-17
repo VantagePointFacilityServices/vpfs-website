@@ -517,8 +517,8 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 @media (max-width:900px){ .carousel-overlay .hero-single{ max-width:none; } }
 
 /* Per-slide caption, text swapped by JS to match the active slide */
-.carousel-bottom{ position:absolute; left:0; right:0; bottom:76px; z-index:2; text-align:left; }
-@media (max-width:720px){ .carousel-bottom{ bottom:64px; } }
+.carousel-bottom{ position:absolute; left:0; right:0; top:56px; z-index:2; text-align:left; }
+@media (max-width:720px){ .carousel-bottom{ top:28px; } }
 .carousel-bottom h1{ max-width:50%; margin-bottom:var(--space-3); }
 @media (max-width:900px){ .carousel-bottom h1{ max-width:none; } }
 .carousel-caption h2{ font-weight:400; font-size:var(--fs-p1); line-height:var(--lh-body); letter-spacing:normal; color:var(--text-on-inverse-muted); margin:0; max-width:50%; }
