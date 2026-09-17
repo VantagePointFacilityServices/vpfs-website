@@ -196,28 +196,46 @@
     <div>
       <span class="eyebrow">Request a new area</span>
       <h2>Ask us anyway</h2>
-      <p>We take sites in the Northern Rivers of NSW and the Scenic Rim case by case. If we cannot service it properly, we will tell you rather than stretch the roster.</p>
+      <p>We service areas based on demand and cleaner capacity, so every site gets a quality cleaner and a satisfied customer.</p>
     </div>
     <form class="assessment-form">
       <div class="form-fields contact-form">
-        <h3 class="mt-0">Request a new area</h3>
+        <h3 class="mt-0" style="text-align:center;">Request a new area</h3>
         <div class="form-row">
           <div><label for="area-fname">First name</label><input id="area-fname" name="first_name" type="text" autocomplete="given-name" required></div>
           <div><label for="area-lname">Last name</label><input id="area-lname" name="last_name" type="text" autocomplete="family-name" required></div>
         </div>
         <div class="form-row single">
-          <div><label for="area-email">Email</label><input id="area-email" name="email" type="email" autocomplete="email" required></div>
+          <div>
+            <label for="area-email">Email</label>
+            <div class="input-icon-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+              <input id="area-email" name="email" type="email" autocomplete="email" required>
+            </div>
+          </div>
         </div>
         <div class="form-row">
-          <div><label for="area-phone">Phone number</label><input id="area-phone" name="phone" type="tel" autocomplete="tel" required></div>
-          <div><label for="area-postcode">Postcode</label><input id="area-postcode" name="postcode" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="postal-code" required></div>
+          <div>
+            <label for="area-phone">Phone number</label>
+            <div class="input-icon-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.2 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+              <input id="area-phone" name="phone" type="tel" autocomplete="tel" required>
+            </div>
+          </div>
+          <div>
+            <label for="area-postcode">Postcode</label>
+            <div class="input-icon-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              <input id="area-postcode" name="postcode" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="postal-code" required>
+            </div>
+          </div>
         </div>
         <input type="hidden" name="enquiry_type" value="New Area Request">
         <div class="hp-field" aria-hidden="true">
           <label for="area-website-url">Website</label>
           <input id="area-website-url" name="url" type="text" tabindex="-1" autocomplete="off">
         </div>
-        <button type="submit" class="btn btn-primary btn-block">Request this area</button>
+        <button type="submit" class="btn btn-primary btn-block">Request area</button>
       </div>
       <div class="form-success contact-form">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
