@@ -105,100 +105,91 @@
   <div class="wrap contact-grid">
     <div class="contact-form-col">
       <span class="eyebrow">Request a quote</span>
-      <h2>Book a free walkthrough</h2>
-      <p class="lead">Tell us about the building. We will confirm a time within one business day and quote from what we see on site.</p>
+      <h2>Book a walkthrough</h2>
+      <p class="lead">Tell us about the building and get a customised cleaning solution for your business that saves you unnecessary costs.</p>
 
-      <form class="assessment-form">
+      <form class="assessment-form" data-channel="website-contact">
         <div class="form-fields">
+          <div class="booking-error" role="alert"></div>
           <div class="form-row">
-            <div><label for="cname">Contact name *</label><input id="cname" name="contact_name" type="text" autocomplete="name" placeholder="Alex Rowe" required></div>
-            <div><label for="company">Company</label><input id="company" name="company" type="text" autocomplete="organization" placeholder="Meridian Strata"></div>
+            <div><label for="fname">First name</label><input id="fname" name="first_name" type="text" autocomplete="given-name" required></div>
+            <div><label for="lname">Last name</label><input id="lname" name="last_name" type="text" autocomplete="family-name"></div>
           </div>
-          <div class="form-row">
+          <div class="form-row single">
             <div>
-              <label for="email">Email *</label>
+              <label for="email">Email</label>
               <div class="input-icon-wrap">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
-                <input id="email" name="email" type="email" autocomplete="email" placeholder="alex@meridianstrata.com.au" required>
+                <input id="email" name="email" type="email" autocomplete="email" required>
               </div>
             </div>
+          </div>
+          <div class="form-row">
             <div>
               <label for="phone">Phone</label>
               <div class="input-icon-wrap">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.2 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="0400 000 000">
+                <input id="phone" name="phone" type="tel" autocomplete="tel" required>
               </div>
             </div>
-          </div>
-          <div class="form-row single">
             <div>
-              <label for="site-address">Site address</label>
+              <label for="postcode">Postcode</label>
               <div class="input-icon-wrap">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-                <input id="site-address" name="site_address" type="text" autocomplete="street-address" placeholder="12 Nerang St, Southport QLD 4215">
+                <input id="postcode" name="postcode" type="text" inputmode="numeric" required>
               </div>
             </div>
-          </div>
-          <p class="field-help">Street, suburb and postcode</p>
-          <div class="form-row">
-            <div>
-              <label for="property-type">Property type</label>
-              <select id="property-type" name="property_type">
-                <option value="">Select a property type</option>
-                <option>Commercial offices</option>
-                <option>Strata &amp; body corporate</option>
-                <option>Education</option>
-                <option>Medical</option>
-                <option>Industrial</option>
-                <option>Other</option>
-              </select>
-            </div>
-            <div><label for="floor-area">Approx. floor area</label><input id="floor-area" name="floor_area" type="text" placeholder="e.g. 1,800 m&sup2;"></div>
-          </div>
-          <label>Cleaning frequency</label>
-          <div class="radio-row">
-            <label class="radio-option"><input type="radio" name="frequency" value="Daily" checked>Daily</label>
-            <label class="radio-option"><input type="radio" name="frequency" value="5 x week">5 &times; week</label>
-            <label class="radio-option"><input type="radio" name="frequency" value="3 x week">3 &times; week</label>
-          </div>
-          <label>Add-ons</label>
-          <div class="check-row-desc">
-            <div class="check-row">
-              <input id="day-porter" name="addon_day_porter" type="checkbox" checked>
-              <label for="day-porter">Day porter</label>
-            </div>
-            <div class="check-desc">On-site attendant during business hours</div>
-          </div>
-          <div class="check-row-desc">
-            <div class="check-row">
-              <input id="window-cleaning" name="addon_window_cleaning" type="checkbox">
-              <label for="window-cleaning">Window cleaning</label>
-            </div>
-            <div class="check-desc">Internal and reachable external glass</div>
-          </div>
-          <div class="check-row-desc">
-            <div class="check-row">
-              <input id="carpet-extraction" name="addon_carpet_extraction" type="checkbox">
-              <label for="carpet-extraction">Carpet extraction</label>
-            </div>
-          </div>
-          <div class="form-row single">
-            <div><label for="message">Anything we should know?</label><textarea id="message" name="message" placeholder="Access hours, bin room location, previous contractor issues"></textarea></div>
-          </div>
-          <div class="toggle-row">
-            <span class="switch">
-              <input id="audit-opt-in" name="audit_report_opt_in" type="checkbox" checked>
-              <span class="switch-slider"></span>
-            </span>
-            <label for="audit-opt-in">Email me the monthly audit report once we start</label>
           </div>
           <input type="hidden" name="enquiry_type" value="Walkthrough Request">
           <div class="hp-field" aria-hidden="true">
             <label for="website-url">Website</label>
             <input id="website-url" name="url" type="text" tabindex="-1" autocomplete="off">
           </div>
-          <button type="submit" class="btn btn-primary">Send request<span class="btn-chip"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
-          <p class="form-note" style="text-align:left;">No obligation. We reply within one business day.</p>
+          <button type="submit" class="btn btn-primary">Start Booking<span class="btn-chip"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
+          <p class="form-note" style="text-align:left;">The booking is instant and confirmed via sms.</p>
+        </div>
+        <div class="booking-step-2 contact-form">
+          <div class="booking-step-2-questions">
+            <h3 class="mt-0">Just a couple more details</h3>
+            <div class="booking-error" role="alert"></div>
+            <div class="form-row single">
+              <div>
+                <label for="contact-facility-type">Facility type</label>
+                <select id="contact-facility-type" name="facility_type" required>
+                  <option value="">Select a facility type</option>
+                  <option value="office">Office</option>
+                  <option value="strata">Strata &amp; body corporate</option>
+                  <option value="education">Education</option>
+                  <option value="medical">Medical</option>
+                  <option value="construction">Construction / industrial</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row single">
+              <div><label for="contact-monthly-budget">Approx. monthly cleaning budget</label><input id="contact-monthly-budget" name="monthly_budget" type="number" min="0" required></div>
+            </div>
+            <label>Cleaning frequency required</label>
+            <div class="radio-row">
+              <label class="radio-option"><input type="radio" name="cleaning_frequency" value="daily">Daily</label>
+              <label class="radio-option"><input type="radio" name="cleaning_frequency" value="few_times_week">A few times a week</label>
+              <label class="radio-option"><input type="radio" name="cleaning_frequency" value="weekly">Weekly</label>
+              <label class="radio-option"><input type="radio" name="cleaning_frequency" value="fortnightly">Fortnightly</label>
+            </div>
+            <button type="button" class="btn btn-primary step2-submit">See availability</button>
+          </div>
+          <div class="booking-result">
+            <div id="calendar-priority" class="booking-calendar-embed">
+              <!-- Priority GHL calendar embed script — added in a follow-up issue. -->
+            </div>
+            <div id="calendar-standard" class="booking-calendar-embed">
+              <!-- Standard GHL calendar embed script — added in a follow-up issue. -->
+            </div>
+            <div id="no-calendar-message" class="form-success" style="padding:var(--space-3) 0;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+              <h3>Thanks &mdash; we&rsquo;ll be in touch</h3>
+              <p class="small" style="color:var(--text-muted);">Based on what you&rsquo;ve told us, one of the team will reach out directly rather than booking a walkthrough right away.</p>
+            </div>
+          </div>
         </div>
         <div class="form-success contact-form">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
@@ -308,6 +299,7 @@
   </div>
 </footer>
 
+<script type="module" src="assets/js/booking-gate.js"></script>
 <script src="assets/js/main.js"></script>
 </body>
 </html>

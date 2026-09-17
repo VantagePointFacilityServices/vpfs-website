@@ -132,16 +132,4 @@ document.addEventListener('DOMContentLoaded', function () {
     show(0);
     restart();
   }
-
-  // Contact form — client-side success state (no backend wired up yet)
-  var form = document.querySelector('.assessment-form');
-  if (form) {
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      var fields = form.querySelector('.form-fields');
-      var success = form.querySelector('.form-success');
-      if (fields) fields.style.display = 'none';
-      if (success) success.classList.add('show');
-    });
-  }
 });

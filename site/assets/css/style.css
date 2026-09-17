@@ -312,10 +312,11 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 }
 .hero-photo{
   background:
-    linear-gradient(115deg, rgba(7,26,53,.88) 0%, rgba(7,26,53,.84) 28%, rgba(7,26,53,.68) 50%, rgba(7,26,53,.4) 72%, rgba(7,26,53,.18) 100%),
+    linear-gradient(115deg, rgba(7,26,53,.47) 0%, rgba(7,26,53,.45) 28%, rgba(7,26,53,.36) 50%, rgba(7,26,53,.21) 72%, rgba(7,26,53,.1) 100%),
     url('../img/homepage-hero-offices-background.jpg') center/cover no-repeat;
 }
-.hero-inner h1, .hero-inner h2, .hero-inner .lead, .hero-checks li, .hero-trust{ text-shadow:0 1px 10px rgba(0,0,0,.28); }
+.hero-inner h1, .hero-inner h2, .hero-inner .lead, .hero-checks li, .hero-trust,
+.hero-single .eyebrow, .carousel-bottom h1, .carousel-caption h2{ text-shadow:0 1px 3px rgba(0,0,0,.65), 0 2px 16px rgba(0,0,0,.42); }
 .hero-grid{ position:relative; z-index:1; display:grid; grid-template-columns:1.15fr .85fr; gap:var(--space-8); align-items:start; padding:56px 0 48px; }
 .hero-grid .contact-form h3{ font-size:1.5rem; white-space:nowrap; text-align:center; }
 .hero-inner{ max-width:640px; display:flex; flex-direction:column; gap:var(--space-5); }
@@ -702,6 +703,17 @@ input:focus,select:focus,textarea:focus{ outline:none; border-color:var(--vp-nav
 .form-success{ display:none; text-align:center; padding:var(--space-6) var(--space-3); }
 .form-success.show{ display:block; }
 .form-success svg{ width:44px; height:44px; color:var(--vp-navy); margin:0 auto 12px; }
+.booking-step-2{ display:none; }
+.booking-step-2.show{ display:block; }
+.booking-error{ display:none; background:#FBEAE9; border:1px solid #B3261E; color:#B3261E; border-radius:var(--radius-sm); padding:var(--space-3); font-size:.85rem; margin-bottom:var(--space-4); }
+.booking-error.show{ display:block; }
+.form-fields.hide-after-step1{ display:none; }
+.booking-step-2-questions.hide-after-step2{ display:none; }
+.booking-result{ display:none; }
+.booking-result.show{ display:block; }
+.booking-result > div{ display:none; }
+.booking-result > div.show{ display:block; }
+.booking-calendar-embed{ min-height:420px; }
 .hp-field{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
 .field-help{ margin-top:-10px; margin-bottom:var(--space-4); font-size:.8rem; color:var(--text-faint); }
 .input-icon-wrap{ position:relative; }

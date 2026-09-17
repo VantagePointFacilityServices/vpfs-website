@@ -5,13 +5,20 @@ domain/DNS/Pages setup, see `docs/DEPLOYMENT.md`. For how the pieces fit
 together, see `docs/ARCHITECTURE.md`.
 
 This repo has three independently-versioned parts — the website has no
-build step or dependencies at all; the Worker and DNS tooling are separate
-Node packages with their own `package.json`, installed and tested
+build step (still plain HTML/CSS, hand-served) but does now have a small
+dev-only JS test dependency; the Worker and DNS tooling are separate Node
+packages with their own `package.json`, installed and tested
 independently.
 
 ## Website (`site/`)
 
-**Install:** nothing — plain HTML/CSS/JS, no dependencies.
+**Install:**
+
+```bash
+cd site
+npm install   # only needed to run the JS test suite below — the site
+              # itself still has zero runtime dependencies
+```
 
 **Run locally:**
 
@@ -24,14 +31,26 @@ Requires only [Node.js](https://nodejs.org/). `serve.sh` wraps
 `site/dev-server.js`; edit any file under `site/` and open browser tabs
 auto-refresh.
 
-**Test:** none currently — the site is static markup with no logic to
-unit test. Changes are checked visually against
-`design/design_handoff_vpfs_website/` (see the root README's Design
-reference section).
+**Test:**
+
+```bash
+cd site
+npm test    # vitest run, jsdom environment — see test/booking-gate.test.js
+```
+
+Covers the two-step booking gate JS (`assets/js/booking-gate.js`) — Step 1
+submit → `POST /lead` → Step 2 reveal, error/retry handling, and
+`contact.html`'s single `contact_name` field splitting into
+`first_name`/`last_name` to match the homepage form's shape. `fetch` is
+mocked throughout; nothing hits the live Worker. The rest of the static
+markup (page layout, copy) has no logic to unit test and is checked
+visually against `design/design_handoff_vpfs_website/` (see the root
+README's Design reference section).
 
 **Deploy:** automatic, via `.github/workflows/deploy-website.yml` on every
-push to `main` touching `site/**`. See `docs/DEPLOYMENT.md` Part 7 for the
-one-time GitHub Pages setup this depends on.
+push to `main` touching `site/**`, gated on the test job passing (same
+pattern as the Worker). See `docs/DEPLOYMENT.md` Part 7 for the one-time
+GitHub Pages setup this depends on.
 
 ## Lead Scoring Worker (`worker/`)
 
@@ -118,7 +137,7 @@ token scopes).
 ## Running every test suite at once
 
 ```bash
-(cd worker && npm test) && (cd dns && npm test)
+(cd site && npm test) && (cd worker && npm test) && (cd dns && npm test)
 ```
 
 Both are also run in CI on every relevant PR — see `docs/ARCHITECTURE.md`
