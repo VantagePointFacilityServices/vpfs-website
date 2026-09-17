@@ -1,13 +1,17 @@
 // Vantage Point Facility Services — two-step booking gate
 //
-// Step 1: name/email/phone -> POST /lead -> creates the GHL contact and
-// reveals the Step 2 DQ questions. Step 2: facility type/budget/frequency/
-// postcode -> POST /gate (the same DQ scoring the AI Receptionist already
-// calls live on the phone) -> shows the Priority calendar, the Standard
-// calendar, or a no-calendar "we'll be in touch" message, based on the
-// returned tier. Both calendar containers exist in the page's static HTML
-// from load (issue 06 fills in the real GHL embeds) — this module only
-// toggles which one is visible; it never injects a <script> tag.
+// Step 1: name/email/phone/postcode -> POST /lead -> creates
+// the GHL contact and reveals the Step 2 DQ questions. Step 2: facility
+// type/budget/frequency -> POST /gate (the same DQ scoring the AI
+// Receptionist already calls live on the phone) -> shows the Priority
+// calendar, the Standard calendar, or a no-calendar "we'll be in touch"
+// message, based on the returned tier. Postcode is only asked once, in
+// Step 1, but /gate's DQ check still needs it — buildGatePayload() reads
+// it back out of the (by then hidden, but still populated) Step 1 field
+// rather than asking again. Both calendar containers exist in the page's
+// static HTML from load (issue 06 fills in the real GHL embeds) — this
+// module only toggles which one is visible; it never injects a <script>
+// tag.
 //
 // Shared between the homepage hero form and contact.html's form — see
 // data-channel on each <form class="assessment-form"> for which page a
@@ -59,27 +63,15 @@ function handleStep1Submit(form, submitBtn) {
     });
 }
 
-// Homepage's form already has first_name/last_name as separate fields;
-// contact.html has a single contact_name field — split it on the first
-// space so both pages resolve to the same /lead contract without
-// restructuring contact.html's existing markup.
 function buildLeadPayload(form) {
   var get = fieldGetter(form);
 
-  var firstName = get("first_name");
-  var lastName = get("last_name");
-  if (!firstName && !lastName) {
-    var full = (get("contact_name") || "").trim();
-    var parts = full.split(/\s+/).filter(Boolean);
-    firstName = parts.shift() || "";
-    lastName = parts.join(" ");
-  }
-
   return {
-    first_name: firstName,
-    last_name: lastName,
+    first_name: get("first_name"),
+    last_name: get("last_name"),
     email: get("email"),
     phone: get("phone"),
+    postcode: get("postcode"),
     channel: form.getAttribute("data-channel") || "",
     url: get("url"),
   };
@@ -105,17 +97,17 @@ function initStep2(form) {
 
   submitBtn.addEventListener("click", function () {
     if (submitBtn.disabled) return; // already in flight
-    handleStep2Submit(step2, submitBtn);
+    handleStep2Submit(form, step2, submitBtn);
   });
 }
 
 var VALIDATION_ERROR_MESSAGE = "Please fill in every field so we can check availability.";
 
-function handleStep2Submit(step2, submitBtn) {
+function handleStep2Submit(form, step2, submitBtn) {
   var errorBox = step2.querySelector(".booking-step-2-questions .booking-error");
   clearError(errorBox);
 
-  var payload = buildGatePayload(step2);
+  var payload = buildGatePayload(form, step2);
   if (!isGatePayloadComplete(payload)) {
     showError(errorBox, VALIDATION_ERROR_MESSAGE);
     return;
@@ -140,16 +132,18 @@ function handleStep2Submit(step2, submitBtn) {
 
 // /gate's contract nests the DQ fields under customFields (see
 // extractGateFields in worker/worker.js) — distinct from /lead's flat
-// top-level shape.
-function buildGatePayload(step2) {
+// top-level shape. postcode comes from the whole form (it's a Step 1
+// field), everything else from step2.
+function buildGatePayload(form, step2) {
   var get = fieldGetter(step2);
+  var getFromForm = fieldGetter(form);
 
   return {
     contact_id: step2.dataset.contactId || "",
     customFields: {
       facility_type: get("facility_type"),
       monthly_budget: get("monthly_budget"),
-      postcode: get("postcode"),
+      postcode: getFromForm("postcode"),
       cleaning_frequency: get("cleaning_frequency"),
     },
   };

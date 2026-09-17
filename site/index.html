@@ -113,27 +113,46 @@
           <div class="booking-error" role="alert"></div>
           <div class="form-row">
             <div><label for="hero-fname">First name</label><input id="hero-fname" name="first_name" type="text" autocomplete="given-name" required></div>
-            <div><label for="hero-lname">Last name</label><input id="hero-lname" name="last_name" type="text" autocomplete="family-name" required></div>
+            <div><label for="hero-lname">Last name</label><input id="hero-lname" name="last_name" type="text" autocomplete="family-name"></div>
           </div>
           <div class="form-row single">
-            <div><label for="hero-email">Email</label><input id="hero-email" name="email" type="email" autocomplete="email" required></div>
+            <div>
+              <label for="hero-email">Email</label>
+              <div class="input-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+                <input id="hero-email" name="email" type="email" autocomplete="email" required>
+              </div>
+            </div>
           </div>
-          <div class="form-row single">
-            <div><label for="hero-phone">Phone</label><input id="hero-phone" name="phone" type="tel" autocomplete="tel" required></div>
+          <div class="form-row">
+            <div>
+              <label for="hero-phone">Phone</label>
+              <div class="input-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.2 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                <input id="hero-phone" name="phone" type="tel" autocomplete="tel" required>
+              </div>
+            </div>
+            <div>
+              <label for="hero-postcode">Postcode</label>
+              <div class="input-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                <input id="hero-postcode" name="postcode" type="text" inputmode="numeric" required>
+              </div>
+            </div>
           </div>
           <input type="hidden" name="enquiry_type" value="Walkthrough Request">
           <div class="hp-field" aria-hidden="true">
             <label for="hero-website-url">Website</label>
             <input id="hero-website-url" name="url" type="text" tabindex="-1" autocomplete="off">
           </div>
-          <button type="submit" class="btn btn-primary btn-block">Start Walkthrough Booking</button>
+          <button type="submit" class="btn btn-primary btn-block">Start Booking</button>
           <p class="form-note">The booking is instant and confirmed via sms.</p>
         </div>
         <div class="booking-step-2 contact-form">
           <div class="booking-step-2-questions">
             <h3 class="mt-0">Just a couple more details</h3>
             <div class="booking-error" role="alert"></div>
-            <div class="form-row">
+            <div class="form-row single">
               <div>
                 <label for="hero-facility-type">Facility type</label>
                 <select id="hero-facility-type" name="facility_type" required>
@@ -145,10 +164,9 @@
                   <option value="construction">Construction / industrial</option>
                 </select>
               </div>
-              <div><label for="hero-postcode">Postcode</label><input id="hero-postcode" name="postcode" type="text" inputmode="numeric" placeholder="4211" required></div>
             </div>
             <div class="form-row single">
-              <div><label for="hero-monthly-budget">Approx. monthly cleaning budget</label><input id="hero-monthly-budget" name="monthly_budget" type="number" min="0" placeholder="e.g. 1800" required></div>
+              <div><label for="hero-monthly-budget">Approx. monthly cleaning budget</label><input id="hero-monthly-budget" name="monthly_budget" type="number" min="0" required></div>
             </div>
             <label>Cleaning frequency required</label>
             <div class="radio-row">

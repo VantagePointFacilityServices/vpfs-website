@@ -104,6 +104,28 @@ describe("POST /lead", () => {
     expect(channelField.field_value).toBe("website-contact");
   });
 
+  it("sends postcode as a custom field", async () => {
+    global.fetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ contact: { id: "new-contact-3" } }), { status: 200 })
+    );
+
+    const req = makeRequest("/lead", {
+      first_name: "Sam",
+      last_name: "Taylor",
+      email: "sam@example.com",
+      phone: "0400000000",
+      postcode: "4211",
+      channel: "website-homepage",
+    });
+
+    await worker.fetch(req, env);
+
+    const [, options] = global.fetch.mock.calls[0];
+    const sentBody = JSON.parse(options.body);
+    const postcodeField = sentBody.customFields.find((f) => f.key === "postcode");
+    expect(postcodeField.field_value).toBe("4211");
+  });
+
   it("does not call the GHL API when the honeypot field is filled", async () => {
     global.fetch = vi.fn();
 

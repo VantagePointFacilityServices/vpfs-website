@@ -267,6 +267,10 @@ function extractLeadFields(payload) {
     lastName: payload.last_name || "",
     email: payload.email || "",
     phone: payload.phone || "",
+    // Captured in Step 1 now (see assets/js/booking-gate.js), but not a
+    // DQ input here — /gate still runs the actual service-area check
+    // once the browser sends this same value back under customFields.
+    postcode: payload.postcode || "",
     // Pass-through tag only — identifies which form/page the lead came
     // from (website-homepage, website-contact, ...). Never a DQ input;
     // checkDisqualifiers()/calculateGateScore() never read it.
@@ -867,6 +871,7 @@ async function createContactInGHL(f, env) {
   const url = `${GHL_API_BASE}/contacts/`;
 
   const customFields = Object.entries({
+    postcode: f.postcode,
     channel: f.channel,
     utm_source: f.utm_source,
     utm_medium: f.utm_medium,

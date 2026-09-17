@@ -10,6 +10,7 @@ function mountHomepageForm() {
         <input name="last_name" value="Rowe">
         <input name="email" value="alex@example.com">
         <input name="phone" value="0400000000">
+        <input name="postcode" value="4211">
         <input name="url" value="">
         <button type="submit">Start Walkthrough Booking</button>
       </div>
@@ -24,7 +25,6 @@ function mountHomepageForm() {
             <option value="medical">Medical</option>
             <option value="construction">Construction</option>
           </select>
-          <input name="postcode" value="4211">
           <input name="monthly_budget" value="3000">
           <label><input type="radio" name="cleaning_frequency" value="daily">Daily</label>
           <label><input type="radio" name="cleaning_frequency" value="few_times_week" checked>Few times a week</label>
@@ -48,9 +48,11 @@ function mountContactPageForm() {
     <form class="assessment-form" data-channel="website-contact">
       <div class="form-fields">
         <div class="booking-error" role="alert"></div>
-        <input name="contact_name" value="Jamie Lee">
+        <input name="first_name" value="Jamie">
+        <input name="last_name" value="Lee">
         <input name="email" value="jamie@example.com">
         <input name="phone" value="0411111111">
+        <input name="postcode" value="4215">
         <input name="url" value="">
         <button type="submit">Send request</button>
       </div>
@@ -89,6 +91,7 @@ describe("Step 1 submit", () => {
     expect(body.last_name).toBe("Rowe");
     expect(body.email).toBe("alex@example.com");
     expect(body.phone).toBe("0400000000");
+    expect(body.postcode).toBe("4211");
     expect(body.channel).toBe("website-homepage");
 
     const step2 = form.querySelector(".booking-step-2");
@@ -100,7 +103,7 @@ describe("Step 1 submit", () => {
     expect(form.querySelector(".form-fields").classList.contains("hide-after-step1")).toBe(true);
   });
 
-  it("splits contact.html's single contact_name field into first/last name", async () => {
+  it("posts contact.html's fields to /lead tagged with its own channel", async () => {
     const form = mountContactPageForm();
     global.fetch = mockLeadOk("contact-456");
     initBookingGate(form);
@@ -113,6 +116,7 @@ describe("Step 1 submit", () => {
     const body = JSON.parse(options.body);
     expect(body.first_name).toBe("Jamie");
     expect(body.last_name).toBe("Lee");
+    expect(body.postcode).toBe("4215");
     expect(body.channel).toBe("website-contact");
   });
 
@@ -283,7 +287,7 @@ describe("Step 2 submit", () => {
 
     // No result panel is shown, entered values untouched, retry is possible.
     expect(step2.querySelector(".booking-result").classList.contains("show")).toBe(false);
-    expect(step2.querySelector('[name="postcode"]').value).toBe("4211");
+    expect(form.querySelector('[name="postcode"]').value).toBe("4211");
     expect(step2.querySelector(".step2-submit").disabled).toBe(false);
   });
 
@@ -322,7 +326,7 @@ describe("Step 2 submit", () => {
     const form = mountHomepageForm();
     const step2 = form.querySelector(".booking-step-2");
     step2.dataset.contactId = "contact-abc";
-    step2.querySelector('[name="postcode"]').value = ""; // required field left blank
+    form.querySelector('[name="postcode"]').value = ""; // required field left blank
     initBookingGate(form);
 
     global.fetch = vi.fn();

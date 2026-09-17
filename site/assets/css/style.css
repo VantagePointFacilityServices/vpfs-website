@@ -312,10 +312,11 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 }
 .hero-photo{
   background:
-    linear-gradient(115deg, rgba(7,26,53,.88) 0%, rgba(7,26,53,.84) 28%, rgba(7,26,53,.68) 50%, rgba(7,26,53,.4) 72%, rgba(7,26,53,.18) 100%),
+    linear-gradient(115deg, rgba(7,26,53,.47) 0%, rgba(7,26,53,.45) 28%, rgba(7,26,53,.36) 50%, rgba(7,26,53,.21) 72%, rgba(7,26,53,.1) 100%),
     url('../img/homepage-hero-offices-background.jpg') center/cover no-repeat;
 }
-.hero-inner h1, .hero-inner h2, .hero-inner .lead, .hero-checks li, .hero-trust{ text-shadow:0 1px 10px rgba(0,0,0,.28); }
+.hero-inner h1, .hero-inner h2, .hero-inner .lead, .hero-checks li, .hero-trust,
+.hero-single .eyebrow, .carousel-bottom h1, .carousel-caption h2{ text-shadow:0 1px 3px rgba(0,0,0,.65), 0 2px 16px rgba(0,0,0,.42); }
 .hero-grid{ position:relative; z-index:1; display:grid; grid-template-columns:1.15fr .85fr; gap:var(--space-8); align-items:start; padding:56px 0 48px; }
 .hero-grid .contact-form h3{ font-size:1.5rem; white-space:nowrap; text-align:center; }
 .hero-inner{ max-width:640px; display:flex; flex-direction:column; gap:var(--space-5); }
