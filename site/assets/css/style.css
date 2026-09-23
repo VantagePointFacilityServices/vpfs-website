@@ -131,14 +131,14 @@ button{ font-family:var(--font-core); }
 
 section{ padding:var(--section-y-lg) 0; }
 @media (max-width:720px){ section{ padding:var(--section-y) 0; } }
-.section-compact{ padding-top:calc(var(--section-y-lg) / 4); padding-bottom:calc(var(--section-y-lg) / 4); }
+.section-compact{ padding-top:calc(var(--section-y-lg) / 2); padding-bottom:calc(var(--section-y-lg) / 2); }
 .section-compact .section-head-row{ margin-bottom:calc(var(--section-y-lg) / 4); }
 @media (max-width:720px){
-  .section-compact{ padding-top:calc(var(--section-y) / 4); padding-bottom:calc(var(--section-y) / 4); }
+  .section-compact{ padding-top:calc(var(--section-y) / 2); padding-bottom:calc(var(--section-y) / 2); }
   .section-compact .section-head-row{ margin-bottom:calc(var(--section-y) / 4); }
 }
-#how-it-works{ padding-top:calc(var(--section-y-lg) / 4); padding-bottom:calc(var(--section-y-lg) / 4); }
-@media (max-width:720px){ #how-it-works{ padding-top:calc(var(--section-y) / 4); padding-bottom:calc(var(--section-y) / 4); } }
+#how-it-works{ padding-top:calc(var(--section-y-lg) / 2); padding-bottom:calc(var(--section-y-lg) / 2); }
+@media (max-width:720px){ #how-it-works{ padding-top:calc(var(--section-y) / 2); padding-bottom:calc(var(--section-y) / 2); } }
 
 h1,h2,h3,h4{ margin:0 0 var(--space-4); font-weight:800; line-height:var(--lh-heading); letter-spacing:var(--ls-heading); color:var(--text-strong); }
 h1{ font-size:clamp(2.25rem,1.6rem + 3vw,var(--fs-h1)); line-height:var(--lh-tight); }
@@ -428,6 +428,10 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 .info-card .image-slot{ aspect-ratio:1/1.05; align-items:flex-start; padding-top:18px; margin-top:auto; }
 .info-card .image-slot .slot-mark{ width:22%; }
 .info-card .image-slot .slot-caption{ left:14px; right:14px; bottom:12px; font-size:11px; line-height:1.35; }
+/* Pending real photography: keep the markup in place but collapse it out of
+   the layout entirely until a real image replaces the placeholder. Remove
+   this class per-card once its photo is added. */
+.image-slot.is-pending{ display:none; }
 
 /* ===== Process steps ===== */
 .process-wrap{ display:grid; grid-template-columns:1.1fr .9fr; gap:var(--space-8); align-items:center; }
