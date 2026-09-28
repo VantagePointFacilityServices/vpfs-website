@@ -279,7 +279,7 @@ describe("POST /gate", () => {
       contact_id: "c1",
       customFields: {
         facility_type: "office",
-        monthly_budget: "3000",
+        monthly_budget: "6000",
         postcode: "4211",
         cleaning_frequency: "daily",
         utm_source: "google",
@@ -467,7 +467,7 @@ describe("POST /confirm", () => {
       customFields: {
         dq_flag: "nurture-budget",
         budget_flexible: "yes",
-        flexible_budget_amount: "1500",
+        flexible_budget_amount: "2500",
         cleaning_frequency: "daily",
         facility_type: "office",
       },
@@ -589,7 +589,7 @@ describe("field defaults and alternate payload shapes", () => {
       contact_id: "c13",
       customFields: {
         facility_type: "",
-        monthly_budget: "1000",
+        monthly_budget: "3000",
         postcode: "4211",
         cleaning_frequency: "daily",
       },
@@ -606,7 +606,7 @@ describe("field defaults and alternate payload shapes", () => {
     global.fetch = mockGhlOk();
     const req = makeRequest("/gate", {
       contact_id: "c14",
-      custom_fields: { monthly_budget: "3000", cleaning_frequency: "daily", facility_type: "office", postcode: "4211" },
+      custom_fields: { monthly_budget: "6000", cleaning_frequency: "daily", facility_type: "office", postcode: "4211" },
     });
 
     const res = await worker.fetch(req, env);

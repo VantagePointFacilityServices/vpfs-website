@@ -287,7 +287,7 @@ those plus the postcode from Step 1 and the `contact_id`.
 ```mermaid
 flowchart TD
     IN["POST /gate<br/>contact_id + facility_type,<br/>monthly_budget, cleaning_frequency, postcode"]
-    IN --> D1{"Budget under $800/month?"}
+    IN --> D1{"Budget under $2,000/month?"}
     D1 -- yes --> N1["nurture-budget"]
     D1 -- no --> D2{"Fewer than 3 cleans/week?<br/>(weekly or fortnightly)"}
     D2 -- yes --> N2["nurture-frequency"]
@@ -308,7 +308,8 @@ flowchart TD
 
     OUT --> C1["priority → Priority calendar"]
     OUT --> C2["standard / standard-flagged → Standard calendar"]
-    OUT --> C3["nurture → 'we'll be in touch' message,<br/>no calendar"]
+    OUT --> C3["nurture + nurture-budget →<br/>budget message, no calendar"]
+    OUT --> C4["any other nurture →<br/>'we'll be in touch' message, no calendar"]
 ```
 
 **Disqualifiers** are checked in the order shown; the first one that fails
@@ -318,17 +319,36 @@ decides the `dq_flag`. A blank answer never disqualifies.
 
 | Factor | Points |
 |---|---|
-| Budget $2,400+/month (3× minimum) | 50 |
-| Budget $1,600–$2,399 (2× minimum) | 30 |
-| Budget $800–$1,599 | 10 |
-| Daily cleaning (5×/week) | 30 |
-| A few times a week (3×/week) | 15 |
-| Office or strata | 20 |
-| Construction / industrial | 10 |
+| Budget $5,000+/month | 70 |
+| Budget $2,000–$4,999 | 30 |
+| Daily (7 days a week) | 20 |
+| 5 days a week | 15 |
+| 3 days a week | 10 |
+| Office or strata | 10 |
+| Construction / industrial | 5 |
 
-So a daily-cleaned office on $3,000/month scores 50 + 30 + 20 = **100 →
-Priority**; a 3×/week office on $1,000/month scores 10 + 15 + 20 = **45 →
-Standard**.
+**Budget alone decides the calendar.** Any $5,000+ budget scores at least
+70 + 10 + 5 = **85 → Priority**; a $2,000–$4,999 budget scores at most
+30 + 20 + 10 = **60 → Standard**. Frequency and facility type only rank
+leads *within* a tier (e.g. in GHL views sorted by `lead_score`).
+
+| Monthly budget | Result |
+|---|---|
+| $5,000+ | Priority calendar |
+| $2,000–$4,999 | Standard calendar |
+| Under $2,000 | No calendar — budget message: *"Unfortunately, your monthly budget is below the minimum we need…we'll check in from time to time to see if anything has changed."* |
+
+**Frequency options** on the form: Daily, 3 days a week, 5 days a week,
+Weekly, Fortnightly (values `daily`, `three_days_week`, `five_days_week`,
+`weekly`, `fortnightly`). Weekly and fortnightly are under the 3-per-week
+minimum, so they're disqualified (`nurture-frequency`). The old value
+`few_times_week` is still accepted as 3 days a week, in case the AI
+Receptionist or a GHL survey sends it.
+
+**Which "no calendar" message?** A lead disqualified on budget sees the
+budget message above. Leads disqualified for any other reason (frequency,
+facility type, postcode) see the general *"Thanks — we'll be in touch"*
+message.
 
 **Service-area postcodes** are currently only **4211, 4212, 4226, 4227**.
 Any other postcode is out of area (see [section 12](#12-changing-the-business-rules)).
@@ -360,7 +380,7 @@ demotes — that was settled at `/gate`.
 
 A lead disqualified on **budget** or **frequency** gets one follow-up
 question from GHL ("is that budget a hard ceiling?" / "would you consider
-3×/week?"). Their answer webhooks `/confirm`. Out-of-area and
+3 days a week?"). Their answer webhooks `/confirm`. Out-of-area and
 capability-gap leads don't get this — they can't change those facts — and
 that routing lives in the GHL workflow, not the Worker.
 
@@ -368,13 +388,13 @@ that routing lives in the GHL workflow, not the Worker.
 flowchart TD
     IN["POST /confirm<br/>dq_flag + flexibility answers"] --> WHICH{"Which disqualifier?"}
 
-    WHICH -- "nurture-budget (default)" --> B1{"Budget flexible AND<br/>flexed amount $800+?"}
+    WHICH -- "nurture-budget (default)" --> B1{"Budget flexible AND<br/>flexed amount $2,000+?"}
     B1 -- no --> BN["dq_flag: nurture-budget-confirmed<br/>stays in nurture"]
     B1 -- yes --> BR["Re-score with flexed budget<br/>→ new tier, dq_flag: none"]
 
     WHICH -- nurture-frequency --> F1{"Frequency flexible AND<br/>flexed to 3+/week?"}
     F1 -- no --> FN["dq_flag: nurture-frequency-confirmed<br/>stays in nurture"]
-    F1 -- yes --> F2{"Budget still under $800?"}
+    F1 -- yes --> F2{"Budget still under $2,000?"}
     F2 -- yes --> FB["dq_flag: nurture-budget<br/>stays in nurture"]
     F2 -- no --> FR["Re-score with flexed frequency<br/>→ new tier, dq_flag: none"]
 ```
@@ -606,7 +626,7 @@ Send the same request again: same `contact_id`, no second workflow run.
 curl -s -X POST https://worker.vantagepointfacilityservices.com.au/gate \
   -H "Content-Type: application/json" \
   -d '{"contact_id":"<ID FROM STEP 1>","customFields":{"facility_type":"office",
-       "monthly_budget":"3000","cleaning_frequency":"daily","postcode":"4211"}}'
+       "monthly_budget":"6000","cleaning_frequency":"daily","postcode":"4211"}}'
 ```
 
 Expect `"tier":"priority"`, `"sla_flag":"call-within-15min"` and
@@ -648,7 +668,9 @@ All rules live at the top of `worker/worker.js` under `CONFIG`:
 | To change… | Edit |
 |---|---|
 | Service-area postcodes (leads **and** applicants) | `SERVICE_POSTCODES` |
-| Minimum monthly budget | `MIN_MONTHLY_SPEND` (score bands scale from it: 1×, 2×, 3×) |
+| Minimum monthly budget (under → nurture) | `MIN_MONTHLY_SPEND` |
+| Priority budget (at or over → Priority) | `PRIORITY_MONTHLY_SPEND` |
+| Frequency options and their cleans per week | `FREQUENCY_TO_WEEKLY` — plus the radio buttons in `site/index.html` and `site/contact.html` |
 | Minimum cleans per week | `MIN_WEEKLY_CLEANS` |
 | Facility types you can service | `CAPABLE_FACILITY_TYPES` — add `"education"`, `"medical"` once the Blue Card / clinical bench is ready |
 | Contract-renewal bump window | `CONTRACT_RENEWAL_PRIORITY_THRESHOLD_MONTHS` |

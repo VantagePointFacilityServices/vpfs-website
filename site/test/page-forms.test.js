@@ -33,6 +33,28 @@ describe.each(PAGES)("%s booking form", (page) => {
     expect(form.checkValidity()).toBe(true);
   });
 
+  it("offers the five cleaning frequency options, in order", () => {
+    const form = mountPage(page);
+    const options = Array.from(form.querySelectorAll('[name="cleaning_frequency"]'), (el) => [
+      el.value,
+      el.closest("label").textContent.trim(),
+    ]);
+    expect(options).toEqual([
+      ["daily", "Daily"],
+      ["three_days_week", "3 days a week"],
+      ["five_days_week", "5 days a week"],
+      ["weekly", "Weekly"],
+      ["fortnightly", "Fortnightly"],
+    ]);
+  });
+
+  it("has a budget nurture message in the Step 2 results", () => {
+    const form = mountPage(page);
+    const message = form.querySelector(".booking-result #budget-nurture-message");
+    expect(message).not.toBeNull();
+    expect(message.textContent).toMatch(/budget/i);
+  });
+
   it("still marks the Step 2 questions as required for assistive tech", () => {
     const form = mountPage(page);
     for (const name of ["facility_type", "monthly_budget"]) {
