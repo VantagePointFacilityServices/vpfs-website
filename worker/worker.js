@@ -307,6 +307,7 @@ async function handleGate(contactId, payload, env) {
   const utm = extractUtmFields(payload);
 
   const dq = checkDisqualifiers(f);
+  const flags = leadFlags(f);
 
   let tier, score;
 
@@ -331,6 +332,7 @@ async function handleGate(contactId, payload, env) {
       lead_score: score,
       lead_tier: tier,
       dq_flag: dq.disqualified ? dq.reason : "none",
+      lead_flags: flags.length > 0 ? flags.join(",") : "none",
       sla_flag: slaFlag,
       lead_captured_at: new Date().toISOString(),
       ...stripUndefined(utm),
@@ -344,6 +346,7 @@ async function handleGate(contactId, payload, env) {
     score,
     tier,
     dq_flag: dq.reason || "none",
+    lead_flags: flags,
     sla_flag: slaFlag,
     ghl_update: result,
   });
@@ -375,25 +378,30 @@ function extractGateFields(payload) {
   };
 }
 
+// Budget is the only disqualifier: under $2,000/month -> nurture, no
+// calendar. Everything else a lead can fall short on is recorded by
+// leadFlags() for the team to review, but never blocks a booking.
 function checkDisqualifiers(f) {
   if (f.monthlyBudget > 0 && f.monthlyBudget < MIN_MONTHLY_SPEND) {
     return { disqualified: true, reason: "nurture-budget" };
   }
 
-  const weeklyCleans = FREQUENCY_TO_WEEKLY[f.frequency] ?? 0;
-  if (f.frequency && weeklyCleans < MIN_WEEKLY_CLEANS) {
-    return { disqualified: true, reason: "nurture-frequency" };
-  }
-
-  if (f.facilityType && !CAPABLE_FACILITY_TYPES.includes(f.facilityType)) {
-    return { disqualified: true, reason: "nurture-capability-gap" };
-  }
-
-  if (f.postcode && !SERVICE_POSTCODES.includes(f.postcode)) {
-    return { disqualified: true, reason: "nurture-out-of-area" };
-  }
-
   return { disqualified: false, reason: null };
+}
+
+// Service-fit concerns worth a look before the walkthrough — written to the
+// contact as lead_flags. Blank answers are never flagged.
+function leadFlags(f) {
+  const flags = [];
+
+  const weeklyCleans = FREQUENCY_TO_WEEKLY[f.frequency] ?? 0;
+  if (f.frequency && weeklyCleans < MIN_WEEKLY_CLEANS) flags.push("low-frequency");
+
+  if (f.facilityType && !CAPABLE_FACILITY_TYPES.includes(f.facilityType)) flags.push("capability-gap");
+
+  if (f.postcode && !SERVICE_POSTCODES.includes(f.postcode)) flags.push("out-of-area");
+
+  return flags;
 }
 
 // Budget decides the tier on its own: $5,000+ scores 70 (always Priority,
@@ -981,6 +989,7 @@ async function writeBackToGHL(contactId, values, env) {
 // dependency, so these can be tested without the workerd runtime.
 export {
   checkDisqualifiers,
+  leadFlags,
   calculateGateScore,
   tierFromScore,
   monthsUntilContractRenewal,

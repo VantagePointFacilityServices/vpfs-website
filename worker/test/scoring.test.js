@@ -1,13 +1,14 @@
 import { describe, it, expect } from "vitest";
 import {
   checkDisqualifiers,
+  leadFlags,
   calculateGateScore,
   tierFromScore,
   monthsUntilContractRenewal,
 } from "../worker.js";
 
 describe("checkDisqualifiers", () => {
-  it("passes a lead that clears every gate", () => {
+  it("passes a lead at the $2,000 minimum", () => {
     const result = checkDisqualifiers({
       monthlyBudget: 2000,
       frequency: "three_days_week",
@@ -17,7 +18,7 @@ describe("checkDisqualifiers", () => {
     expect(result).toEqual({ disqualified: false, reason: null });
   });
 
-  it("flags a budget under $2,000/month", () => {
+  it("flags a budget under $2,000/month — the only disqualifier", () => {
     const result = checkDisqualifiers({
       monthlyBudget: 1999,
       frequency: "daily",
@@ -27,47 +28,43 @@ describe("checkDisqualifiers", () => {
     expect(result).toEqual({ disqualified: true, reason: "nurture-budget" });
   });
 
-  it.each(["weekly", "fortnightly"])("flags %s cleaning as under the 3-per-week floor", (frequency) => {
+  it.each([
+    ["weekly cleaning", { frequency: "weekly" }],
+    ["fortnightly cleaning", { frequency: "fortnightly" }],
+    ["a medical facility", { facilityType: "medical" }],
+    ["an education facility", { facilityType: "education" }],
+    ["a postcode outside the core service area", { postcode: "4217" }],
+  ])("does not disqualify %s — budget alone decides", (_, override) => {
     const result = checkDisqualifiers({
-      monthlyBudget: 5000,
-      frequency,
-      facilityType: "office",
-      postcode: "4211",
-    });
-    expect(result).toEqual({ disqualified: true, reason: "nurture-frequency" });
-  });
-
-  it.each(["daily", "five_days_week", "three_days_week", "few_times_week"])(
-    "accepts %s cleaning",
-    (frequency) => {
-      const result = checkDisqualifiers({
-        monthlyBudget: 2000,
-        frequency,
-        facilityType: "office",
-        postcode: "4211",
-      });
-      expect(result.disqualified).toBe(false);
-    }
-  );
-
-  it("flags an unsupported facility type", () => {
-    const result = checkDisqualifiers({
-      monthlyBudget: 2000,
-      frequency: "daily",
-      facilityType: "medical",
-      postcode: "4211",
-    });
-    expect(result).toEqual({ disqualified: true, reason: "nurture-capability-gap" });
-  });
-
-  it("flags a postcode outside the service area", () => {
-    const result = checkDisqualifiers({
-      monthlyBudget: 2000,
+      monthlyBudget: 3000,
       frequency: "daily",
       facilityType: "office",
-      postcode: "9999",
+      postcode: "4211",
+      ...override,
     });
-    expect(result).toEqual({ disqualified: true, reason: "nurture-out-of-area" });
+    expect(result).toEqual({ disqualified: false, reason: null });
+  });
+});
+
+describe("leadFlags", () => {
+  const clean = { monthlyBudget: 3000, frequency: "daily", facilityType: "office", postcode: "4211" };
+
+  it("returns no flags for a lead that fits every service rule", () => {
+    expect(leadFlags(clean)).toEqual([]);
+  });
+
+  it.each([
+    [{ frequency: "weekly" }, ["low-frequency"]],
+    [{ frequency: "fortnightly" }, ["low-frequency"]],
+    [{ facilityType: "medical" }, ["capability-gap"]],
+    [{ postcode: "4217" }, ["out-of-area"]],
+    [{ frequency: "weekly", facilityType: "education", postcode: "9999" }, ["low-frequency", "capability-gap", "out-of-area"]],
+  ])("flags %j as %j for the team to review", (override, expected) => {
+    expect(leadFlags({ ...clean, ...override })).toEqual(expected);
+  });
+
+  it("never flags blank answers", () => {
+    expect(leadFlags({ monthlyBudget: 0, frequency: "", facilityType: "", postcode: "" })).toEqual([]);
   });
 });
 
