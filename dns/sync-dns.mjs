@@ -143,7 +143,12 @@ export async function syncRecords(apiToken, zoneId, desired, { apply = false, pr
     }
   }
 
-  const toDelete = prune ? existing.filter((e) => !matchedExistingIds.has(e.id)) : [];
+  // Cloudflare-managed read-only records (e.g. the AAAA 100:: record a Worker
+  // custom domain creates, owned by Wrangler) can't be deleted and aren't ours
+  // to manage, so --prune never touches them.
+  const toDelete = prune
+    ? existing.filter((e) => !matchedExistingIds.has(e.id) && !e.meta?.read_only)
+    : [];
 
   console.log(`  DNS records: ${unchanged.length} already correct.`);
 

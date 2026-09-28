@@ -145,9 +145,11 @@ Once the plan looks right:
 node --env-file=.env sync-dns.mjs --apply
 ```
 
-Never add `--prune` on `vantagepointfacilityservices.com` — it would
-delete the live email records this file doesn't list. See
-`dns/zones/vantagepointfacilityservices.com.yaml`'s header comment.
+Both zone files now list every live record, email included (pulled
+2026-09-29), so `--prune` only deletes records you've deliberately removed
+from a file — but still dry-run with `--prune` first and read the DELETE
+list. If a zone ever picks up records added outside this repo (e.g. by
+Google Admin or GHL), add them to the file before pruning, or they go.
 
 This single command creates the `.com.au` website DNS records **and**
 the `.com` → `.com.au` redirect rule (via Cloudflare's Redirect Rules
@@ -201,16 +203,42 @@ curl -I https://www.vantagepointfacilityservices.com.au
 curl -I https://vantagepointfacilityservices.com.au
 # expect: 301 Location: https://www.vantagepointfacilityservices.com.au/
 
-# .com redirects to .com.au apex, path preserved (Cloudflare Redirect Rule)
+# Bare apex must NOT show someone else's page (see Troubleshooting: GoDaddy leftovers)
+curl -sL https://vantagepointfacilityservices.com.au | grep -o '<title>[^<]*'
+# expect: <title>Commercial Cleaning Gold Coast | Vantage Point Facility Services
+
+# .com redirects straight to the www.com.au page, path preserved (Cloudflare Redirect Rule)
 curl -I https://vantagepointfacilityservices.com/services.html
-# expect: HTTP/2 301, location: https://vantagepointfacilityservices.com.au/services.html
-# — which itself then redirects to https://www.vantagepointfacilityservices.com.au/services.html
+# expect: HTTP/2 301, location: https://www.vantagepointfacilityservices.com.au/services.html
 
 # Existing email on the .com domain still works — send yourself a test
 # message to confirm the DNS apply in Part 6 didn't disturb MX/SPF/DKIM.
 ```
 
+## Part 9 — The Lead Scoring Worker and GHL
+
+The Worker (`worker.vantagepointfacilityservices.com.au`) deploys on its own
+from `.github/workflows/deploy-worker.yml` and needs its own tokens and
+secrets (a Cloudflare token scoped to Workers, the `GHL_API_KEY` secret,
+`GHL_LOCATION_ID`) plus GHL custom fields, a tag and workflows. Follow
+[`WORKER.md`](WORKER.md) §8 "Setting it up from scratch", then its §10
+to verify.
+
 ## Troubleshooting
+
+- **The bare domain shows a GoDaddy page instead of the site** — leftover
+  GoDaddy A records at the apex (GoDaddy parking/forwarding IPs such as
+  `13.248.243.5` / `76.223.105.230`, or `15.197.148.33` / `3.33.130.190`
+  on `.com`), usually **proxied**, so Cloudflare sends some or all apex
+  traffic to GoDaddy. `sync-dns.mjs` without `--prune` never reports
+  records that aren't in the zone file, so this is invisible to a normal
+  dry run — run `node --env-file=.env sync-dns.mjs --prune` (still a dry
+  run) and read the DELETE list. Found and removed 2026-09-29.
+- **SPF failing for mail from either domain** — both zones' SPF records
+  include `dc-aa8e722993._spfm.<domain>`, a GoDaddy "SPF manager" record
+  that doesn't exist since DNS moved to Cloudflare (NXDOMAIN). Mail still
+  passes DMARC via DKIM, but SPF permerrors. Fix: set the SPF `content` in
+  each zone file to `"v=spf1 include:_spf.google.com ~all"` and `--apply`.
 
 - **GitHub Pages says "domain's DNS record could not be retrieved"** —
   DNS hasn't propagated yet, or Part 6 wasn't applied for that zone. Run

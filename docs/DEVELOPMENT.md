@@ -38,18 +38,29 @@ cd site
 npm test    # vitest run, jsdom environment — see test/booking-gate.test.js
 ```
 
-Covers the two-step booking gate JS (`assets/js/booking-gate.js`) — Step 1
-submit → `POST /lead` → Step 2 reveal, error/retry handling, and
-`contact.html`'s single `contact_name` field splitting into
-`first_name`/`last_name` to match the homepage form's shape. `fetch` is
-mocked throughout; nothing hits the live Worker. The rest of the static
+79 tests across five files, `fetch` mocked throughout (nothing hits the
+live Worker):
+- `booking-gate.test.js` — the two-step booking gate JS: Step 1 → `/lead`,
+  the Step 2 overlay (`<dialog>`), `/gate` → calendar/message choice,
+  error/retry handling.
+- `page-forms.test.js` — loads the real `index.html`/`contact.html`: no
+  hidden `required` fields blocking Step 1, frequency options, overlay
+  structure and accessibility attributes.
+- `utm.test.js` — UTM capture across pages (`assets/js/utm.js`).
+- `business-hours.test.js` — every page's footer, contact card and schema
+  say Mon–Sun 7am–7pm.
+- `cache-bust.test.js` — the deploy-time `?v=<commit>` asset versioning
+  (`scripts/cache-bust.mjs`). The rest of the static
 markup (page layout, copy) has no logic to unit test and is checked
 visually against `design/design_handoff_vpfs_website/` (see the root
 README's Design reference section).
 
 **Deploy:** automatic, via `.github/workflows/deploy-website.yml` on every
 push to `main` touching `site/**`, gated on the test job passing (same
-pattern as the Worker). See `docs/DEPLOYMENT.md` Part 7 for the one-time
+pattern as the Worker). Just before upload the job runs
+`site/scripts/cache-bust.mjs`, which appends `?v=<commit>` to every local
+CSS/JS URL in the deployed copy (GitHub Pages caches files for 10 minutes);
+the repo's own files never carry it. See `docs/DEPLOYMENT.md` Part 7 for the one-time
 GitHub Pages setup this depends on.
 
 ## Lead Scoring Worker (`worker/`)
@@ -68,12 +79,13 @@ npx wrangler dev
 ```
 
 Starts the Worker against a local `workerd` runtime at
-`http://localhost:8787`, routing `/gate`, `/enrich`, `/confirm`,
-`/outcome` per `worker/worker.js`. It doesn't need `CLOUDFLARE_API_TOKEN`
+`http://localhost:8787`, routing all seven endpoints (`/lead`, `/gate`,
+`/enrich`, `/confirm`, `/outcome`, `/apply`, `/apply-screen`) per
+`worker/worker.js`. It doesn't need `CLOUDFLARE_API_TOKEN`
 to run locally — only `wrangler deploy` does. `writeBackToGHL` will still
 attempt a real call to the GHL API on each request, though, so a request
 without a working `GHL_API_KEY` set locally (`wrangler dev` reads
-`.dev.vars` if present — not currently in this repo) will return
+`.dev.vars` if present — git-ignored, never commit it) will return
 `ghl_update: { success: false, ... }` rather than failing the whole
 request; that's expected for local testing of the routing/scoring logic
 itself.
@@ -85,11 +97,12 @@ npm test    # vitest run, with coverage — see worker/README.md
 ```
 
 Enforces 95% coverage (statements/branches/functions/lines) on
-`worker.js`; the command exits non-zero below that. 36 tests across
-`test/scoring.test.js` (pure scoring/disqualification logic) and
-`test/handlers.test.js` (all four endpoints, end-to-end through the
-exported `fetch` handler, with `fetch` mocked so nothing hits the live
-GHL API).
+`worker.js`; the command exits non-zero below that. 119 tests across
+`test/scoring.test.js` (pure scoring/disqualification logic),
+`test/applicant-scoring.test.js` and `test/handlers.test.js` (all seven
+endpoints, end-to-end through the exported `fetch` handler, with `fetch`
+mocked so nothing hits the live GHL API). See `docs/WORKER.md` for the
+full guide.
 
 **Deploy:** automatic, via `.github/workflows/deploy-worker.yml` on every
 push to `main` touching `worker/**`, gated on the test job passing. See
@@ -123,7 +136,7 @@ Always dry-run before `--apply` — see `dns/README.md` for the full
 npm test    # vitest run, with coverage — see dns/README.md
 ```
 
-Enforces 95% coverage on `sync-dns.mjs`; 51 tests, `fetch` mocked
+Enforces 95% coverage on `sync-dns.mjs`; 53 tests, `fetch` mocked
 throughout so no test ever calls the real Cloudflare API. Also directly
 parses the real `dns/zones/*.yaml` files as a regression check that they
 stay valid.

@@ -81,7 +81,7 @@ call mocked (via `global.fetch`) to assert routing, tier/DQ outcomes, and
 the exact payload sent to GHL, without hitting the live API — including the
 sparse/missing-field and alternate-payload-shape cases (`custom_fields` vs
 `customFields`, absent `dq_flag`/`outcome_type`, etc.), not just the
-fully-populated happy paths, not just the happy path. 96 tests total, run
+fully-populated happy paths, not just the happy path. 119 tests total, run
 in Node's native `fetch`/`Request`/`Response` rather than a real `workerd`
 runtime — `@cloudflare/vitest-pool-workers` would close that gap if
 worker-specific bindings (KV, Durable Objects, etc.) are ever introduced,

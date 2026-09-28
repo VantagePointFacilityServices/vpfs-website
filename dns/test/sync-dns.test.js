@@ -388,6 +388,27 @@ describe("syncRecords", () => {
     expect(deleteCall[0]).toBe(`${API_BASE}/zones/zone123/dns_records/stray`);
   });
 
+  it("never prunes Cloudflare read-only records (e.g. a Worker custom domain Wrangler owns)", async () => {
+    const workerRecord = {
+      id: "worker",
+      type: "AAAA",
+      name: "worker.example.com",
+      content: "100::",
+      meta: { origin_worker_id: "abc", read_only: true },
+    };
+    const stray = { id: "stray", type: "TXT", name: "example.com", content: "leftover" };
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ success: true, result: [workerRecord, stray], result_info: { total_pages: 1 } }))
+      .mockResolvedValueOnce(jsonResponse({ success: true, result: { id: "new" } }))
+      .mockResolvedValueOnce(jsonResponse({ success: true }));
+
+    const plan = await syncRecords("token", "zone123", desired, { apply: true, prune: true });
+    expect(plan.toDelete).toEqual([stray]);
+    const deletes = global.fetch.mock.calls.filter(([, options]) => options?.method === "DELETE");
+    expect(deletes.map(([url]) => url)).toEqual([`${API_BASE}/zones/zone123/dns_records/stray`]);
+  });
+
   it("does not delete unmatched records when prune is false, even with apply", async () => {
     const stray = { id: "stray", type: "TXT", name: "example.com", content: "leftover" };
     global.fetch = vi

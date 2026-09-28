@@ -17,6 +17,7 @@ own install/test/deploy story, tied together in
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How GoDaddy, Cloudflare, GitHub Pages, and GitHub Actions fit together — diagrams for the domain/DNS setup, the three CI/CD workflows, and a visitor request lifecycle |
 | [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) | Install, run locally, and test each of `site/`, `worker/`, and `dns/` |
 | [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | One-time step-by-step setup runbook: GoDaddy nameservers → Cloudflare zones/token → applying DNS → GitHub Pages custom domain |
+| [`docs/KNOWLEDGE.md`](docs/KNOWLEDGE.md) | Operating knowledge & lessons learned — where everything lives, business rules the code encodes, GHL/Cloudflare/Pages gotchas, and how to test the live system safely. **Read before changing DNS, the Worker or anything GHL reads.** |
 | [`docs/WORKER.md`](docs/WORKER.md) | Plain-English guide to the Cloudflare Worker — end-to-end lead and applicant journeys with diagrams, configuration, GHL setup it depends on, testing, troubleshooting |
 | [`worker/README.md`](worker/README.md) | Worker-specific detail: endpoints, local dev, CI/CD secrets, test coverage |
 | [`dns/README.md`](dns/README.md) | Zone-file format, `sync-dns.mjs` usage, what's live vs. commented out pending real values |
