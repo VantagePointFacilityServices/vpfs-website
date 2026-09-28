@@ -255,7 +255,7 @@ sequenceDiagram
         W->>G: POST /contacts/{id}/tags<br/>["website-lead"]
         Note over G: Tag Added → your<br/>new-lead workflow starts
         W-->>B: {contact_id: "..."}
-        B->>V: shows Step 2 questions
+        B->>V: opens Step 2 questions in an overlay
     end
 ```
 
@@ -281,7 +281,10 @@ Things worth knowing:
 ### Stage 2 — `/gate`: qualify, score and route
 
 The visitor answers **facility type, approximate monthly budget and
-cleaning frequency**, and clicks **See availability**. The browser sends
+cleaning frequency** in a pop-up overlay (a modal `<dialog>`), and clicks
+**See availability**. The calendar or message that follows appears in the
+same overlay. If they close it, a **Continue booking** button on the page
+reopens it where they left off. The browser sends
 those plus the postcode from Step 1 and the `contact_id`.
 
 ```mermaid

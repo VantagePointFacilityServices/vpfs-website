@@ -28,6 +28,7 @@ export function initBookingGate(form) {
   if (!form) return;
   initStep1(form);
   initStep2(form);
+  initDialog(form);
 }
 
 // ---- Step 1 — name/email/phone -> /lead --------------------------------
@@ -86,6 +87,48 @@ function revealStep2(form, contactId) {
   if (!step2) return;
   step2.dataset.contactId = contactId;
   step2.classList.add("show");
+  openDialog(form);
+}
+
+// ---- Step 2 overlay ------------------------------------------------------
+// Step 2's questions and its result (calendar or message) live in a modal
+// <dialog> inside the form, so they still belong to it. Opened with
+// showModal(), the browser handles the backdrop, focus trapping and Esc.
+// There's deliberately no click-outside-to-close: a stray click shouldn't
+// throw away a half-picked calendar slot. Once closed, .booking-resume on
+// the page offers the way back in (Step 1 is already done and hidden).
+
+function initDialog(form) {
+  var dialog = form.querySelector(".booking-dialog");
+  if (!dialog) return;
+
+  var closeBtn = dialog.querySelector(".booking-dialog-close");
+  if (closeBtn) {
+    closeBtn.addEventListener("click", function () {
+      dialog.close();
+    });
+  }
+
+  var resume = form.querySelector(".booking-resume");
+  var resumeBtn = form.querySelector(".booking-resume-btn");
+  if (resumeBtn) {
+    resumeBtn.addEventListener("click", function () {
+      openDialog(form);
+    });
+  }
+
+  // Fires however it closed — close button, Esc, or a mobile back gesture.
+  dialog.addEventListener("close", function () {
+    if (resume) resume.classList.add("show");
+  });
+}
+
+function openDialog(form) {
+  var dialog = form.querySelector(".booking-dialog");
+  if (!dialog || dialog.hasAttribute("open")) return;
+  var resume = form.querySelector(".booking-resume");
+  if (resume) resume.classList.remove("show");
+  dialog.showModal();
 }
 
 // ---- Step 2 — DQ questions -> /gate -> tier-based calendar branch ------
@@ -181,7 +224,12 @@ function revealCalendarForTier(step2, tier, dqFlag) {
 
   var nurtureMessage = dqFlag === "nurture-budget" ? budgetNurture : noCalendar;
   var target = tier === "priority" ? priority : tier === "nurture" ? nurtureMessage : standard;
-  if (target) target.classList.add("show");
+  if (!target) return;
+  target.classList.add("show");
+  // The button that had focus is now hidden — move focus to what replaced it
+  // so keyboard and screen-reader users land on the result.
+  target.setAttribute("tabindex", "-1");
+  target.focus();
 }
 
 // ---- Shared helpers ------------------------------------------------------

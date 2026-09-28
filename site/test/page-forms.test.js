@@ -55,6 +55,38 @@ describe.each(PAGES)("%s booking form", (page) => {
     expect(message.textContent).toMatch(/budget/i);
   });
 
+  it("puts Step 2 and every result panel inside a labelled modal dialog", () => {
+    const form = mountPage(page);
+    const dialog = form.querySelector("dialog.booking-dialog");
+    expect(dialog).not.toBeNull();
+    expect(dialog.getAttribute("aria-label") || dialog.getAttribute("aria-labelledby")).toBeTruthy();
+    for (const sel of [
+      ".booking-step-2-questions",
+      "#calendar-priority",
+      "#calendar-standard",
+      "#no-calendar-message",
+      "#budget-nurture-message",
+    ]) {
+      expect(dialog.querySelector(sel), sel).not.toBeNull();
+    }
+    expect(dialog.querySelector(".form-fields"), "Step 1 stays on the page").toBeNull();
+  });
+
+  it("focuses the first question, not the close button, when the dialog opens", () => {
+    const form = mountPage(page);
+    const autofocused = form.querySelectorAll(".booking-dialog [autofocus]");
+    expect(Array.from(autofocused, (el) => el.name)).toEqual(["facility_type"]);
+    expect(form.querySelectorAll("[autofocus]").length).toBe(1);
+  });
+
+  it("gives the dialog a labelled close button and the page a way back in", () => {
+    const form = mountPage(page);
+    const close = form.querySelector(".booking-dialog .booking-dialog-close");
+    expect(close.getAttribute("type")).toBe("button");
+    expect(close.getAttribute("aria-label")).toBe("Close");
+    expect(form.querySelector(".booking-resume .booking-resume-btn").getAttribute("type")).toBe("button");
+  });
+
   it("still marks the Step 2 questions as required for assistive tech", () => {
     const form = mountPage(page);
     for (const name of ["facility_type", "monthly_budget"]) {
