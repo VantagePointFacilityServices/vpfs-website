@@ -27,7 +27,8 @@ function mountHomepageForm() {
           </select>
           <input name="monthly_budget" value="3000">
           <label><input type="radio" name="cleaning_frequency" value="daily">Daily</label>
-          <label><input type="radio" name="cleaning_frequency" value="few_times_week" checked>Few times a week</label>
+          <label><input type="radio" name="cleaning_frequency" value="three_days_week" checked>3 days a week</label>
+          <label><input type="radio" name="cleaning_frequency" value="five_days_week">5 days a week</label>
           <label><input type="radio" name="cleaning_frequency" value="weekly">Weekly</label>
           <label><input type="radio" name="cleaning_frequency" value="fortnightly">Fortnightly</label>
           <button type="button" class="step2-submit">See availability</button>
@@ -36,6 +37,7 @@ function mountHomepageForm() {
           <div id="calendar-priority"></div>
           <div id="calendar-standard"></div>
           <div id="no-calendar-message"></div>
+          <div id="budget-nurture-message"></div>
         </div>
       </div>
     </form>
@@ -208,10 +210,10 @@ describe("Step 1 submit", () => {
   });
 });
 
-function mockGateOk(tier) {
+function mockGateOk(tier, dqFlag) {
   return vi.fn().mockResolvedValue({
     ok: true,
-    json: () => Promise.resolve({ tier: tier, dq_flag: tier === "nurture" ? "nurture-budget" : "none" }),
+    json: () => Promise.resolve({ tier: tier, dq_flag: dqFlag || (tier === "nurture" ? "nurture-budget" : "none") }),
   });
 }
 
@@ -235,7 +237,7 @@ describe("Step 2 submit", () => {
     expect(body.customFields.facility_type).toBe("office");
     expect(body.customFields.postcode).toBe("4211");
     expect(body.customFields.monthly_budget).toBe("3000");
-    expect(body.customFields.cleaning_frequency).toBe("few_times_week");
+    expect(body.customFields.cleaning_frequency).toBe("three_days_week");
 
     expect(step2.querySelector(".booking-result").classList.contains("show")).toBe(true);
     expect(step2.querySelector("#calendar-priority").classList.contains("show")).toBe(true);
@@ -274,21 +276,40 @@ describe("Step 2 submit", () => {
     expect(step2.querySelector("#calendar-standard").classList.contains("show")).toBe(true);
   });
 
-  it("reveals the no-calendar message on a nurture tier — no calendar is ever shown", async () => {
+  it("reveals the budget message on a budget nurture — no calendar is ever shown", async () => {
     const form = mountHomepageForm();
     const step2 = form.querySelector(".booking-step-2");
     step2.dataset.contactId = "contact-abc";
     initBookingGate(form);
 
-    global.fetch = mockGateOk("nurture");
+    global.fetch = mockGateOk("nurture", "nurture-budget");
     step2.querySelector(".step2-submit").click();
     await new Promise((resolve) => setTimeout(resolve, 0));
     await new Promise((resolve) => setTimeout(resolve, 0));
 
-    expect(step2.querySelector("#no-calendar-message").classList.contains("show")).toBe(true);
+    expect(step2.querySelector("#budget-nurture-message").classList.contains("show")).toBe(true);
+    expect(step2.querySelector("#no-calendar-message").classList.contains("show")).toBe(false);
     expect(step2.querySelector("#calendar-priority").classList.contains("show")).toBe(false);
     expect(step2.querySelector("#calendar-standard").classList.contains("show")).toBe(false);
   });
+
+  it.each(["nurture-frequency", "nurture-capability-gap", "nurture-out-of-area"])(
+    "reveals the general no-calendar message on a %s nurture, not the budget one",
+    async (dqFlag) => {
+      const form = mountHomepageForm();
+      const step2 = form.querySelector(".booking-step-2");
+      step2.dataset.contactId = "contact-abc";
+      initBookingGate(form);
+
+      global.fetch = mockGateOk("nurture", dqFlag);
+      step2.querySelector(".step2-submit").click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(step2.querySelector("#no-calendar-message").classList.contains("show")).toBe(true);
+      expect(step2.querySelector("#budget-nurture-message").classList.contains("show")).toBe(false);
+    }
+  );
 
   it("shows a retry-capable error and preserves entered values on a failed /gate request", async () => {
     const form = mountHomepageForm();

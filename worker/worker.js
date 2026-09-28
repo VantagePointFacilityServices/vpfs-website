@@ -86,7 +86,8 @@
 
 // ---- CONFIG ---------------------------------------------------------
 
-const MIN_MONTHLY_SPEND = 800; // adjust to your actual floor
+const MIN_MONTHLY_SPEND = 2000; // under this -> nurture-budget
+const PRIORITY_MONTHLY_SPEND = 5000; // at or over this -> always Priority (see calculateGateScore)
 const MIN_WEEKLY_CLEANS = 3; // hard floor — anything under this is DQ'd
 const SERVICE_POSTCODES = ["4227", "4226", "4211", "4212"]; // Gold Coast coverage zone — extend as needed
 const CAPABLE_FACILITY_TYPES = ["office", "strata", "construction"]; // subcontractor bench currently supports these
@@ -110,7 +111,11 @@ const WEBSITE_LEAD_TAG = "website-lead";
 
 // frequency string -> cleans-per-week, used against MIN_WEEKLY_CLEANS
 const FREQUENCY_TO_WEEKLY = {
-  daily: 5,
+  daily: 7,
+  five_days_week: 5,
+  three_days_week: 3,
+  // Legacy value from the old "A few times a week" option — still accepted
+  // in case the AI Receptionist or a GHL survey sends it.
   few_times_week: 3,
   weekly: 1,
   fortnightly: 0.5,
@@ -391,25 +396,26 @@ function checkDisqualifiers(f) {
   return { disqualified: false, reason: null };
 }
 
-// Scoring with only the gate's 4 fields available — coarser than the
-// old full model, but that's fine: this score only needs to split
-// qualified leads into Priority vs Standard, not rank them precisely.
+// Budget decides the tier on its own: $5,000+ scores 70 (always Priority,
+// since tierFromScore's cut-off is 70), $2,000–$4,999 scores 30 and can reach
+// at most 60 with the other factors (always Standard). Frequency and facility
+// fit only rank leads within their tier.
 function calculateGateScore(f) {
   let score = 0;
 
-  // Budget tier (0-50)
-  if (f.monthlyBudget >= MIN_MONTHLY_SPEND * 3) score += 50;
-  else if (f.monthlyBudget >= MIN_MONTHLY_SPEND * 2) score += 30;
-  else if (f.monthlyBudget >= MIN_MONTHLY_SPEND) score += 10;
+  // Budget tier (0-70)
+  if (f.monthlyBudget >= PRIORITY_MONTHLY_SPEND) score += 70;
+  else if (f.monthlyBudget >= MIN_MONTHLY_SPEND) score += 30;
 
-  // Frequency (0-30)
+  // Frequency (0-20)
   const weeklyCleans = FREQUENCY_TO_WEEKLY[f.frequency] ?? 0;
-  if (weeklyCleans >= 5) score += 30;
-  else if (weeklyCleans >= 3) score += 15;
+  if (weeklyCleans >= 7) score += 20;
+  else if (weeklyCleans >= 5) score += 15;
+  else if (weeklyCleans >= 3) score += 10;
 
-  // Facility type fit (0-20)
-  if (f.facilityType === "strata" || f.facilityType === "office") score += 20;
-  else if (f.facilityType === "construction") score += 10;
+  // Facility type fit (0-10)
+  if (f.facilityType === "strata" || f.facilityType === "office") score += 10;
+  else if (f.facilityType === "construction") score += 5;
 
   return Math.min(score, 100);
 }

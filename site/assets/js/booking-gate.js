@@ -124,7 +124,7 @@ function handleStep2Submit(form, step2, submitBtn) {
         showError(errorBox, GENERIC_ERROR_MESSAGE);
         return;
       }
-      revealCalendarForTier(step2, data.tier);
+      revealCalendarForTier(step2, data.tier, data.dq_flag);
     })
     .catch(function () {
       setLoading(submitBtn, false);
@@ -162,21 +162,25 @@ function isGatePayloadComplete(payload) {
 
 // tier is one of "priority" / "standard" / "standard-flagged" / "nurture"
 // (tierFromScore() in worker.js). Exactly one result panel is ever shown.
-function revealCalendarForTier(step2, tier) {
+// A nurture lead disqualified on budget gets its own message; every other
+// nurture reason (frequency, capability, area) gets the general one.
+function revealCalendarForTier(step2, tier, dqFlag) {
   var questions = step2.querySelector(".booking-step-2-questions");
   var result = step2.querySelector(".booking-result");
   var priority = step2.querySelector("#calendar-priority");
   var standard = step2.querySelector("#calendar-standard");
   var noCalendar = step2.querySelector("#no-calendar-message");
+  var budgetNurture = step2.querySelector("#budget-nurture-message");
 
   if (questions) questions.classList.add("hide-after-step2");
   if (result) result.classList.add("show");
 
-  [priority, standard, noCalendar].forEach(function (el) {
+  [priority, standard, noCalendar, budgetNurture].forEach(function (el) {
     if (el) el.classList.remove("show");
   });
 
-  var target = tier === "priority" ? priority : tier === "nurture" ? noCalendar : standard;
+  var nurtureMessage = dqFlag === "nurture-budget" ? budgetNurture : noCalendar;
+  var target = tier === "priority" ? priority : tier === "nurture" ? nurtureMessage : standard;
   if (target) target.classList.add("show");
 }
 

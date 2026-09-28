@@ -9,17 +9,17 @@ import {
 describe("checkDisqualifiers", () => {
   it("passes a lead that clears every gate", () => {
     const result = checkDisqualifiers({
-      monthlyBudget: 2500,
-      frequency: "daily",
+      monthlyBudget: 2000,
+      frequency: "three_days_week",
       facilityType: "office",
       postcode: "4211",
     });
     expect(result).toEqual({ disqualified: false, reason: null });
   });
 
-  it("flags budget below the floor", () => {
+  it("flags a budget under $2,000/month", () => {
     const result = checkDisqualifiers({
-      monthlyBudget: 500,
+      monthlyBudget: 1999,
       frequency: "daily",
       facilityType: "office",
       postcode: "4211",
@@ -27,15 +27,28 @@ describe("checkDisqualifiers", () => {
     expect(result).toEqual({ disqualified: true, reason: "nurture-budget" });
   });
 
-  it("flags frequency under the weekly floor", () => {
+  it.each(["weekly", "fortnightly"])("flags %s cleaning as under the 3-per-week floor", (frequency) => {
     const result = checkDisqualifiers({
-      monthlyBudget: 2000,
-      frequency: "weekly",
+      monthlyBudget: 5000,
+      frequency,
       facilityType: "office",
       postcode: "4211",
     });
     expect(result).toEqual({ disqualified: true, reason: "nurture-frequency" });
   });
+
+  it.each(["daily", "five_days_week", "three_days_week", "few_times_week"])(
+    "accepts %s cleaning",
+    (frequency) => {
+      const result = checkDisqualifiers({
+        monthlyBudget: 2000,
+        frequency,
+        facilityType: "office",
+        postcode: "4211",
+      });
+      expect(result.disqualified).toBe(false);
+    }
+  );
 
   it("flags an unsupported facility type", () => {
     const result = checkDisqualifiers({
@@ -59,26 +72,60 @@ describe("checkDisqualifiers", () => {
 });
 
 describe("calculateGateScore / tierFromScore", () => {
-  it("scores a strong office lead into priority", () => {
-    const score = calculateGateScore({ monthlyBudget: 3000, frequency: "daily", facilityType: "office" });
+  it("scores the strongest lead at 100 — priority", () => {
+    const score = calculateGateScore({ monthlyBudget: 6000, frequency: "daily", facilityType: "office" });
     expect(score).toBe(100);
     expect(tierFromScore(score)).toBe("priority");
   });
 
-  it("scores a mid-range construction lead into standard", () => {
+  it("puts any $5,000+ budget in priority, even at the weakest frequency and facility fit", () => {
     const score = calculateGateScore({
-      monthlyBudget: 1000,
-      frequency: "few_times_week",
+      monthlyBudget: 5000,
+      frequency: "three_days_week",
       facilityType: "construction",
     });
-    expect(score).toBe(35);
+    expect(score).toBe(85);
+    expect(tierFromScore(score)).toBe("priority");
+  });
+
+  it("keeps a $2,000–$4,999 budget in standard, even at the strongest frequency and facility fit", () => {
+    const score = calculateGateScore({ monthlyBudget: 4999, frequency: "daily", facilityType: "strata" });
+    expect(score).toBe(60);
     expect(tierFromScore(score)).toBe("standard");
   });
 
-  it("scores a bare-minimum qualifying lead into standard-flagged", () => {
-    const score = calculateGateScore({ monthlyBudget: 800, frequency: "few_times_week", facilityType: "" });
-    expect(score).toBe(25);
-    expect(tierFromScore(score)).toBe("standard-flagged");
+  it("scores the bare-minimum qualifying lead into standard", () => {
+    const score = calculateGateScore({
+      monthlyBudget: 2000,
+      frequency: "three_days_week",
+      facilityType: "construction",
+    });
+    expect(score).toBe(45);
+    expect(tierFromScore(score)).toBe("standard");
+  });
+
+  it("ranks 5 days a week between daily and 3 days a week", () => {
+    const base = { monthlyBudget: 2000, facilityType: "office" };
+    const daily = calculateGateScore({ ...base, frequency: "daily" });
+    const five = calculateGateScore({ ...base, frequency: "five_days_week" });
+    const three = calculateGateScore({ ...base, frequency: "three_days_week" });
+    expect([daily, five, three]).toEqual([60, 55, 50]);
+  });
+
+  it("still scores the legacy few_times_week value as 3 days a week", () => {
+    const base = { monthlyBudget: 2000, facilityType: "office" };
+    expect(calculateGateScore({ ...base, frequency: "few_times_week" })).toBe(
+      calculateGateScore({ ...base, frequency: "three_days_week" })
+    );
+  });
+
+  it("never puts a lead with no budget given (e.g. from the AI Receptionist) in priority", () => {
+    const score = calculateGateScore({ monthlyBudget: 0, frequency: "daily", facilityType: "office" });
+    expect(score).toBe(30);
+    expect(tierFromScore(score)).toBe("standard");
+    expect(tierFromScore(calculateGateScore({ monthlyBudget: 0, frequency: "", facilityType: "" }))).toBe(
+      "standard-flagged"
+    );
   });
 });
 
