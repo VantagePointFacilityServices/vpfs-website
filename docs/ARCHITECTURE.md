@@ -33,7 +33,7 @@ flowchart TD
     Z1 -- "resolves to (DNS only,\napex and www both)" --> GHP["GitHub Pages\nsite/ — served via\n.github/workflows/deploy-website.yml\nsite/CNAME = www (canonical);\nGitHub 301s bare apex -> www"]
 
     GHP -- "Step 1: name/email/phone\n(assets/js/booking-gate.js)" --> W["Cloudflare Worker\nworker/worker.js\n/lead /gate /enrich /confirm /outcome /apply /apply-screen"]
-    W -- "creates contact, returns contact_id" --> GHP
+    W -- "upserts contact, tags website-lead,\nreturns contact_id" --> GHP
     GHP -- "Step 2: facility/budget/frequency/postcode\n(same booking-gate.js, direct /gate call)" --> W
     W -- "writes lead_tier / dq_flag / score,\nreturns tier synchronously" --> GHP
     GHP -- "tier decides: Priority calendar,\nStandard calendar, or no-calendar message" --> GHL["GoHighLevel"]
@@ -43,7 +43,8 @@ flowchart TD
 ```
 
 `/lead` and `/gate` are called directly by the browser (not via a GHL-hosted
-embedded form) — see `worker/README.md` and `assets/js/booking-gate.js` for
+embedded form) — see [`WORKER.md`](WORKER.md) for the full end-to-end Worker
+guide, and `worker/README.md` and `assets/js/booking-gate.js` for
 the two-step gate this implements. `careers.html`'s application form is
 unrelated and still uses the original GHL-embedded-widget pattern.
 
