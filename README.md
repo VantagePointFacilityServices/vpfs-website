@@ -17,6 +17,7 @@ own install/test/deploy story, tied together in
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How GoDaddy, Cloudflare, GitHub Pages, and GitHub Actions fit together — diagrams for the domain/DNS setup, the three CI/CD workflows, and a visitor request lifecycle |
 | [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) | Install, run locally, and test each of `site/`, `worker/`, and `dns/` |
 | [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | One-time step-by-step setup runbook: GoDaddy nameservers → Cloudflare zones/token → applying DNS → GitHub Pages custom domain |
+| [`docs/WORKER.md`](docs/WORKER.md) | Plain-English guide to the Cloudflare Worker — end-to-end lead and applicant journeys with diagrams, configuration, GHL setup it depends on, testing, troubleshooting |
 | [`worker/README.md`](worker/README.md) | Worker-specific detail: endpoints, local dev, CI/CD secrets, test coverage |
 | [`dns/README.md`](dns/README.md) | Zone-file format, `sync-dns.mjs` usage, what's live vs. commented out pending real values |
 
@@ -32,6 +33,7 @@ site/                                      the website (plain HTML/CSS/JS, no bu
   careers.html                           the seven pages (see Page & section map below)
   assets/css/style.css                   shared stylesheet (design tokens + components)
   assets/js/main.js                      nav toggle, carousel, tabs, FAQ, form handling
+  assets/js/utm.js                       saves landing-page UTMs so the booking gate can send them to /lead
   assets/img/                            logo SVGs
   branding/                              client-supplied brand guidelines and source logo files
   dev-server.js                          local dev server with live reload (see below)

@@ -8,8 +8,9 @@
  * withCors() below for the resulting origin-allowlist requirement:
  *
  *   POST /lead     — fires on the website's SHORT Step 1 capture form
- *                    (first/last name, email, phone only — no DQ fields
- *                    yet). Creates the GHL contact and returns its
+ *                    (first/last name, email, phone, postcode — no DQ
+ *                    fields yet). Upserts the GHL contact (matched by
+ *                    email/phone), tags it website-lead, and returns its
  *                    contact_id, which the browser carries into /gate.
  *                    Never scores anything; channel is a pass-through
  *                    tag only.
@@ -101,6 +102,11 @@ const CONTRACT_RENEWAL_PRIORITY_THRESHOLD_MONTHS = 6;
 
 const GHL_API_BASE = "https://services.leadconnectorhq.com";
 const GHL_API_VERSION = "2021-07-28";
+
+// Added to every contact /lead captures. GHL workflows start on a
+// "Contact Tag → Tag Added: website-lead" trigger rather than an Inbound
+// Webhook (a premium, per-execution trigger with a public URL).
+const WEBSITE_LEAD_TAG = "website-lead";
 
 // frequency string -> cleans-per-week, used against MIN_WEEKLY_CLEANS
 const FREQUENCY_TO_WEEKLY = {
@@ -252,11 +258,16 @@ async function handleLead(payload, env) {
     return new Response("Missing required field: email and phone are required", { status: 400 });
   }
 
-  const result = await createContactInGHL(f, env);
+  const result = await upsertContactInGHL(f, env);
 
   if (!result.success) {
     return jsonResponse({ contact_id: null, ghl_error: result.error });
   }
+
+  // The contact already exists by now, so a failed tag call must not stop
+  // the visitor reaching Step 2 — it only means the tag-triggered GHL
+  // workflow won't fire for this lead.
+  await addTagsInGHL(result.contactId, [WEBSITE_LEAD_TAG], env);
 
   return jsonResponse({ contact_id: result.contactId });
 }
@@ -863,12 +874,15 @@ function jsonResponse(body) {
   });
 }
 
-// Creates a new GHL contact — distinct from writeBackToGHL below, which
-// only PUTs updates onto a contact that already exists. GHL upserts by
-// email/phone, so a duplicate Step 1 submission from the same person
-// doesn't create a second contact.
-async function createContactInGHL(f, env) {
-  const url = `${GHL_API_BASE}/contacts/`;
+// Creates the GHL contact, or updates the existing one matched by
+// email/phone — a repeat enquiry from the same person gets their existing
+// contact_id back instead of a duplicate-contact error. Distinct from
+// writeBackToGHL below, which only PUTs updates onto a known contact id.
+// Tags are deliberately never sent here — on an existing contact the
+// upsert can overwrite its tags — so they go through addTagsInGHL's
+// additive endpoint instead.
+async function upsertContactInGHL(f, env) {
+  const url = `${GHL_API_BASE}/contacts/upsert`;
 
   const customFields = Object.entries({
     postcode: f.postcode,
@@ -890,6 +904,7 @@ async function createContactInGHL(f, env) {
       Version: GHL_API_VERSION,
     },
     body: JSON.stringify({
+      locationId: env.GHL_LOCATION_ID,
       firstName: f.firstName,
       lastName: f.lastName,
       email: f.email,
@@ -905,6 +920,29 @@ async function createContactInGHL(f, env) {
 
   const data = await res.json();
   return { success: true, contactId: data.contact?.id };
+}
+
+// Additive — appends to the contact's existing tags rather than replacing
+// them.
+async function addTagsInGHL(contactId, tags, env) {
+  const url = `${GHL_API_BASE}/contacts/${contactId}/tags`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.GHL_API_KEY}`,
+      "Content-Type": "application/json",
+      Version: GHL_API_VERSION,
+    },
+    body: JSON.stringify({ tags }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    return { success: false, status: res.status, error: errText };
+  }
+
+  return { success: true };
 }
 
 async function writeBackToGHL(contactId, values, env) {

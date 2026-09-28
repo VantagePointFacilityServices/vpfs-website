@@ -1,5 +1,9 @@
 # Lead Scoring Worker
 
+> For the full plain-English guide — end-to-end diagrams, configuration,
+> GHL setup, verification and troubleshooting — see
+> [`docs/WORKER.md`](../docs/WORKER.md).
+
 Cloudflare Worker that scores and routes leads from the two-stage gate form
 embedded on this site (and on paid-traffic landing pages), and separately
 scores job applicants from a two-stage careers funnel. Seven endpoints —
@@ -12,10 +16,13 @@ the AI Receptionist mid-call, so every endpoint responds with CORS headers
 restricted to an explicit origin allowlist (see `ALLOWED_ORIGINS` in
 `worker.js`) rather than trusting only server-to-server callers.
 
-`/lead` (Step 1 of the website's booking gate — name/email/phone) creates
-the GHL contact and returns its `contact_id`, which the browser then
-carries into Step 2's `/gate` call; no DQ fields exist yet at Step 1, so
-this endpoint never scores anything.
+`/lead` (Step 1 of the website's booking gate — name/email/phone) upserts
+the GHL contact (matched by email/phone, so a repeat enquiry reuses the
+existing contact rather than erroring), tags it `website-lead`, and returns
+its `contact_id`, which the browser then carries into Step 2's `/gate`
+call; no DQ fields exist yet at Step 1, so this endpoint never scores
+anything. GHL follow-up workflows for website leads trigger on
+**Contact Tag → Tag Added: `website-lead`**, not an Inbound Webhook.
 
 `/apply` (Stage 1, `careers.html`'s short capture form) only checks the
 service-area postcode gate and, if cleared, hands off to a mandatory Stage 2
@@ -74,7 +81,7 @@ call mocked (via `global.fetch`) to assert routing, tier/DQ outcomes, and
 the exact payload sent to GHL, without hitting the live API — including the
 sparse/missing-field and alternate-payload-shape cases (`custom_fields` vs
 `customFields`, absent `dq_flag`/`outcome_type`, etc.), not just the
-fully-populated happy paths, not just the happy path. 81 tests total, run
+fully-populated happy paths, not just the happy path. 96 tests total, run
 in Node's native `fetch`/`Request`/`Response` rather than a real `workerd`
 runtime — `@cloudflare/vitest-pool-workers` would close that gap if
 worker-specific bindings (KV, Durable Objects, etc.) are ever introduced,

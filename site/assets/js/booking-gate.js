@@ -18,6 +18,8 @@
 // submission came from. See docs/ARCHITECTURE.md for how this fits into
 // the rest of the site/Worker/GHL flow.
 
+import { readUtms, sessionStore } from "./utm.js";
+
 var WORKER_BASE = "https://worker.vantagepointfacilityservices.com.au";
 var FETCH_TIMEOUT_MS = 9000;
 var GENERIC_ERROR_MESSAGE = "Something went wrong — please try again.";
@@ -66,7 +68,7 @@ function handleStep1Submit(form, submitBtn) {
 function buildLeadPayload(form) {
   var get = fieldGetter(form);
 
-  return {
+  return Object.assign({
     first_name: get("first_name"),
     last_name: get("last_name"),
     email: get("email"),
@@ -74,7 +76,7 @@ function buildLeadPayload(form) {
     postcode: get("postcode"),
     channel: form.getAttribute("data-channel") || "",
     url: get("url"),
-  };
+  }, readUtms(window.location.search, sessionStore()));
 }
 
 function revealStep2(form, contactId) {
