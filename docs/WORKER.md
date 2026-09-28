@@ -145,9 +145,20 @@ with exactly these keys:
 | Read/written by `/outcome` | `outcome_type`, `reschedule_attempts`, `loss_reason`, `noshow_attempts`, `lost_at_proposal_date` |
 | Applicants | `applicant_stage`, `applicant_tier`, `applicant_score`, `applicant_dq_flag`, `applicant_captured_at`, `applicant_screened_at`, `applicant_blue_card_eligible`, `applicant_subcontractor_ready`, plus the survey fields listed in [section 5](#5-the-job-applicant-journey) |
 
-Plus:
+Plus the tag, which already exists in the sub-account:
 
-- **Tag** `website-lead` — added by `/lead` to every website enquiry.
+| Field | Value |
+|---|---|
+| Name | `website-lead` |
+| ID | `AxqSvCibXVSHZd0ycUI4` |
+
+The Worker adds this tag **by name** to every website enquiry via `/lead`,
+so the ID is for reference only (e.g. finding it in GHL or its API). If the
+tag is ever renamed in GHL, change `WEBSITE_LEAD_TAG` in `worker.js` to
+match, or the Worker will silently create a new tag with the old name.
+
+Also required:
+
 - **Workflow** triggered by **Contact Tag → Tag Added → `website-lead`** —
   the new-lead alert / follow-up. (Not an Inbound Webhook trigger: that's a
   premium per-run trigger with a public URL, and it can't hand a contact ID
@@ -507,8 +518,10 @@ flowchart LR
 ```
 
 1. **GHL custom fields and tag.** In the sub-account: Settings → Custom
-   Fields, create every key in [section 3](#what-must-exist-in-ghl). The
-   `website-lead` tag is created automatically the first time it's used.
+   Fields, create every key in [section 3](#what-must-exist-in-ghl). Create
+   the `website-lead` tag under Settings → Tags (in a fresh sub-account it
+   would also be auto-created the first time the Worker uses it, but it
+   must exist before you can pick it in the workflow trigger).
 2. **GHL token.** Switch into the **sub-account** (not agency view) →
    Settings → Private Integrations → Create new integration → scopes
    `contacts.write` and `contacts.readonly` → copy the token (shown once;
