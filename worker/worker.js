@@ -339,6 +339,14 @@ async function handleGate(contactId, payload, env) {
       lead_flags: flags.length > 0 ? flags.join(",") : "none",
       sla_flag: slaFlag,
       lead_captured_at: new Date().toISOString(),
+      // The visitor's own Step 2 answers, so the team can see them on the
+      // contact (the AI Receptionist also writes these itself). Blanks are
+      // stripped so a missing answer never wipes an existing value.
+      ...stripUndefined({
+        facility_type: f.facilityType,
+        monthly_budget: f.monthlyBudget || undefined,
+        cleaning_frequency: f.frequency,
+      }),
       ...stripUndefined(utm),
     },
     env
