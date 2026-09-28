@@ -516,6 +516,56 @@ describe("POST /gate — budget is the only thing that decides the calendar", ()
   });
 });
 
+describe("POST /gate — saves the Step 2 answers to the contact", () => {
+  it("writes facility_type, monthly_budget and cleaning_frequency alongside the score", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/gate", {
+      contact_id: "c-answers",
+      customFields: { facility_type: "Office", monthly_budget: "3000", postcode: "4211", cleaning_frequency: "Five_Days_Week" },
+    });
+
+    await worker.fetch(req, env);
+
+    const fields = fieldsFromLastCall(global.fetch);
+    expect(fields.facility_type).toBe("office");
+    expect(fields.monthly_budget).toBe("3000");
+    expect(fields.cleaning_frequency).toBe("five_days_week");
+    expect(fields.lead_tier).toBe("standard");
+  });
+
+  it("saves the answers for a nurture lead too", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/gate", {
+      contact_id: "c-answers-nurture",
+      customFields: { facility_type: "strata", monthly_budget: "1500", postcode: "4211", cleaning_frequency: "weekly" },
+    });
+
+    await worker.fetch(req, env);
+
+    const fields = fieldsFromLastCall(global.fetch);
+    expect(fields.lead_tier).toBe("nurture");
+    expect(fields.facility_type).toBe("strata");
+    expect(fields.monthly_budget).toBe("1500");
+    expect(fields.cleaning_frequency).toBe("weekly");
+  });
+
+  it("never writes blank answers, so it can't wipe an existing value", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/gate", {
+      contact_id: "c-answers-blank",
+      customFields: { facility_type: "", monthly_budget: "", postcode: "4211", cleaning_frequency: "" },
+    });
+
+    await worker.fetch(req, env);
+
+    const fields = fieldsFromLastCall(global.fetch);
+    expect(fields).not.toHaveProperty("facility_type");
+    expect(fields).not.toHaveProperty("monthly_budget");
+    expect(fields).not.toHaveProperty("cleaning_frequency");
+    expect(fields.lead_tier).toBeDefined();
+  });
+});
+
 describe("POST /confirm", () => {
   it("requalifies a budget-DQ'd lead when the flexible amount clears the floor", async () => {
     global.fetch = mockGhlOk();

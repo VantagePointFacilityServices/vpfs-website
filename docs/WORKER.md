@@ -139,7 +139,7 @@ with exactly these keys:
 | Group | Custom field keys |
 |---|---|
 | Captured at Step 1 | `postcode`, `channel`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content` |
-| Written by `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `lead_flags`, `sla_flag`, `lead_captured_at` |
+| Written by `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `lead_flags`, `sla_flag`, `lead_captured_at`, plus the visitor's Step 2 answers `facility_type`, `monthly_budget`, `cleaning_frequency` |
 | Read/written by `/enrich` | `size_sqm`, `headcount`, `floor_count`, `lifts_present`, `bathroom_count`, `kitchen_count`, `breakroom_count`, `meeting_room_count`, `special_requests`, `supplies_provided`, `equipment_needed`, `contract_renewal_date`, `contract_renewal_months_out` |
 | Read/written by `/confirm` | `budget_flexible`, `flexible_budget_amount`, `frequency_flexible`, `flexible_frequency`, `monthly_budget`, `cleaning_frequency`, `facility_type` |
 | Read/written by `/outcome` | `outcome_type`, `reschedule_attempts`, `loss_reason`, `noshow_attempts`, `lost_at_proposal_date` |
@@ -301,7 +301,7 @@ flowchart TD
     T -- "30–69" --> ST["Tier: standard<br/>SLA: call-within-15min"]
     T -- "under 30" --> SF["Tier: standard-flagged<br/>SLA: call-within-15min"]
 
-    PR & ST & SF & NUR --> WB["PUT /contacts/{id} in GHL<br/>lead_score, lead_tier, dq_flag,<br/>lead_flags, sla_flag, lead_captured_at"]
+    PR & ST & SF & NUR --> WB["PUT /contacts/{id} in GHL<br/>lead_score, lead_tier, dq_flag,<br/>lead_flags, sla_flag, lead_captured_at,<br/>+ the Step 2 answers"]
     WB --> OUT["Reply to browser with the tier"]
 
     OUT --> C1["priority → Priority calendar"]
@@ -515,7 +515,7 @@ went wrong.
 | Endpoint | Fields written |
 |---|---|
 | `/lead` | first/last name, email, phone, `postcode`, `channel`, `utm_*` (only those present), tag `website-lead` |
-| `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `lead_flags`, `sla_flag`, `lead_captured_at`, `utm_*` if sent |
+| `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `lead_flags`, `sla_flag`, `lead_captured_at`, the Step 2 answers `facility_type` / `monthly_budget` / `cleaning_frequency` (only those given — blanks never overwrite), `utm_*` if sent |
 | `/enrich` | the facility detail fields, `contract_renewal_months_out`, and `lead_tier: priority` if bumped |
 | `/confirm` | `dq_flag` (confirmed nurture), or `lead_score`, `lead_tier`, `dq_flag: none` plus the flexed `monthly_budget` / `cleaning_frequency` |
 | `/outcome` | `lead_tier: nurture`, `dq_flag`, `noshow_attempts` or `lost_at_proposal_date` |
