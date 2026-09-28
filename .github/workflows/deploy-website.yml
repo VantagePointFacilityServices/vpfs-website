@@ -48,6 +48,12 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
+      # Pages caches every file for 10 minutes, so give each deploy's CSS/JS
+      # URLs a new ?v=<commit> — otherwise a browser can run new HTML against
+      # old cached JS. Only rewrites this job's checkout, never the repo.
+      - name: Version asset URLs (cache busting)
+        run: node site/scripts/cache-bust.mjs site "${GITHUB_SHA::8}"
+
       - name: Upload site/ as the Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

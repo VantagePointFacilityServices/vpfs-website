@@ -78,6 +78,13 @@ flowchart LR
     WF3S -- "--apply, manual only" --> CFD["Cloudflare\nDNS records + Redirect Rules"]
 ```
 
+Before uploading, `deploy-website.yml` runs `site/scripts/cache-bust.mjs`,
+which appends `?v=<commit>` to every local CSS/JS URL in the deployed copy
+of the pages (and to relative JS imports). GitHub Pages caches files for 10
+minutes, so without this a browser could run a freshly deployed page against
+the previous deploy's cached JavaScript. The repo's source files never carry
+the `?v=`.
+
 Key asymmetry, deliberate: the worker's `deploy` job runs automatically on
 every push to `main` once tests pass. The DNS `sync` job never auto-applies
 — even a passing test run only dry-runs on a PR; an actual `--apply`
