@@ -319,12 +319,16 @@ async function handleGate(contactId, payload, env) {
     tier = tierFromScore(score);
   }
 
-  // Speed-to-lead: Priority tier gets a timestamp + explicit SLA flag
-  // written to the contact so a GHL workflow can trigger an
-  // immediate call/SMS task (target: contact within 5-15 min) rather
-  // than sitting in the normal queue. Standard gets a same-day flag.
+  // Speed-to-lead: the SLA flag written to the contact drives GHL workflow
+  // 29's breach escalation (vpos). Priority: call within 5 minutes.
+  // Standard — and standard-flagged, which books the same Standard
+  // calendar — call within 15 minutes. Nurture gets no SLA.
   const slaFlag =
-    tier === "priority" ? "call-within-15min" : tier === "standard" ? "call-same-day" : "none";
+    tier === "priority"
+      ? "call-within-5min"
+      : tier === "standard" || tier === "standard-flagged"
+        ? "call-within-15min"
+        : "none";
 
   const result = await writeBackToGHL(
     contactId,

@@ -297,9 +297,9 @@ flowchart TD
 
     N1 --> NUR["Tier: nurture, score 0"]
     SC --> T{"Score?"}
-    T -- "70+" --> PR["Tier: priority<br/>SLA: call-within-15min"]
-    T -- "30–69" --> ST["Tier: standard<br/>SLA: call-same-day"]
-    T -- "under 30" --> SF["Tier: standard-flagged<br/>SLA: none"]
+    T -- "70+" --> PR["Tier: priority<br/>SLA: call-within-5min"]
+    T -- "30–69" --> ST["Tier: standard<br/>SLA: call-within-15min"]
+    T -- "under 30" --> SF["Tier: standard-flagged<br/>SLA: call-within-15min"]
 
     PR & ST & SF & NUR --> WB["PUT /contacts/{id} in GHL<br/>lead_score, lead_tier, dq_flag,<br/>lead_flags, sla_flag, lead_captured_at"]
     WB --> OUT["Reply to browser with the tier"]
@@ -525,8 +525,9 @@ went wrong.
 **Tier values:** `priority`, `standard`, `standard-flagged`, `nurture`
 (leads); `priority`, `standard`, `unsuccessful`, `pending` (applicants).
 
-**SLA values:** `call-within-15min` (Priority), `call-same-day`
-(Standard), `none`.
+**SLA values:** `call-within-5min` (Priority), `call-within-15min`
+(Standard and standard-flagged), `none` (nurture). GHL workflow 29 (vpos)
+escalates on these.
 
 ---
 
@@ -637,7 +638,7 @@ curl -s -X POST https://worker.vantagepointfacilityservices.com.au/gate \
        "monthly_budget":"6000","cleaning_frequency":"daily","postcode":"4211"}}'
 ```
 
-Expect `"tier":"priority"`, `"sla_flag":"call-within-15min"` and
+Expect `"tier":"priority"`, `"sla_flag":"call-within-5min"` and
 `"ghl_update":{"success":true}`. The contact's Lead Score should read 100.
 
 **3. The real form**

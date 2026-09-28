@@ -273,7 +273,7 @@ describe("POST /lead", () => {
 });
 
 describe("POST /gate", () => {
-  it("qualifies a strong lead into priority with a 15-min SLA flag", async () => {
+  it("qualifies a strong lead into priority with a 5-min SLA flag", async () => {
     global.fetch = mockGhlOk();
     const req = makeRequest("/gate", {
       contact_id: "c1",
@@ -291,7 +291,7 @@ describe("POST /gate", () => {
 
     expect(res.status).toBe(200);
     expect(json.tier).toBe("priority");
-    expect(json.sla_flag).toBe("call-within-15min");
+    expect(json.sla_flag).toBe("call-within-5min");
     expect(json.dq_flag).toBe("none");
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
@@ -656,7 +656,34 @@ describe("field defaults and alternate payload shapes", () => {
     const json = await res.json();
 
     expect(json.tier).toBe("standard");
-    expect(json.sla_flag).toBe("call-same-day");
+    expect(json.sla_flag).toBe("call-within-15min");
+    expect(fieldsFromLastCall(global.fetch).sla_flag).toBe("call-within-15min");
+  });
+
+  it("gives a no-budget standard-flagged lead the Standard 15-minute SLA, since it books the Standard calendar", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/gate", {
+      contact_id: "c13b",
+      customFields: { facility_type: "construction", monthly_budget: "", postcode: "4211", cleaning_frequency: "three_days_week" },
+    });
+
+    const json = await (await worker.fetch(req, env)).json();
+
+    expect(json.tier).toBe("standard-flagged");
+    expect(json.sla_flag).toBe("call-within-15min");
+  });
+
+  it("gives a nurture lead no SLA", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/gate", {
+      contact_id: "c13c",
+      customFields: { facility_type: "office", monthly_budget: "1500", postcode: "4211", cleaning_frequency: "daily" },
+    });
+
+    const json = await (await worker.fetch(req, env)).json();
+
+    expect(json.tier).toBe("nurture");
+    expect(json.sla_flag).toBe("none");
   });
 
   it("accepts custom_fields (snake_case) as an alternative to customFields", async () => {
