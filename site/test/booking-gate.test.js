@@ -103,6 +103,25 @@ describe("Step 1 submit", () => {
     expect(form.querySelector(".form-fields").classList.contains("hide-after-step1")).toBe(true);
   });
 
+  it("includes utm params from the page URL in the /lead payload", async () => {
+    window.history.replaceState(null, "", "/?utm_source=google&utm_campaign=office-gc");
+    const form = mountHomepageForm();
+    global.fetch = mockLeadOk("contact-789");
+    initBookingGate(form);
+
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.utm_source).toBe("google");
+    expect(body.utm_campaign).toBe("office-gc");
+    expect(body).not.toHaveProperty("utm_medium");
+
+    window.history.replaceState(null, "", "/");
+    window.sessionStorage.clear();
+  });
+
   it("posts contact.html's fields to /lead tagged with its own channel", async () => {
     const form = mountContactPageForm();
     global.fetch = mockLeadOk("contact-456");
