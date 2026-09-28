@@ -459,6 +459,63 @@ describe("POST /enrich", () => {
   });
 });
 
+describe("POST /gate — budget is the only thing that decides the calendar", () => {
+  it.each([
+    ["an out-of-area postcode", { postcode: "4217" }, "out-of-area"],
+    ["weekly cleaning", { cleaning_frequency: "weekly" }, "low-frequency"],
+    ["a medical facility", { facility_type: "medical" }, "capability-gap"],
+  ])("still gives %s a calendar, and records the concern in lead_flags", async (_, override, flag) => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/gate", {
+      contact_id: "c-flag",
+      customFields: {
+        facility_type: "office",
+        monthly_budget: "6000",
+        postcode: "4211",
+        cleaning_frequency: "daily",
+        ...override,
+      },
+    });
+
+    const json = await (await worker.fetch(req, env)).json();
+
+    expect(json.tier).toBe("priority");
+    expect(json.dq_flag).toBe("none");
+    expect(json.lead_flags).toEqual([flag]);
+    const fields = fieldsFromLastCall(global.fetch);
+    expect(fields.dq_flag).toBe("none");
+    expect(fields.lead_flags).toBe(flag);
+  });
+
+  it("writes lead_flags: none when nothing needs reviewing", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/gate", {
+      contact_id: "c-clean",
+      customFields: { facility_type: "office", monthly_budget: "3000", postcode: "4211", cleaning_frequency: "daily" },
+    });
+
+    const json = await (await worker.fetch(req, env)).json();
+
+    expect(json.tier).toBe("standard");
+    expect(json.lead_flags).toEqual([]);
+    expect(fieldsFromLastCall(global.fetch).lead_flags).toBe("none");
+  });
+
+  it("sends an under-$2,000 budget to nurture even with other flags", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/gate", {
+      contact_id: "c-nurture",
+      customFields: { facility_type: "medical", monthly_budget: "1500", postcode: "4217", cleaning_frequency: "weekly" },
+    });
+
+    const json = await (await worker.fetch(req, env)).json();
+
+    expect(json.tier).toBe("nurture");
+    expect(json.dq_flag).toBe("nurture-budget");
+    expect(json.lead_flags).toEqual(["low-frequency", "capability-gap", "out-of-area"]);
+  });
+});
+
 describe("POST /confirm", () => {
   it("requalifies a budget-DQ'd lead when the flexible amount clears the floor", async () => {
     global.fetch = mockGhlOk();

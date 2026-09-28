@@ -139,7 +139,7 @@ with exactly these keys:
 | Group | Custom field keys |
 |---|---|
 | Captured at Step 1 | `postcode`, `channel`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content` |
-| Written by `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `sla_flag`, `lead_captured_at` |
+| Written by `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `lead_flags`, `sla_flag`, `lead_captured_at` |
 | Read/written by `/enrich` | `size_sqm`, `headcount`, `floor_count`, `lifts_present`, `bathroom_count`, `kitchen_count`, `breakroom_count`, `meeting_room_count`, `special_requests`, `supplies_provided`, `equipment_needed`, `contract_renewal_date`, `contract_renewal_months_out` |
 | Read/written by `/confirm` | `budget_flexible`, `flexible_budget_amount`, `frequency_flexible`, `flexible_frequency`, `monthly_budget`, `cleaning_frequency`, `facility_type` |
 | Read/written by `/outcome` | `outcome_type`, `reschedule_attempts`, `loss_reason`, `noshow_attempts`, `lost_at_proposal_date` |
@@ -290,23 +290,18 @@ those plus the postcode from Step 1 and the `contact_id`.
 ```mermaid
 flowchart TD
     IN["POST /gate<br/>contact_id + facility_type,<br/>monthly_budget, cleaning_frequency, postcode"]
-    IN --> D1{"Budget under $2,000/month?"}
-    D1 -- yes --> N1["nurture-budget"]
-    D1 -- no --> D2{"Fewer than 3 cleans/week?<br/>(weekly or fortnightly)"}
-    D2 -- yes --> N2["nurture-frequency"]
-    D2 -- no --> D3{"Facility type we can't<br/>service yet?<br/>(education, medical)"}
-    D3 -- yes --> N3["nurture-capability-gap"]
-    D3 -- no --> D4{"Postcode outside<br/>the service area?"}
-    D4 -- yes --> N4["nurture-out-of-area"]
-    D4 -- no --> SC["Calculate score 0–100"]
+    IN --> FL["Record lead_flags for review:<br/>low-frequency, capability-gap,<br/>out-of-area (never block booking)"]
+    FL --> D1{"Budget under $2,000/month?"}
+    D1 -- yes --> N1["dq_flag: nurture-budget"]
+    D1 -- no --> SC["Calculate score 0–100"]
 
-    N1 & N2 & N3 & N4 --> NUR["Tier: nurture, score 0"]
+    N1 --> NUR["Tier: nurture, score 0"]
     SC --> T{"Score?"}
     T -- "70+" --> PR["Tier: priority<br/>SLA: call-within-15min"]
     T -- "30–69" --> ST["Tier: standard<br/>SLA: call-same-day"]
     T -- "under 30" --> SF["Tier: standard-flagged<br/>SLA: none"]
 
-    PR & ST & SF & NUR --> WB["PUT /contacts/{id} in GHL<br/>lead_score, lead_tier, dq_flag,<br/>sla_flag, lead_captured_at"]
+    PR & ST & SF & NUR --> WB["PUT /contacts/{id} in GHL<br/>lead_score, lead_tier, dq_flag,<br/>lead_flags, sla_flag, lead_captured_at"]
     WB --> OUT["Reply to browser with the tier"]
 
     OUT --> C1["priority → Priority calendar"]
@@ -315,10 +310,21 @@ flowchart TD
     OUT --> C4["any other nurture →<br/>'we'll be in touch' message, no calendar"]
 ```
 
-**Disqualifiers** are checked in the order shown; the first one that fails
-decides the `dq_flag`. A blank answer never disqualifies.
+**Budget is the only disqualifier.** Under $2,000/month is `nurture-budget`
+and gets no calendar. A blank budget never disqualifies.
 
-**The score** only runs for leads that pass every disqualifier:
+**Everything else is a flag, not a disqualifier.** `/gate` writes
+`lead_flags` to the contact (comma-separated, or `none`) so the team can
+review a booked lead before the walkthrough — it never stops someone
+booking:
+
+| Flag | When |
+|---|---|
+| `low-frequency` | Weekly or fortnightly (under 3 cleans a week) |
+| `capability-gap` | Education or medical — not serviced yet |
+| `out-of-area` | Postcode not in `SERVICE_POSTCODES` |
+
+**The score** runs for every lead that isn't under the budget minimum:
 
 | Factor | Points |
 |---|---|
@@ -343,18 +349,18 @@ leads *within* a tier (e.g. in GHL views sorted by `lead_score`).
 
 **Frequency options** on the form: Daily, 3 days a week, 5 days a week,
 Weekly, Fortnightly (values `daily`, `three_days_week`, `five_days_week`,
-`weekly`, `fortnightly`). Weekly and fortnightly are under the 3-per-week
-minimum, so they're disqualified (`nurture-frequency`). The old value
+`weekly`, `fortnightly`). Weekly and fortnightly add no frequency points
+and are flagged `low-frequency`, but still get the calendar their budget
+earns. The old value
 `few_times_week` is still accepted as 3 days a week, in case the AI
 Receptionist or a GHL survey sends it.
 
-**Which "no calendar" message?** A lead disqualified on budget sees the
-budget message above. Leads disqualified for any other reason (frequency,
-facility type, postcode) see the general *"Thanks — we'll be in touch"*
-message.
+**The "no calendar" message** is only ever the budget message above, since
+budget is the only way into nurture. (The general *"Thanks — we'll be in
+touch"* panel remains as a fallback for any other nurture reason.)
 
 **Service-area postcodes** are currently only **4211, 4212, 4226, 4227**.
-Any other postcode is out of area (see [section 12](#12-changing-the-business-rules)).
+Any other postcode is flagged `out-of-area` (see [section 12](#12-changing-the-business-rules)).
 
 The **AI Receptionist** calls this same `/gate` endpoint live on the phone,
 so phone and web leads are judged by identical rules.
@@ -381,11 +387,10 @@ demotes — that was settled at `/gate`.
 
 ### Stage 4 — `/confirm`: second chance for disqualified leads
 
-A lead disqualified on **budget** or **frequency** gets one follow-up
-question from GHL ("is that budget a hard ceiling?" / "would you consider
-3 days a week?"). Their answer webhooks `/confirm`. Out-of-area and
-capability-gap leads don't get this — they can't change those facts — and
-that routing lives in the GHL workflow, not the Worker.
+A lead disqualified on **budget** gets one follow-up question from GHL ("is
+that budget a hard ceiling?"). Their answer webhooks `/confirm`. The
+frequency path below only applies to older contacts still carrying
+`nurture-frequency` from before budget became the only disqualifier.
 
 ```mermaid
 flowchart TD
@@ -510,7 +515,7 @@ went wrong.
 | Endpoint | Fields written |
 |---|---|
 | `/lead` | first/last name, email, phone, `postcode`, `channel`, `utm_*` (only those present), tag `website-lead` |
-| `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `sla_flag`, `lead_captured_at`, `utm_*` if sent |
+| `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `lead_flags`, `sla_flag`, `lead_captured_at`, `utm_*` if sent |
 | `/enrich` | the facility detail fields, `contract_renewal_months_out`, and `lead_tier: priority` if bumped |
 | `/confirm` | `dq_flag` (confirmed nurture), or `lead_score`, `lead_tier`, `dq_flag: none` plus the flexed `monthly_budget` / `cleaning_frequency` |
 | `/outcome` | `lead_tier: nurture`, `dq_flag`, `noshow_attempts` or `lost_at_proposal_date` |
@@ -657,7 +662,8 @@ reports and so the same details can re-trigger Tag Added later.
 | `ghl_error` mentions `locationId` | `GHL_LOCATION_ID` wrong or missing | Check `worker/wrangler.toml`, redeploy |
 | Contact created but Channel / Postcode / UTMs blank | Custom field keys in GHL don't match | Create/rename fields to the keys in section 3 |
 | Contact created, no workflow run | Workflow not published, trigger not Tag Added `website-lead`, or contact already had the tag | Check the trigger; test with a fresh contact |
-| Every lead lands in nurture with `nurture-out-of-area` | Postcode not in `SERVICE_POSTCODES` | Add it — see section 12 |
+| Every lead is flagged `out-of-area` | Postcode not in `SERVICE_POSTCODES` | Add it — see section 12 |
+| `lead_flags` blank on contacts | No `lead_flags` custom field in GHL | Create it (single-line text) |
 | Browser console shows a CORS error | Site served from an address not in `ALLOWED_ORIGINS` (e.g. a preview URL) | Add that origin in `worker.js` |
 | Changes merged but not live | Tests failed in GitHub Actions, so deploy was skipped | Check the Actions tab for `deploy-worker.yml` |
 | `/enrich`, `/confirm` etc. return 400 "Missing contact_id" | GHL webhook isn't sending the contact ID as `contact_id` | Add it to the webhook action's body |
@@ -693,8 +699,8 @@ section 9. Rule changes should also be reflected in the vpos scoring docs.
   a GHL form embed (with a workflow webhooking `/apply`) or its own
   browser-side script like `booking-gate.js`.
 - **Only four service-area postcodes** (4211, 4212, 4226, 4227). Many Gold
-  Coast leads will be disqualified as out-of-area until this list is
-  extended.
+  Coast leads will be flagged `out-of-area` (they still get a calendar)
+  until this list is extended.
 - **No authentication on endpoints** — see [Security](#security-honestly).
 - **Tag Added fires once per contact**, so a returning enquirer doesn't
   re-run the new-lead workflow.
