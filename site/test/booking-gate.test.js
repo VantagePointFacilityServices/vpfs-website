@@ -14,6 +14,8 @@ function mountHomepageForm() {
         <input name="url" value="">
         <button type="submit">Start Walkthrough Booking</button>
       </div>
+      <dialog class="booking-dialog" aria-label="Book your walkthrough">
+      <button type="button" class="booking-dialog-close" aria-label="Close">x</button>
       <div class="booking-step-2">
         <div class="booking-step-2-questions">
           <div class="booking-error" role="alert"></div>
@@ -39,6 +41,10 @@ function mountHomepageForm() {
           <div id="no-calendar-message"></div>
           <div id="budget-nurture-message"></div>
         </div>
+      </div>
+      </dialog>
+      <div class="booking-resume">
+        <button type="button" class="booking-resume-btn">Continue booking</button>
       </div>
     </form>
   `;
@@ -73,7 +79,21 @@ function mockLeadOk(contactId) {
 
 beforeEach(() => {
   vi.restoreAllMocks();
+  // jsdom doesn't implement <dialog>'s showModal()/close(); mimic the browser.
+  HTMLDialogElement.prototype.showModal = function () {
+    this.setAttribute("open", "");
+  };
+  HTMLDialogElement.prototype.close = function () {
+    if (!this.hasAttribute("open")) return;
+    this.removeAttribute("open");
+    this.dispatchEvent(new Event("close"));
+  };
 });
+
+async function flush() {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  await new Promise((resolve) => setTimeout(resolve, 0));
+}
 
 describe("Step 1 submit", () => {
   it("posts to /lead and reveals Step 2 with the returned contact_id", async () => {
@@ -216,6 +236,97 @@ function mockGateOk(tier, dqFlag) {
     json: () => Promise.resolve({ tier: tier, dq_flag: dqFlag || (tier === "nurture" ? "nurture-budget" : "none") }),
   });
 }
+
+describe("Step 2 overlay", () => {
+  it("opens Step 2 in a modal dialog once Step 1 succeeds", async () => {
+    const form = mountHomepageForm();
+    const dialog = form.querySelector(".booking-dialog");
+    const showModal = vi.spyOn(dialog, "showModal");
+    global.fetch = mockLeadOk("contact-123");
+    initBookingGate(form);
+
+    expect(dialog.hasAttribute("open")).toBe(false);
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await flush();
+
+    expect(showModal).toHaveBeenCalledTimes(1);
+    expect(dialog.hasAttribute("open")).toBe(true);
+    expect(dialog.contains(form.querySelector(".booking-step-2-questions"))).toBe(true);
+  });
+
+  it("does not open the dialog when Step 1 fails", async () => {
+    const form = mountHomepageForm();
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500, json: () => Promise.resolve({}) });
+    initBookingGate(form);
+
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await flush();
+
+    expect(form.querySelector(".booking-dialog").hasAttribute("open")).toBe(false);
+  });
+
+  it("closes from the close button and offers a way back in", async () => {
+    const form = mountHomepageForm();
+    const dialog = form.querySelector(".booking-dialog");
+    global.fetch = mockLeadOk("contact-123");
+    initBookingGate(form);
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await flush();
+
+    const resume = form.querySelector(".booking-resume");
+    expect(resume.classList.contains("show")).toBe(false);
+
+    form.querySelector(".booking-dialog-close").click();
+    expect(dialog.hasAttribute("open")).toBe(false);
+    expect(resume.classList.contains("show")).toBe(true);
+
+    form.querySelector(".booking-resume-btn").click();
+    expect(dialog.hasAttribute("open")).toBe(true);
+    expect(resume.classList.contains("show")).toBe(false);
+  });
+
+  it("shows the way back in after an Esc-key close too", async () => {
+    const form = mountHomepageForm();
+    const dialog = form.querySelector(".booking-dialog");
+    global.fetch = mockLeadOk("contact-123");
+    initBookingGate(form);
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await flush();
+
+    dialog.close(); // what the browser does on Esc / back gesture
+    expect(form.querySelector(".booking-resume").classList.contains("show")).toBe(true);
+  });
+
+  it("keeps the calendar result inside the open dialog and moves focus to it", async () => {
+    const form = mountHomepageForm();
+    const dialog = form.querySelector(".booking-dialog");
+    const step2 = form.querySelector(".booking-step-2");
+    global.fetch = mockLeadOk("contact-123");
+    initBookingGate(form);
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await flush();
+
+    global.fetch = mockGateOk("priority");
+    step2.querySelector(".step2-submit").click();
+    await flush();
+
+    const priority = dialog.querySelector("#calendar-priority");
+    expect(dialog.hasAttribute("open")).toBe(true);
+    expect(priority.classList.contains("show")).toBe(true);
+    expect(document.activeElement).toBe(priority);
+  });
+
+  it("still works on a form without a dialog", async () => {
+    const form = mountContactPageForm();
+    global.fetch = mockLeadOk("contact-456");
+    initBookingGate(form);
+
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await flush();
+
+    expect(form.querySelector(".booking-step-2").classList.contains("show")).toBe(true);
+  });
+});
 
 describe("Step 2 submit", () => {
   it("posts contact_id + DQ fields to /gate and reveals the Priority calendar on a priority tier", async () => {

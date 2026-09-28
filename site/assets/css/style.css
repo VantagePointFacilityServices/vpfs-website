@@ -718,6 +718,40 @@ input:focus,select:focus,textarea:focus{ outline:none; border-color:var(--vp-nav
 .booking-result > div{ display:none; }
 .booking-result > div.show{ display:block; }
 .booking-calendar-embed{ min-height:420px; }
+
+/* Step 2 + its result open in a modal <dialog> over the page (booking-gate.js) */
+.booking-dialog{
+  width:min(640px, calc(100vw - 32px));
+  max-height:calc(100dvh - 32px);
+  padding:0; border:none; border-radius:var(--radius-lg);
+  background:var(--surface-card); color:var(--text-body);
+  box-shadow:var(--shadow-lg); text-align:left;
+  overflow-y:auto; overscroll-behavior:contain;
+}
+.booking-dialog::backdrop{ background:rgba(7,26,53,.6); backdrop-filter:blur(2px); }
+html:has(.booking-dialog[open]){ overflow:hidden; } /* stop the page scrolling behind it */
+.booking-dialog .booking-step-2.contact-form{ border-radius:0; padding:var(--space-6); }
+.booking-dialog .booking-step-2 h3{ white-space:normal; }
+.booking-dialog .booking-step-2-questions h3{ text-align:left; padding-right:40px; }
+.booking-dialog-close{
+  position:sticky; top:var(--space-3); float:right; z-index:1;
+  margin:var(--space-3) var(--space-3) 0 0;
+  display:grid; place-items:center; width:40px; height:40px;
+  border:none; border-radius:var(--radius-pill);
+  background:var(--surface-card); color:var(--vp-navy); cursor:pointer;
+  box-shadow:var(--shadow-sm);
+}
+.booking-dialog-close:hover{ background:var(--surface-wash); }
+.booking-dialog-close:focus-visible{ outline:3px solid var(--focus-ring); outline-offset:2px; }
+.booking-dialog-close svg{ width:20px; height:20px; }
+.booking-resume{ display:none; }
+.booking-resume.show{ display:block; }
+/* Result panels get programmatic focus for screen readers; they aren't controls, so no ring */
+.booking-result > div[tabindex="-1"]:focus{ outline:none; }
+.booking-resume p{ margin-bottom:var(--space-4); }
+@media (max-width:480px){
+  .booking-dialog .booking-step-2.contact-form{ padding:var(--space-5) var(--space-4); }
+}
 .hp-field{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
 .field-help{ margin-top:-10px; margin-bottom:var(--space-4); font-size:.8rem; color:var(--text-faint); }
 .input-icon-wrap{ position:relative; }

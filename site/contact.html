@@ -147,6 +147,8 @@
           <button type="submit" class="btn btn-primary">Start Booking<span class="btn-chip"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
           <p class="form-note" style="text-align:left;">The booking is instant and confirmed via sms.</p>
         </div>
+        <dialog class="booking-dialog" aria-label="Book your walkthrough">
+          <button type="button" class="booking-dialog-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
         <div class="booking-step-2 contact-form">
           <div class="booking-step-2-questions">
             <h3 class="mt-0">Just a couple more details</h3>
@@ -154,7 +156,7 @@
             <div class="form-row single">
               <div>
                 <label for="contact-facility-type">Facility type</label>
-                <select id="contact-facility-type" name="facility_type" aria-required="true">
+                <select id="contact-facility-type" name="facility_type" aria-required="true" autofocus>
                   <option value="">Select a facility type</option>
                   <option value="office">Office</option>
                   <option value="strata">Strata &amp; body corporate</option>
@@ -195,6 +197,11 @@
               <p class="small" style="color:var(--text-muted);">Unfortunately, your monthly budget is below the minimum we need to deliver the standard of cleaning we&rsquo;re known for, so we can&rsquo;t take on your site just yet. We&rsquo;d love to work with you down the track, so we&rsquo;ll check in from time to time to see if anything has changed. If it does sooner, give us a call on <a href="tel:0756512257">07 5651 2257</a>.</p>
             </div>
           </div>
+        </div>
+        </dialog>
+        <div class="booking-resume">
+          <p>Your details are saved &mdash; pick up where you left off.</p>
+          <button type="button" class="btn btn-primary booking-resume-btn">Continue booking</button>
         </div>
         <div class="form-success contact-form">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
