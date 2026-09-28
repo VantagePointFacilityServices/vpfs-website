@@ -5,6 +5,11 @@ compatibility_date = "2024-09-23"
 # GHL_API_KEY is a runtime secret, not set here:
 #   wrangler secret put GHL_API_KEY
 
+[vars]
+# The GHL sub-account contacts are created in — required by /contacts/upsert.
+# Not a secret: it also appears in the sub-account's public webhook URLs.
+GHL_LOCATION_ID = "i1xCcUSRa8PDofaJ1Oyz"
+
 # Cloudflare provisions and manages the DNS record for this automatically
 # on deploy — do not also add it to dns/zones/*.yaml (see dns/README.md).
 [[routes]]

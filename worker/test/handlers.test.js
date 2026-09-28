@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import worker from "../worker.js";
 
-const env = { GHL_API_KEY: "test-key" };
+const env = { GHL_API_KEY: "test-key", GHL_LOCATION_ID: "loc-123" };
 
 function makeRequest(path, body, { method = "POST", headers } = {}) {
   const init = { method };
@@ -50,11 +50,24 @@ describe("routing and request validation", () => {
   });
 });
 
+// /lead makes two GHL calls: an upsert (returns { new, contact }), then an
+// additive tag call on the resulting contact id.
+function mockLeadGhl(contactId, { isNew = true } = {}) {
+  return vi
+    .fn()
+    .mockResolvedValueOnce(
+      new Response(JSON.stringify({ new: isNew, contact: { id: contactId } }), { status: 200 })
+    )
+    .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+}
+
+function upsertBody(fetchMock) {
+  return JSON.parse(fetchMock.mock.calls[0][1].body);
+}
+
 describe("POST /lead", () => {
-  it("creates a GHL contact and returns its contact_id", async () => {
-    global.fetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ contact: { id: "new-contact-1" } }), { status: 200 })
-    );
+  it("upserts the GHL contact and returns its contact_id", async () => {
+    global.fetch = mockLeadGhl("new-contact-1");
 
     const req = makeRequest("/lead", {
       first_name: "Alex",
@@ -70,9 +83,8 @@ describe("POST /lead", () => {
     expect(res.status).toBe(200);
     expect(json.contact_id).toBe("new-contact-1");
 
-    expect(global.fetch).toHaveBeenCalledTimes(1);
     const [url, options] = global.fetch.mock.calls[0];
-    expect(url).toBe("https://services.leadconnectorhq.com/contacts/");
+    expect(url).toBe("https://services.leadconnectorhq.com/contacts/upsert");
     expect(options.method).toBe("POST");
     expect(options.headers.Authorization).toBe("Bearer test-key");
 
@@ -83,10 +95,76 @@ describe("POST /lead", () => {
     expect(sentBody.phone).toBe("0400000000");
   });
 
-  it("writes channel as a custom field on the created contact", async () => {
-    global.fetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ contact: { id: "new-contact-2" } }), { status: 200 })
+  it("sends the sub-account's locationId on the upsert", async () => {
+    global.fetch = mockLeadGhl("new-contact-1");
+
+    await worker.fetch(
+      makeRequest("/lead", { email: "alex@example.com", phone: "0400000000" }),
+      env
     );
+
+    expect(upsertBody(global.fetch).locationId).toBe("loc-123");
+  });
+
+  it("returns the existing contact's id when the visitor is already in GHL", async () => {
+    global.fetch = mockLeadGhl("existing-contact-9", { isNew: false });
+
+    const res = await worker.fetch(
+      makeRequest("/lead", { email: "repeat@example.com", phone: "0400000000" }),
+      env
+    );
+    const json = await res.json();
+
+    expect(json.contact_id).toBe("existing-contact-9");
+  });
+
+  it("adds the website-lead tag to the contact via the additive tags endpoint", async () => {
+    global.fetch = mockLeadGhl("new-contact-4");
+
+    await worker.fetch(
+      makeRequest("/lead", { email: "alex@example.com", phone: "0400000000" }),
+      env
+    );
+
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    const [url, options] = global.fetch.mock.calls[1];
+    expect(url).toBe("https://services.leadconnectorhq.com/contacts/new-contact-4/tags");
+    expect(options.method).toBe("POST");
+    expect(options.headers.Authorization).toBe("Bearer test-key");
+    expect(JSON.parse(options.body)).toEqual({ tags: ["website-lead"] });
+  });
+
+  it("never sends tags on the upsert itself, so existing tags aren't overwritten", async () => {
+    global.fetch = mockLeadGhl("new-contact-5");
+
+    await worker.fetch(
+      makeRequest("/lead", { email: "alex@example.com", phone: "0400000000" }),
+      env
+    );
+
+    expect(upsertBody(global.fetch)).not.toHaveProperty("tags");
+  });
+
+  it("still returns the contact_id when the tag call fails", async () => {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ new: true, contact: { id: "new-contact-6" } }), { status: 200 })
+      )
+      .mockResolvedValueOnce(new Response("tag error", { status: 500 }));
+
+    const res = await worker.fetch(
+      makeRequest("/lead", { email: "alex@example.com", phone: "0400000000" }),
+      env
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.contact_id).toBe("new-contact-6");
+  });
+
+  it("writes channel as a custom field on the contact", async () => {
+    global.fetch = mockLeadGhl("new-contact-2");
 
     const req = makeRequest("/lead", {
       first_name: "Jamie",
@@ -98,16 +176,12 @@ describe("POST /lead", () => {
 
     await worker.fetch(req, env);
 
-    const [, options] = global.fetch.mock.calls[0];
-    const sentBody = JSON.parse(options.body);
-    const channelField = sentBody.customFields.find((f) => f.key === "channel");
+    const channelField = upsertBody(global.fetch).customFields.find((f) => f.key === "channel");
     expect(channelField.field_value).toBe("website-contact");
   });
 
   it("sends postcode as a custom field", async () => {
-    global.fetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ contact: { id: "new-contact-3" } }), { status: 200 })
-    );
+    global.fetch = mockLeadGhl("new-contact-3");
 
     const req = makeRequest("/lead", {
       first_name: "Sam",
@@ -120,10 +194,32 @@ describe("POST /lead", () => {
 
     await worker.fetch(req, env);
 
-    const [, options] = global.fetch.mock.calls[0];
-    const sentBody = JSON.parse(options.body);
-    const postcodeField = sentBody.customFields.find((f) => f.key === "postcode");
+    const postcodeField = upsertBody(global.fetch).customFields.find((f) => f.key === "postcode");
     expect(postcodeField.field_value).toBe("4211");
+  });
+
+  it("writes utm params as custom fields and omits ones that weren't sent", async () => {
+    global.fetch = mockLeadGhl("new-contact-7");
+
+    await worker.fetch(
+      makeRequest("/lead", {
+        email: "alex@example.com",
+        phone: "0400000000",
+        utm_source: "google",
+        utm_medium: "cpc",
+        utm_campaign: "office-gc",
+      }),
+      env
+    );
+
+    const fields = Object.fromEntries(
+      upsertBody(global.fetch).customFields.map((f) => [f.key, f.field_value])
+    );
+    expect(fields.utm_source).toBe("google");
+    expect(fields.utm_medium).toBe("cpc");
+    expect(fields.utm_campaign).toBe("office-gc");
+    expect(fields).not.toHaveProperty("utm_term");
+    expect(fields).not.toHaveProperty("utm_content");
   });
 
   it("does not call the GHL API when the honeypot field is filled", async () => {
@@ -156,7 +252,7 @@ describe("POST /lead", () => {
     expect(res.status).toBe(400);
   });
 
-  it("surfaces a failed GHL contact-creation call without throwing", async () => {
+  it("surfaces a failed GHL upsert without throwing or tagging", async () => {
     global.fetch = vi.fn().mockResolvedValue(new Response("server error", { status: 500 }));
 
     const req = makeRequest("/lead", {
@@ -172,6 +268,7 @@ describe("POST /lead", () => {
     expect(res.status).toBe(200);
     expect(json.contact_id).toBeNull();
     expect(json.ghl_error).toBe("server error");
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 });
 
