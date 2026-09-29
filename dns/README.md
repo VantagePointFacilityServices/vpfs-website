@@ -88,10 +88,12 @@ removes records you've deliberately deleted from a file. Cloudflare's
 read-only records — e.g. the Worker's `worker.` custom-domain record,
 owned by Wrangler — are never pruned.
 
-**Both zones' SPF record is currently broken** — it includes a GoDaddy
-`dc-…._spfm` record that no longer exists (see the comment in each zone
-file). Fixing it is a deliberate one-line change to `content`, then
-`--apply`.
+**SPF on both zones is `v=spf1 include:_spf.google.com ~all`** (fixed
+2026-09-29 — it used to include a GoDaddy `dc-…._spfm` record that no
+longer existed). Keep exactly one SPF record per domain. Changing a TXT
+value shows as CREATE + DELETE, so apply it with `--prune` or the old
+record stays and the domain ends up with two SPF records (itself an SPF
+error).
 
 The Lead Scoring Worker's custom domain (if you ever want one, e.g.
 `api.vantagepointfacilityservices.com.au`) is deliberately **not** managed

@@ -57,14 +57,13 @@ records:
     name: vantagepointfacilityservices.com.au
     content: 'alt4.aspmx.l.google.com'
     priority: 10
-  # !! SPF is currently BROKEN: it includes dc-aa8e722993._spfm.<domain>, a GoDaddy
-  # "SPF manager" record that doesn't exist since DNS moved to Cloudflare (NXDOMAIN,
-  # checked 2026-09-29) — so SPF permerrors. Mail still passes DMARC via DKIM. The fix
-  # is content "v=spf1 include:_spf.google.com ~all" — change it deliberately, then
-  # --apply. Listed here as-is so this file matches the live zone.
+  # SPF — fixed 2026-09-29. It previously included dc-aa8e722993._spfm.<domain>, a GoDaddy
+  # "SPF manager" record that stopped existing when DNS moved to Cloudflare (NXDOMAIN, so SPF
+  # permerrored). Google Workspace is the only sender for this domain's mailboxes; GHL sends from
+  # the separate noreply. subdomain, which has its own SPF. Keep exactly ONE SPF record here.
   - type: TXT
     name: vantagepointfacilityservices.com.au
-    content: '"v=spf1 include:dc-aa8e722993._spfm.vantagepointfacilityservices.com.au ~all"'
+    content: '"v=spf1 include:_spf.google.com ~all"'
   - type: TXT
     name: _dmarc.vantagepointfacilityservices.com.au
     content: '"v=DMARC1; p=reject; rua=mailto:blake@vantagepointfacilityservices.com.au, mailto:dmarc@vantagepointfacilityservices.com.au; pct=10; adkim=s; aspf=s"'

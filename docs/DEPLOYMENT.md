@@ -234,11 +234,12 @@ to verify.
   records that aren't in the zone file, so this is invisible to a normal
   dry run — run `node --env-file=.env sync-dns.mjs --prune` (still a dry
   run) and read the DELETE list. Found and removed 2026-09-29.
-- **SPF failing for mail from either domain** — both zones' SPF records
-  include `dc-aa8e722993._spfm.<domain>`, a GoDaddy "SPF manager" record
-  that doesn't exist since DNS moved to Cloudflare (NXDOMAIN). Mail still
-  passes DMARC via DKIM, but SPF permerrors. Fix: set the SPF `content` in
-  each zone file to `"v=spf1 include:_spf.google.com ~all"` and `--apply`.
+- **SPF failing for mail from either domain** — check each domain has
+  exactly one SPF record and every `include:` resolves. Until 2026-09-29
+  both included `dc-aa8e722993._spfm.<domain>`, a GoDaddy "SPF manager"
+  record that stopped existing when DNS moved to Cloudflare (NXDOMAIN →
+  permerror). Now `"v=spf1 include:_spf.google.com ~all"`. A TXT value
+  change plans as CREATE + DELETE, so apply with `--prune`.
 
 - **GitHub Pages says "domain's DNS record could not be retrieved"** —
   DNS hasn't propagated yet, or Part 6 wasn't applied for that zone. Run

@@ -87,9 +87,14 @@ reads. Setup runbooks live elsewhere — this file points to them.
 - **The zone files now list every live record, email included** — Google
   Workspace on both domains and GHL's Mailgun `noreply.` records. Before
   that, `--prune` would have deleted all email.
-- **SPF on both domains is broken** (includes a GoDaddy `dc-…._spfm` record
-  that doesn't exist). Fix is a one-line `content` change per zone — see
-  the zone files and `DEPLOYMENT.md` Troubleshooting.
+- **SPF was broken on both domains until 2026-09-29** — it included a
+  GoDaddy `dc-…._spfm` record that vanished with the move to Cloudflare.
+  Now `v=spf1 include:_spf.google.com ~all` (verified: a Google Workspace
+  IP passes, 1 DNS lookup). GoDaddy leftovers are the recurring theme —
+  check anything that references `domaincontrol.com` or `_spfm`.
+- **Changing a TXT record's value plans as CREATE + DELETE**, not UPDATE,
+  so apply it with `--prune` — otherwise both old and new stay live (two
+  SPF records = SPF error).
 - **The Worker's `worker.` DNS record is Cloudflare read-only** (owned by
   Wrangler's custom domain). The sync script never prunes read-only
   records; don't add it to a zone file.
