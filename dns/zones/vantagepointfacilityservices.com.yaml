@@ -1,22 +1,12 @@
 # Desired state for the vantagepointfacilityservices.com zone.
 #
-# !! IMPORTANT — READ BEFORE RUNNING sync-dns.mjs AGAINST THIS ZONE !!
+# This file lists EVERY record in the live zone (email included, pulled
+# 2026-09-29), so it's a complete picture — a dry run should show nothing to
+# create/update, and `--prune` only removes records you've deliberately
+# deleted from here. Still: always dry-run first and read the plan.
 #
-# This domain already has a live mailbox (blake@vantagepointfacilityservices.com),
-# which means it already has real MX/SPF/DKIM records in Cloudflare (or
-# wherever this zone's DNS is currently hosted) that this file does NOT
-# list, because their exact values aren't known here.
-#
-#   - Do NOT run --apply --prune against this zone. Pruning deletes any
-#     live record not listed below, which would take down email.
-#   - Before the first --apply (even without --prune), run a dry run and
-#     check the CREATE/UPDATE list: if an apex A or CNAME record already
-#     exists (e.g. this domain currently hosts a website, not just email),
-#     applying the placeholder record below would silently replace it.
-#     Confirm what it currently points to first.
-#   - Once you've pulled the real MX/SPF/DKIM values from wherever this
-#     domain's email is configured, add them here so this file is a
-#     complete picture of the zone — then --prune becomes safe to use.
+# The domain has a live Google Workspace mailbox (blake@vantagepointfacilityservices.com)
+# — never remove the email records below without changing Google Admin first.
 
 zone: vantagepointfacilityservices.com
 
@@ -34,11 +24,56 @@ records:
     content: vantagepointfacilityservices.com
     proxied: true
 
+  # --- Google Workspace email — LIVE. Values pulled from the live zone 2026-09-29. ---
+  - type: MX
+    name: vantagepointfacilityservices.com
+    content: 'aspmx.l.google.com'
+    priority: 1
+  - type: MX
+    name: vantagepointfacilityservices.com
+    content: 'alt1.aspmx.l.google.com'
+    priority: 5
+  - type: MX
+    name: vantagepointfacilityservices.com
+    content: 'alt2.aspmx.l.google.com'
+    priority: 5
+  - type: MX
+    name: vantagepointfacilityservices.com
+    content: 'alt3.aspmx.l.google.com'
+    priority: 10
+  - type: MX
+    name: vantagepointfacilityservices.com
+    content: 'alt4.aspmx.l.google.com'
+    priority: 10
+  # SPF — fixed 2026-09-29. It previously included dc-aa8e722993._spfm.<domain>, a GoDaddy
+  # "SPF manager" record that stopped existing when DNS moved to Cloudflare (NXDOMAIN, so SPF
+  # permerrored). Google Workspace is the only sender for this domain's mailboxes; GHL sends from
+  # the separate noreply. subdomain, which has its own SPF. Keep exactly ONE SPF record here.
+  - type: TXT
+    name: vantagepointfacilityservices.com
+    content: '"v=spf1 include:_spf.google.com ~all"'
+  - type: TXT
+    name: _dmarc.vantagepointfacilityservices.com
+    content: '"v=DMARC1; p=reject; rua=mailto:blake@vantagepointfacilityservices.com, mailto:dmarc@vantagepointfacilityservices.com; pct=10; adkim=s; aspf=s"'
+  - type: TXT
+    name: google._domainkey.vantagepointfacilityservices.com
+    content: '"v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmDxL2CcWTHN+n7HSchmiqPkbNBYQ+Q9tteD6TA4W2+6DjCavo9ZooyY4Dm8ofuvpnGLeip8/CpucYGGfrB90MLU9oWOGtymi8ogyZR7ERh/VTjGYgbc71gmewY6k46HAxJ0WEGR7L4Ycn40XvKJP3sA4BdpVDKmnYSlmbqpqXNKVuPcLczAwlCFjGW3OvqGfK" "UHHqS4VGW88XERca2VGfQ7D0N4/KC/DLzyQ/X3tv6pQX6MkajpTD5xfFXlAUQeu8iRAxKebfmCC/N5wwpKaxm6MTP+XHbdvH6QZNpDLU+sSIO1jHWmxhA4EK9/hDstXh7mTshCzPB+NyULnISYSiQIDAQAB"'
+  - type: TXT
+    name: vantagepointfacilityservices.com
+    content: '"google-site-verification=TKJIKzRNeQz1QCq0HVa6d_08HujLkIKzafhUOxHSfho"'
+
+  # --- GoDaddy Domain Connect leftover. Harmless; kept so --prune doesn't touch it. ---
+  - type: CNAME
+    name: _domainconnect.vantagepointfacilityservices.com
+    content: '_domainconnect.gd.domaincontrol.com'
+    proxied: true
+
 redirects:
-  # Whole-domain 301 to the .com.au site, preserving path and query string
-  # (e.g. /services?ref=x -> https://vantagepointfacilityservices.com.au/services?ref=x).
-  - description: "Redirect to the .com.au domain"
+  # Whole-domain 301 straight to the canonical www.com.au site (one hop), preserving
+  # path and query string (e.g. /services?ref=x ->
+  # https://www.vantagepointfacilityservices.com.au/services?ref=x).
+  - description: "Redirect to www.vantagepointfacilityservices.com.au"
     expression: 'http.host eq "vantagepointfacilityservices.com" or http.host eq "www.vantagepointfacilityservices.com"'
-    target_expression: 'concat("https://vantagepointfacilityservices.com.au", http.request.uri.path)'
+    target_expression: 'concat("https://www.vantagepointfacilityservices.com.au", http.request.uri.path)'
     status_code: 301
     preserve_query_string: true

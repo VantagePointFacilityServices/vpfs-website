@@ -23,8 +23,8 @@ flowchart TD
     D2 -- "nameservers point to" --> CF
 
     subgraph CF["Cloudflare — authoritative DNS"]
-        Z1["Zone: .com.au\ndns/zones/vantagepointfacilityservices.com.au.yaml\nA x4 -> GitHub Pages IPs (DNS-only)\nCNAME www -> vantagepointfacilityservices.github.io"]
-        Z2["Zone: .com\ndns/zones/vantagepointfacilityservices.com.yaml\nA/CNAME apex (proxied, placeholder IP)\nRedirect Rule: 301 -> .com.au, path+query preserved"]
+        Z1["Zone: .com.au\ndns/zones/vantagepointfacilityservices.com.au.yaml\nA x4 -> GitHub Pages IPs (DNS-only)\nCNAME www -> vantagepointfacilityservices.github.io\nGoogle Workspace + GHL (Mailgun noreply) email records"]
+        Z2["Zone: .com\ndns/zones/vantagepointfacilityservices.com.yaml\nA/CNAME apex (proxied, placeholder IP)\nRedirect Rule: 301 -> www.com.au, path+query preserved\nGoogle Workspace email records"]
     end
 
     Visitor(("Visitor")) -- "https://...com.au/*" --> Z1
@@ -37,7 +37,7 @@ flowchart TD
     GHP -- "Step 2: facility/budget/frequency/postcode\n(same booking-gate.js, direct /gate call)" --> W
     W -- "writes lead_tier / dq_flag / score,\nreturns tier synchronously" --> GHP
     GHP -- "tier decides: Priority calendar,\nStandard calendar, or no-calendar message" --> GHL["GoHighLevel"]
-    GHP -- "careers.html application form\n(embedded GHL JS widget)" --> GHL
+    GHP -. "careers.html form — NOT connected yet\n(see docs/WORKER.md Known gaps)" .-> GHL
     GHL -- "webhook on booking/outcome/application" --> W
     W -- "writes applicant_tier / applicant_dq_flag / applicant_score" --> GHL
 ```
@@ -46,7 +46,8 @@ flowchart TD
 embedded form) — see [`WORKER.md`](WORKER.md) for the full end-to-end Worker
 guide, and `worker/README.md` and `assets/js/booking-gate.js` for
 the two-step gate this implements. `careers.html`'s application form is
-unrelated and still uses the original GHL-embedded-widget pattern.
+**not connected to anything yet** — a plain `<form>` with no action or
+script (see `WORKER.md` → Known gaps).
 
 `dns/sync-dns.mjs` is what actually creates/updates the records and the
 redirect rule shown above — see `dns/README.md` for the zone-file format.
@@ -95,10 +96,10 @@ shape tests before it ships.
 
 ## Request lifecycle: a visitor hitting the `.com` domain
 
-Three redirect hops from the `.com` domain to the final page — worth
-knowing if this ever shows up as a Lighthouse/PageSpeed warning, or if a
-paid-ad landing URL should just use the canonical `www.…com.au` host
-directly to avoid the extra round trips.
+One redirect hop from the `.com` domain straight to the canonical
+`www.…com.au` page (changed 2026-09-29 — it used to go via the bare
+`.com.au` apex, adding two more hops). Paid-ad and printed URLs should
+still use the canonical `www.…com.au` host directly.
 
 ```mermaid
 sequenceDiagram
@@ -109,13 +110,10 @@ sequenceDiagram
 
     V->>CF2: GET https://vantagepointfacilityservices.com/services.html
     Note over CF2: Redirect Rule matches (http.host eq this domain)<br/>origin (192.0.2.1 placeholder) never contacted
-    CF2-->>V: 301 Location: https://vantagepointfacilityservices.com.au/services.html
-    V->>CF1: GET https://vantagepointfacilityservices.com.au/services.html
-    Note over CF1: DNS-only (grey cloud) — Cloudflare<br/>doesn't proxy this request, just resolves it
-    CF1-->>V: (resolves to GitHub Pages IP)
-    V->>GH: GET /services.html (bare apex host)
-    Note over GH: site/CNAME is the www host, not apex —<br/>GitHub redirects apex requests to canonical
-    GH-->>V: 301 Location: https://www.vantagepointfacilityservices.com.au/services.html
+    CF2-->>V: 301 Location: https://www.vantagepointfacilityservices.com.au/services.html
+    V->>CF1: resolve www.vantagepointfacilityservices.com.au
+    Note over CF1: DNS-only (grey cloud) — Cloudflare<br/>doesn't proxy this, just resolves it
+    CF1-->>V: CNAME -> vantagepointfacilityservices.github.io
     V->>GH: GET /services.html (www host, GitHub's own TLS cert)
     GH-->>V: 200 OK, page content
 ```
@@ -126,7 +124,8 @@ sequenceDiagram
 |---|---|---|
 | GoDaddy | Domain registrar for both domains | Nameservers only — no DNS records managed here after initial handoff |
 | Cloudflare DNS | Authoritative DNS for both zones | `dns/zones/*.yaml`, applied by `dns/sync-dns.mjs` |
-| Cloudflare Redirect Rules | `.com` → `.com.au` 301 | `dns/zones/vantagepointfacilityservices.com.yaml`'s `redirects:` block |
+| Cloudflare Redirect Rules | `.com` → `www.com.au` 301 | `dns/zones/vantagepointfacilityservices.com.yaml`'s `redirects:` block |
 | GitHub Pages | Hosts the static site; redirects bare apex → `www` | `site/`, `site/CNAME` (= `www.vantagepointfacilityservices.com.au`), `.github/workflows/deploy-website.yml` |
 | Cloudflare Workers | Lead-scoring and applicant-scoring webhook receiver | `worker/worker.js`, `worker/wrangler.toml`, `.github/workflows/deploy-worker.yml` |
-| GoHighLevel | CRM — sends webhooks to the Worker, receives writes back; also hosts the 3 recruitment pipelines (Priority/Standard/Unsuccessful) | External; field structure documented in the `vpos` repo |
+| GoHighLevel | CRM — the website and AI Receptionist create/score contacts through the Worker; GHL workflows webhook the Worker and act on its fields; also sends email from `noreply.vantagepointfacilityservices.com.au` via Mailgun | External; setup and IDs in the `vpos` repo (`shared/integrations/gohighlevel/`) |
+| Google Workspace | Mailboxes on both domains (MX/SPF/DKIM/DMARC) | Google Admin; the DNS records are listed in both `dns/zones/*.yaml` files |

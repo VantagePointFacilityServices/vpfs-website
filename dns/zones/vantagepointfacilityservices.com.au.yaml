@@ -35,22 +35,86 @@ records:
     content: vantagepointfacilityservices.github.io
     proxied: false
 
-  # --- Google Workspace email (Volume 4, Section 2.4) — uncomment once ---
-  # --- Workspace is set up and you have the real values from the admin ---
-  # --- console (Admin console > Account > Domains > each domain's setup). ---
-  # - type: MX
-  #   name: vantagepointfacilityservices.com.au
-  #   content: smtp.google.com
-  #   priority: 1
-  # - type: TXT
-  #   name: vantagepointfacilityservices.com.au
-  #   content: "v=spf1 include:_spf.google.com ~all"
-  # - type: TXT
-  #   name: google._domainkey.vantagepointfacilityservices.com.au
-  #   content: "REPLACE_WITH_DKIM_VALUE_FROM_GOOGLE_ADMIN_CONSOLE"
-  # - type: TXT
-  #   name: vantagepointfacilityservices.com.au
-  #   content: "REPLACE_WITH_GOOGLE_SITE_VERIFICATION_TOKEN"
+  # --- Google Workspace email — LIVE (mailboxes on @vantagepointfacilityservices.com.au). ---
+  # --- Values pulled from the live zone 2026-09-29; don't edit without Google Admin changes. ---
+  - type: MX
+    name: vantagepointfacilityservices.com.au
+    content: 'aspmx.l.google.com'
+    priority: 1
+  - type: MX
+    name: vantagepointfacilityservices.com.au
+    content: 'alt1.aspmx.l.google.com'
+    priority: 5
+  - type: MX
+    name: vantagepointfacilityservices.com.au
+    content: 'alt2.aspmx.l.google.com'
+    priority: 5
+  - type: MX
+    name: vantagepointfacilityservices.com.au
+    content: 'alt3.aspmx.l.google.com'
+    priority: 10
+  - type: MX
+    name: vantagepointfacilityservices.com.au
+    content: 'alt4.aspmx.l.google.com'
+    priority: 10
+  # SPF — fixed 2026-09-29. It previously included dc-aa8e722993._spfm.<domain>, a GoDaddy
+  # "SPF manager" record that stopped existing when DNS moved to Cloudflare (NXDOMAIN, so SPF
+  # permerrored). Google Workspace is the only sender for this domain's mailboxes; GHL sends from
+  # the separate noreply. subdomain, which has its own SPF. Keep exactly ONE SPF record here.
+  - type: TXT
+    name: vantagepointfacilityservices.com.au
+    content: '"v=spf1 include:_spf.google.com ~all"'
+  - type: TXT
+    name: _dmarc.vantagepointfacilityservices.com.au
+    content: '"v=DMARC1; p=reject; rua=mailto:blake@vantagepointfacilityservices.com.au, mailto:dmarc@vantagepointfacilityservices.com.au; pct=10; adkim=s; aspf=s"'
+  - type: TXT
+    name: google._domainkey.vantagepointfacilityservices.com.au
+    content: '"v=DKIM1; k=rsa; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtN2mIOUZbRIcZKJjnoDAp1Vyi7e5Y12Dl4s/2PKSGdsF00zEIdGOsvJgrzV9lXcUSCuxovILcGMPKeURl3uEqVxoGJsMJ/hZsGoQsF692WN1+4TXd00MzwqygkOC7JiDnTtMOoI3fiNoQaewnS4d8Okx42Ji70GdtSmC5PkKnorh3JB4jaPvWTotQ82u/VNHc" "j7lKSvqrpL/ex26ibYWbxg+5fXltDWYOmM29MCRfB3gS2jeZNSz2/KMuK2zzi+kl9EkGqWsNr5ziuQt3HF6G1qNK4Tc0j1aJn4wfbp3U2FFu32q+7o4825TzxgZ9CBQYiAD+zLcBy7w84sjR85ueQIDAQAB"'
+  - type: TXT
+    name: vantagepointfacilityservices.com.au
+    content: '"google-site-verification=IwWJrDHaoCeaUY9qF_JO4JjexznSddj-0IHoABgd-VA"'
+
+  # --- GoHighLevel email sending domain — LIVE. GHL (LeadConnector) sends workflow/sequence ---
+  # --- email from noreply.vantagepointfacilityservices.com.au through Mailgun; these records ---
+  # --- come from GHL > Settings > Email Services > dedicated domain. Deleting any of them ---
+  # --- breaks GHL's outgoing email. krs._domainkey.main is also a Mailgun DKIM key. ---
+  - type: TXT
+    name: _dmarc.noreply.vantagepointfacilityservices.com.au
+    content: '"v=DMARC1;p=none;"'
+    ttl: 600
+  - type: CNAME
+    name: email.noreply.vantagepointfacilityservices.com.au
+    content: 'mailgun.org'
+    ttl: 3600
+  - type: TXT
+    name: krs._domainkey.main.vantagepointfacilityservices.com.au
+    content: '"k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDjnuzRjMk5UnsCSlktB6RN2kHXz3GxvXcCLv0tl3+JlyAWlQBj0Wgci8eDVjIMfzcp/3Zhwj+ss7lpFBYqPM8a7rVeGbjkWz168ITYf+1QhEOpwjLNfxa3ZijfK/lX/0pnB/044ne2Ogs7jaZsOp9qtE/lwHGdlLYUCLhxa/Z4eQIDAQAB"'
+    ttl: 600
+  - type: MX
+    name: noreply.vantagepointfacilityservices.com.au
+    content: 'mxa.mailgun.org'
+    ttl: 600
+    priority: 10
+  - type: MX
+    name: noreply.vantagepointfacilityservices.com.au
+    content: 'mxb.mailgun.org'
+    ttl: 600
+    priority: 20
+  - type: TXT
+    name: noreply.vantagepointfacilityservices.com.au
+    content: '"v=spf1 include:mailgun.org include:spf.leadconnectorhq.com ~all"'
+    ttl: 3600
+  - type: TXT
+    name: pic._domainkey.noreply.vantagepointfacilityservices.com.au
+    content: '"k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCdGFdlc13WBmzfEJZrGTuoszBl3KRKgEJQhCE5dNN3r4MYNdVb2LPjaLwY6R8G/cvRIUKGHDfWo222VuJy92WEMuhrJ8jnA977Jh4rjceU+ZWFEiKvFFd6QoAtNI5qQ5yIz3uwzYolCR2pzlIgSMYlK7SeR9KAnMuDG8vi/ZxuwQIDAQAB"'
+    ttl: 600
+
+  # --- GoDaddy Domain Connect leftover (from when GoDaddy hosted DNS). Harmless; kept so ---
+  # --- --prune doesn't touch it. Safe to remove deliberately once nothing relies on it. ---
+  - type: CNAME
+    name: _domainconnect.vantagepointfacilityservices.com.au
+    content: '_domainconnect.gd.domaincontrol.com'
+    proxied: true
 
   # --- GoHighLevel custom domain for funnels/forms — not built yet, see ---
   # --- tech-stack-execution-plan-and-mvp-checklist.md Phase 2. Get the ---

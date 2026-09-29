@@ -72,19 +72,28 @@ documentation-reserved placeholder IP, `192.0.2.1`).
   `site/CNAME` is `www.vantagepointfacilityservices.com.au`, matching
   every page's `<link rel="canonical">`/`og:url` and `sitemap.xml`, so
   GitHub redirects the bare apex to `www` rather than the other way
-  round (deployed by `.github/workflows/deploy-website.yml`). Google
-  Workspace email and a GoHighLevel custom domain are documented but
-  commented out, pending real values from those systems' own setup
-  flows (see the [MVP execution
-  plan](../../vpos/commercial/docs/tech-stack-execution-plan-and-mvp-checklist.md)).
+  round (deployed by `.github/workflows/deploy-website.yml`). Also lists
+  the **live** Google Workspace email records and GoHighLevel's
+  email-sending domain (`noreply.` — Mailgun MX/SPF/DKIM), pulled from the
+  live zone 2026-09-29. A GoHighLevel custom domain for funnels is still
+  commented out, pending its real target.
 - **`vantagepointfacilityservices.com`** — redirects entirely to
-  `https://vantagepointfacilityservices.com.au` (which itself then
-  redirects apex → `www` on the GitHub Pages side), path and query
-  string preserved. **This domain already has a live mailbox**
-  (`blake@vantagepointfacilityservices.com`) with MX/SPF/DKIM records this
-  config doesn't list — read the warning at the top of that zone file
-  before running `--apply` (and never `--prune`) against it until those
-  records are added here too.
+  `https://www.vantagepointfacilityservices.com.au`, path and query
+  string preserved — straight to `www.…com.au`, one hop. Its live Google
+  Workspace mailbox records are listed too.
+
+Both files are a **complete** picture of their live zone (checked
+2026-09-29), so a dry run shows nothing to change and `--prune` only
+removes records you've deliberately deleted from a file. Cloudflare's
+read-only records — e.g. the Worker's `worker.` custom-domain record,
+owned by Wrangler — are never pruned.
+
+**SPF on both zones is `v=spf1 include:_spf.google.com ~all`** (fixed
+2026-09-29 — it used to include a GoDaddy `dc-…._spfm` record that no
+longer existed). Keep exactly one SPF record per domain. Changing a TXT
+value shows as CREATE + DELETE, so apply it with `--prune` or the old
+record stays and the domain ends up with two SPF records (itself an SPF
+error).
 
 The Lead Scoring Worker's custom domain (if you ever want one, e.g.
 `api.vantagepointfacilityservices.com.au`) is deliberately **not** managed
