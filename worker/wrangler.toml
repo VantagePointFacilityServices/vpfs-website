@@ -4,6 +4,8 @@ compatibility_date = "2024-09-23"
 
 # GHL_API_KEY is a runtime secret, not set here:
 #   wrangler secret put GHL_API_KEY
+# So is TURNSTILE_SECRET_KEY (optional — /lead skips the bot check without it):
+#   wrangler secret put TURNSTILE_SECRET_KEY
 
 [vars]
 # The GHL sub-account contacts are created in — required by /contacts/upsert.

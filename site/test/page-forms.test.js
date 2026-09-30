@@ -93,4 +93,16 @@ describe.each(PAGES)("%s booking form", (page) => {
       expect(form.querySelector(`.booking-step-2 [name="${name}"]`).getAttribute("aria-required")).toBe("true");
     }
   });
+
+  it("has a Turnstile widget in Step 1, loaded before the booking-gate module", () => {
+    const html = readFileSync(resolve(__dirname, "..", page), "utf8");
+    const form = mountPage(page);
+    const widget = form.querySelector(".form-fields .turnstile-widget");
+    expect(widget).not.toBeNull();
+    expect(widget.hasAttribute("data-sitekey")).toBe(true);
+
+    const api = html.indexOf("challenges.cloudflare.com/turnstile/v0/api.js?render=explicit");
+    expect(api).toBeGreaterThan(-1);
+    expect(api).toBeLessThan(html.indexOf("assets/js/booking-gate.js"));
+  });
 });

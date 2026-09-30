@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { initBookingGate } from "../assets/js/booking-gate.js";
 
 function mountHomepageForm() {
@@ -487,5 +487,111 @@ describe("Step 2 submit", () => {
     expect(global.fetch).not.toHaveBeenCalled();
     const errorBox = step2.querySelector(".booking-step-2-questions .booking-error");
     expect(errorBox.classList.contains("show")).toBe(true);
+  });
+});
+
+describe("Turnstile bot check", () => {
+  function addWidget(form, sitekey = "site-key-1") {
+    const el = document.createElement("div");
+    el.className = "turnstile-widget";
+    el.dataset.sitekey = sitekey;
+    form.querySelector(".form-fields").insertBefore(el, form.querySelector('button[type="submit"]'));
+    return el;
+  }
+
+  function mockTurnstile(token) {
+    window.turnstile = {
+      render: vi.fn(() => "widget-1"),
+      getResponse: vi.fn(() => token),
+      reset: vi.fn(),
+    };
+    return window.turnstile;
+  }
+
+  function submit(form) {
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  }
+
+  afterEach(() => {
+    delete window.turnstile;
+  });
+
+  it("renders the widget with the page's site key", () => {
+    const form = mountHomepageForm();
+    const el = addWidget(form);
+    const ts = mockTurnstile("tok");
+    initBookingGate(form);
+
+    expect(ts.render).toHaveBeenCalledWith(el, expect.objectContaining({ sitekey: "site-key-1", action: "lead" }));
+  });
+
+  it("sends the token to /lead", async () => {
+    const form = mountHomepageForm();
+    addWidget(form);
+    mockTurnstile("tok-abc");
+    global.fetch = mockLeadOk("contact-1");
+    initBookingGate(form);
+
+    submit(form);
+    await flush();
+
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.turnstile_token).toBe("tok-abc");
+  });
+
+  it("holds the submit and explains why while the check hasn't finished", async () => {
+    const form = mountHomepageForm();
+    addWidget(form);
+    mockTurnstile("");
+    global.fetch = vi.fn();
+    initBookingGate(form);
+
+    submit(form);
+    await flush();
+
+    expect(global.fetch).not.toHaveBeenCalled();
+    const errorBox = form.querySelector(".form-fields .booking-error");
+    expect(errorBox.classList.contains("show")).toBe(true);
+    expect(errorBox.textContent).toMatch(/moment/i);
+  });
+
+  it("gets a fresh token after a failed submit, since each token works once", async () => {
+    const form = mountHomepageForm();
+    addWidget(form);
+    const ts = mockTurnstile("tok");
+    global.fetch = vi.fn().mockResolvedValue({ ok: false, status: 403, json: () => Promise.resolve({}) });
+    initBookingGate(form);
+
+    submit(form);
+    await flush();
+
+    expect(ts.reset).toHaveBeenCalledWith("widget-1");
+  });
+
+  it("does nothing Turnstile-related when no site key is set", async () => {
+    const form = mountHomepageForm();
+    addWidget(form, "");
+    const ts = mockTurnstile("tok");
+    global.fetch = mockLeadOk("contact-1");
+    initBookingGate(form);
+
+    submit(form);
+    await flush();
+
+    expect(ts.render).not.toHaveBeenCalled();
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.turnstile_token).toBe("");
+  });
+
+  it("still submits when the Turnstile script failed to load", async () => {
+    const form = mountHomepageForm();
+    addWidget(form);
+    global.fetch = mockLeadOk("contact-1");
+    initBookingGate(form);
+
+    submit(form);
+    await flush();
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 });

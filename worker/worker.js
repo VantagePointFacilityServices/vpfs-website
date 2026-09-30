@@ -109,6 +109,13 @@ const GHL_API_VERSION = "2021-07-28";
 // Webhook (a premium, per-execution trigger with a public URL).
 const WEBSITE_LEAD_TAG = "website-lead";
 
+// Cloudflare Turnstile — /lead's bot check. Only enforced once the
+// TURNSTILE_SECRET_KEY secret is set, so the Worker can ship before the
+// widget exists. A lead that couldn't be checked because Cloudflare itself
+// was unreachable is still taken, but tagged so it can be eyeballed.
+const TURNSTILE_SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+const TURNSTILE_UNVERIFIED_TAG = "turnstile-unverified";
+
 // frequency string -> cleans-per-week, used against MIN_WEEKLY_CLEANS
 const FREQUENCY_TO_WEEKLY = {
   daily: 7,
@@ -212,7 +219,7 @@ async function route(request, env) {
   }
 
   if (url.pathname === "/lead") {
-    return handleLead(payload, env);
+    return handleLead(payload, env, request);
   }
 
   const contactId = payload.contact_id || payload.contactId;
@@ -249,7 +256,7 @@ async function route(request, env) {
 // contact and returns its id, which the browser then carries into the
 // Step 2 DQ questions and passes to /gate. See
 // commercial/docs/lead-scoring-and-two-stage-gate-form.md in the vpos repo.
-async function handleLead(payload, env) {
+async function handleLead(payload, env, request) {
   const f = extractLeadFields(payload);
 
   if (f.honeypot) {
@@ -257,6 +264,15 @@ async function handleLead(payload, env) {
     // ever calling the GHL API, so nothing is created and the bot isn't
     // tipped off that it was caught.
     return jsonResponse({ contact_id: null });
+  }
+
+  const turnstile = await verifyTurnstile(
+    payload.turnstile_token,
+    request.headers.get("CF-Connecting-IP"),
+    env
+  );
+  if (turnstile === "rejected") {
+    return new Response("Verification failed", { status: 403 });
   }
 
   if (!f.email || !f.phone) {
@@ -272,9 +288,34 @@ async function handleLead(payload, env) {
   // The contact already exists by now, so a failed tag call must not stop
   // the visitor reaching Step 2 — it only means the tag-triggered GHL
   // workflow won't fire for this lead.
-  await addTagsInGHL(result.contactId, [WEBSITE_LEAD_TAG], env);
+  const tags = [WEBSITE_LEAD_TAG];
+  if (turnstile === "unverified") tags.push(TURNSTILE_UNVERIFIED_TAG);
+  await addTagsInGHL(result.contactId, tags, env);
 
   return jsonResponse({ contact_id: result.contactId });
+}
+
+// Returns "passed", "rejected", or "unverified" (Cloudflare unreachable —
+// fail open so a Cloudflare outage never costs a real enquiry), or "skipped"
+// when no secret is configured.
+async function verifyTurnstile(token, remoteIp, env) {
+  if (!env.TURNSTILE_SECRET_KEY) return "skipped";
+  if (!token) return "rejected";
+
+  try {
+    const res = await fetch(TURNSTILE_SITEVERIFY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        stripUndefined({ secret: env.TURNSTILE_SECRET_KEY, response: token, remoteip: remoteIp })
+      ),
+    });
+    if (!res.ok) return "unverified";
+    const data = await res.json();
+    return data.success ? "passed" : "rejected";
+  } catch (err) {
+    return "unverified";
+  }
 }
 
 function extractLeadFields(payload) {

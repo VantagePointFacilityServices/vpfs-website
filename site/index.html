@@ -144,6 +144,8 @@
             <label for="hero-website-url">Website</label>
             <input id="hero-website-url" name="url" type="text" tabindex="-1" autocomplete="off">
           </div>
+          <!-- Cloudflare Turnstile bot check; site key from the Turnstile dashboard (see docs/WORKER.md) -->
+          <div class="turnstile-widget" data-sitekey="0x4AAAAAAFKpftSypIZ3KEQk"></div>
           <button type="submit" class="btn btn-primary btn-block">Start Booking</button>
           <p class="form-note">The booking is instant and confirmed via sms.</p>
         </div>
@@ -377,6 +379,7 @@
   </div>
 </footer>
 
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
 <script type="module" src="assets/js/booking-gate.js"></script>
 <script src="assets/js/main.js"></script>
 </body>
