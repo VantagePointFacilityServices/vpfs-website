@@ -272,6 +272,125 @@ describe("POST /lead", () => {
   });
 });
 
+describe("POST /lead — Turnstile", () => {
+  const turnstileEnv = { ...env, TURNSTILE_SECRET_KEY: "ts-secret" };
+  const SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+
+  function leadRequest(extra = {}) {
+    return makeRequest(
+      "/lead",
+      {
+        first_name: "Alex",
+        email: "alex@example.com",
+        phone: "0400000000",
+        turnstile_token: "tok-1",
+        ...extra,
+      },
+      { headers: { "CF-Connecting-IP": "203.0.113.7" } }
+    );
+  }
+
+  function siteverifyResponse(body, status = 200) {
+    return new Response(JSON.stringify(body), { status });
+  }
+
+  function tagsSent(fetchMock) {
+    return JSON.parse(fetchMock.mock.calls.at(-1)[1].body).tags;
+  }
+
+  it("verifies the token with Cloudflare before creating the contact", async () => {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(siteverifyResponse({ success: true }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ contact: { id: "c-ok" } }), { status: 200 })
+      )
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+
+    const res = await worker.fetch(leadRequest(), turnstileEnv);
+    const json = await res.json();
+
+    expect(json.contact_id).toBe("c-ok");
+    const [url, options] = global.fetch.mock.calls[0];
+    expect(url).toBe(SITEVERIFY_URL);
+    const sent = JSON.parse(options.body);
+    expect(sent).toEqual({ secret: "ts-secret", response: "tok-1", remoteip: "203.0.113.7" });
+    expect(tagsSent(global.fetch)).toEqual(["website-lead"]);
+  });
+
+  it("rejects a token Cloudflare says is invalid, without calling GHL", async () => {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(siteverifyResponse({ success: false, "error-codes": ["invalid-input-response"] }));
+
+    const res = await worker.fetch(leadRequest(), turnstileEnv);
+
+    expect(res.status).toBe(403);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects a missing token without calling Cloudflare or GHL", async () => {
+    global.fetch = vi.fn();
+
+    const res = await worker.fetch(leadRequest({ turnstile_token: "" }), turnstileEnv);
+
+    expect(res.status).toBe(403);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("still takes the lead, tagged unverified, when Cloudflare can't be reached", async () => {
+    global.fetch = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("network down"))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ contact: { id: "c-unv" } }), { status: 200 })
+      )
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+
+    const res = await worker.fetch(leadRequest(), turnstileEnv);
+    const json = await res.json();
+
+    expect(json.contact_id).toBe("c-unv");
+    expect(tagsSent(global.fetch)).toEqual(["website-lead", "turnstile-unverified"]);
+  });
+
+  it("still takes the lead, tagged unverified, when Cloudflare returns a server error", async () => {
+    global.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("bad gateway", { status: 502 }))
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ contact: { id: "c-502" } }), { status: 200 })
+      )
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+
+    const res = await worker.fetch(leadRequest(), turnstileEnv);
+    const json = await res.json();
+
+    expect(json.contact_id).toBe("c-502");
+    expect(tagsSent(global.fetch)).toEqual(["website-lead", "turnstile-unverified"]);
+  });
+
+  it("checks the honeypot before spending a Cloudflare call", async () => {
+    global.fetch = vi.fn();
+
+    const res = await worker.fetch(leadRequest({ url: "http://spam.example.com" }), turnstileEnv);
+    const json = await res.json();
+
+    expect(json.contact_id).toBeNull();
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("skips verification entirely when no secret is configured", async () => {
+    global.fetch = mockLeadGhl("c-nokey");
+
+    const res = await worker.fetch(leadRequest({ turnstile_token: "" }), env);
+    const json = await res.json();
+
+    expect(json.contact_id).toBe("c-nokey");
+    expect(global.fetch.mock.calls[0][0]).not.toBe(SITEVERIFY_URL);
+  });
+});
+
 describe("POST /gate", () => {
   it("qualifies a strong lead into priority with a 5-min SLA flag", async () => {
     global.fetch = mockGhlOk();

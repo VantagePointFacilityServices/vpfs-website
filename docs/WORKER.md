@@ -506,7 +506,19 @@ went wrong.
 | API key stays in the Worker | The browser never sees the GHL key | — |
 | Origin allowlist (CORS) | Stops *other websites'* pages calling the Worker from a visitor's browser | Doesn't stop scripts or tools like `curl` — they ignore CORS |
 | Honeypot field | A hidden field humans can't see; bots that fill it get a fake success and nothing reaches GHL | Doesn't stop smarter bots |
-| No login on any endpoint | — | Anyone who knows the URL can post to it. Adding Cloudflare Turnstile to the form (free) is the fix if spam appears. |
+| Cloudflare Turnstile on `/lead` | The booking form gets a token from an (almost always invisible) Turnstile widget; the Worker checks it with Cloudflare before creating any contact. A missing or bad token gets a `403` and nothing reaches GHL — this also stops bots posting to `/lead` directly, skipping the form | If Cloudflare itself can't be reached, the lead is still taken (a real enquiry is worth more than a spam risk) but tagged `turnstile-unverified`. Only enforced once `TURNSTILE_SECRET_KEY` is set |
+| No login on the other endpoints | — | `/gate`, `/enrich` etc. still accept any caller, but they only update a contact that already exists, so they need a `contact_id` from `/lead` first |
+
+#### Turnstile setup
+
+1. Cloudflare dashboard → **Turnstile** → **Add widget**. Hostnames:
+   `vantagepointfacilityservices.com.au`, `www.vantagepointfacilityservices.com.au`
+   (plus the VPC domains if one widget serves both sites). Mode: **Managed**.
+2. Paste the **site key** into `data-sitekey` on the `.turnstile-widget` div in
+   `site/index.html` and `site/contact.html`. Until then the widget doesn't render.
+3. `cd worker && npx wrangler secret put TURNSTILE_SECRET_KEY` with the **secret key**.
+   Until then the Worker skips the check. Do this *after* step 2 is live, or
+   every `/lead` without a token gets rejected.
 
 ---
 
@@ -514,7 +526,7 @@ went wrong.
 
 | Endpoint | Fields written |
 |---|---|
-| `/lead` | first/last name, email, phone, `postcode`, `channel`, `utm_*` (only those present), tag `website-lead` |
+| `/lead` | first/last name, email, phone, `postcode`, `channel`, `utm_*` (only those present), tag `website-lead` (plus `turnstile-unverified` if Cloudflare couldn't be reached) |
 | `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `lead_flags`, `sla_flag`, `lead_captured_at`, the Step 2 answers `facility_type` / `monthly_budget` / `cleaning_frequency` (only those given — blanks never overwrite), `utm_*` if sent |
 | `/enrich` | the facility detail fields, `contract_renewal_months_out`, and `lead_tier: priority` if bumped |
 | `/confirm` | `dq_flag` (confirmed nurture), or `lead_score`, `lead_tier`, `dq_flag: none` plus the flexed `monthly_budget` / `cleaning_frequency` |

@@ -23,12 +23,47 @@ import { readUtms, sessionStore } from "./utm.js";
 var WORKER_BASE = "https://worker.vantagepointfacilityservices.com.au";
 var FETCH_TIMEOUT_MS = 9000;
 var GENERIC_ERROR_MESSAGE = "Something went wrong — please try again.";
+var TURNSTILE_PENDING_MESSAGE = "Just a moment — we're still checking you're not a bot. Please try again in a few seconds.";
 
 export function initBookingGate(form) {
   if (!form) return;
+  initTurnstile(form);
   initStep1(form);
   initStep2(form);
   initDialog(form);
+}
+
+// ---- Turnstile — Cloudflare's bot check on Step 1 ------------------------
+// api.js is loaded with ?render=explicit and `defer` before this module, so
+// window.turnstile exists by the time this runs. The widget is rendered
+// only when the page's .turnstile-widget has a site key; the Worker checks
+// the token (verifyTurnstile in worker/worker.js). If the script failed to
+// load, the form still submits and the Worker decides.
+
+function initTurnstile(form) {
+  var el = form.querySelector(".turnstile-widget");
+  if (!el || !el.dataset.sitekey || !window.turnstile) return;
+  el.dataset.widgetId = window.turnstile.render(el, {
+    sitekey: el.dataset.sitekey,
+    action: "lead",
+    appearance: "interaction-only",
+  });
+}
+
+function turnstileWidgetId(form) {
+  var el = form.querySelector(".turnstile-widget");
+  return el && el.dataset.widgetId && window.turnstile ? el.dataset.widgetId : null;
+}
+
+function turnstileToken(form) {
+  var id = turnstileWidgetId(form);
+  return id ? window.turnstile.getResponse(id) || "" : "";
+}
+
+// A token is single-use, so any failed /lead call needs a fresh one.
+function resetTurnstile(form) {
+  var id = turnstileWidgetId(form);
+  if (id) window.turnstile.reset(id);
 }
 
 // ---- Step 1 — name/email/phone -> /lead --------------------------------
@@ -47,14 +82,20 @@ function initStep1(form) {
 function handleStep1Submit(form, submitBtn) {
   var errorBox = form.querySelector(".form-fields .booking-error");
   clearError(errorBox);
-  setLoading(submitBtn, true);
 
   var payload = buildLeadPayload(form);
+  if (turnstileWidgetId(form) && !payload.turnstile_token) {
+    showError(errorBox, TURNSTILE_PENDING_MESSAGE);
+    return;
+  }
+
+  setLoading(submitBtn, true);
 
   postJson(WORKER_BASE + "/lead", payload)
     .then(function (data) {
       setLoading(submitBtn, false);
       if (!data || !data.contact_id) {
+        resetTurnstile(form);
         showError(errorBox, GENERIC_ERROR_MESSAGE);
         return;
       }
@@ -62,6 +103,7 @@ function handleStep1Submit(form, submitBtn) {
     })
     .catch(function () {
       setLoading(submitBtn, false);
+      resetTurnstile(form);
       showError(errorBox, GENERIC_ERROR_MESSAGE);
     });
 }
@@ -77,6 +119,7 @@ function buildLeadPayload(form) {
     postcode: get("postcode"),
     channel: form.getAttribute("data-channel") || "",
     url: get("url"),
+    turnstile_token: turnstileToken(form),
   }, readUtms(window.location.search, sessionStore()));
 }
 
