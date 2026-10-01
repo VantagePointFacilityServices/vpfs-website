@@ -48,7 +48,7 @@ live Worker):
   structure and accessibility attributes.
 - `utm.test.js` — UTM capture across pages (`assets/js/utm.js`).
 - `business-hours.test.js` — every page's footer, contact card and schema
-  say Mon–Sun 7am–7pm.
+  say Mon–Sun 7am–9pm.
 - `cache-bust.test.js` — the deploy-time `?v=<commit>` asset versioning
   (`scripts/cache-bust.mjs`). The rest of the static
 markup (page layout, copy) has no logic to unit test and is checked

@@ -31,7 +31,7 @@ reads. Setup runbooks live elsewhere — this file points to them.
 | Website-lead tag | `website-lead` (ID `AxqSvCibXVSHZd0ycUI4`) — the new-lead workflow triggers on Tag Added |
 | Calendars | Priority `Ugunj3x67DQlmRm2aL2h`, Standard `FMEE7r6jwySahTZ90S0C` (manual-only: `AD4RlvMCfaaaq4QpLPFu`) |
 | Phone | `07 5651 2257` published (voice); `0485 033 115` SMS-only, never published |
-| Business hours | Mon–Sun 7am–7pm (Australia/Brisbane) |
+| Business hours | Mon–Sun 7am–9pm (Australia/Brisbane) |
 | Secrets | `GHL_API_KEY` (Worker secret), `CLOUDFLARE_WORKER_API_TOKEN` and `CLOUDFLARE_API_TOKEN` (GitHub repo secrets) |
 
 ## 2. Business rules the code encodes (as of 2026-09-29)
