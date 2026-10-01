@@ -19,9 +19,11 @@
  *                    returns the open walkthrough days/times from the
  *                    GHL calendar matching the token's tier.
  *
- *   POST /book     — takes the booking_token and a chosen start_time and
- *                    books the walkthrough on the tier's GHL calendar
- *                    against the token's contact.
+ *   POST /book     — takes the booking_token, a chosen start_time and
+ *                    the site_address, books the walkthrough on the tier's
+ *                    GHL calendar against the token's contact (address as
+ *                    the appointment location) and saves it as the
+ *                    contact's address1.
  *
  *   POST /gate     — fires on the SHORT qualifying form (contact
  *                    details + facility_type + monthly_budget +
@@ -511,6 +513,11 @@ async function handleBook(payload, env) {
     return new Response("Invalid start_time", { status: 400 });
   }
 
+  const siteAddress = typeof (payload && payload.site_address) === "string" ? payload.site_address.trim() : "";
+  if (!siteAddress || siteAddress.length > 200) {
+    return new Response("Invalid site_address", { status: 400 });
+  }
+
   const calendarId = calendarIdForTier(claims.tier, env);
   if (!calendarId) return bookingFailed();
 
@@ -564,6 +571,7 @@ async function handleBook(payload, env) {
         title: "Walkthrough",
         appointmentStatus: "confirmed",
         toNotify: true,
+        address: siteAddress,
       }),
     });
     if (!res.ok) {
@@ -583,7 +591,24 @@ async function handleBook(payload, env) {
     return bookingFailed();
   }
 
-  return jsonResponse({ booked: true, start_time: startRaw, end_time: endTime });
+  // Best effort: the booking already exists, so a failure here must not fail it.
+  let contactAddressSaved = false;
+  try {
+    const putRes = await fetch(`${GHL_API_BASE}/contacts/${encodeURIComponent(claims.cid)}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${env.GHL_API_KEY}`,
+        "Content-Type": "application/json",
+        Version: GHL_API_VERSION,
+      },
+      body: JSON.stringify({ address1: siteAddress }),
+    });
+    contactAddressSaved = putRes.ok;
+  } catch {}
+
+  const out = { booked: true, start_time: startRaw, end_time: endTime };
+  if (!contactAddressSaved) out.contact_address_saved = false;
+  return jsonResponse(out);
 }
 
 // Renders endMs with the same UTC offset as the start string, so the

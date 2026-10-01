@@ -335,6 +335,10 @@ function loadPicker(step2, submitBtn) {
 function initPicker(picker) {
   if (picker.dataset.ready) return;
   picker.dataset.ready = "1";
+  // Natively `required` only once the picker is live: Step 1 and Step 2 share
+  // one <form>, and a hidden required field would block Step 1's submit.
+  var addressField = picker.querySelector('[name="site_address"]');
+  if (addressField) addressField.required = true;
   var book = picker.querySelector(".picker-book");
   if (book) {
     book.addEventListener("click", function () {
@@ -485,6 +489,7 @@ export function drawPicker(picker) {
 
 // ---- Book — /book -> confirmation ---------------------------------------
 
+var ADDRESS_REQUIRED_MESSAGE = "Please enter the site address for the walkthrough.";
 var SLOT_TAKEN_MESSAGE = "That time was just taken — please pick another.";
 
 function handleBook(picker, bookBtn) {
@@ -494,11 +499,19 @@ function handleBook(picker, bookBtn) {
   var errorBox = picker.querySelector(".booking-error");
   clearError(errorBox);
 
+  var addressInput = picker.querySelector('[name="site_address"]');
+  var siteAddress = addressInput ? addressInput.value.trim() : "";
+  if (!siteAddress) {
+    showError(errorBox, ADDRESS_REQUIRED_MESSAGE);
+    if (addressInput) addressInput.focus();
+    return;
+  }
+
   var startTime = state.startTime;
   state.booking = true;
   setLoading(bookBtn, true);
 
-  postJson(WORKER_BASE + "/book", { booking_token: step2.dataset.bookingToken, start_time: startTime })
+  postJson(WORKER_BASE + "/book", { booking_token: step2.dataset.bookingToken, start_time: startTime, site_address: siteAddress })
     .then(function (data) {
       state.booking = false;
       var when = formatWhen(data && data.start_time ? data.start_time : startTime, state.timezone);
