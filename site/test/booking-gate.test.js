@@ -36,8 +36,16 @@ function mountHomepageForm() {
           <button type="button" class="step2-submit">See availability</button>
         </div>
         <div class="booking-result">
-          <div id="calendar-priority"></div>
-          <div id="calendar-standard"></div>
+          <div id="walkthrough-picker">
+            <span class="picker-week-label"></span>
+            <button type="button" class="picker-prev-week">Prev</button>
+            <button type="button" class="picker-next-week">Next</button>
+            <div class="picker-days" role="radiogroup"></div>
+            <div class="picker-times" role="radiogroup"></div>
+            <div class="booking-error"></div>
+            <button type="button" class="picker-book" disabled>Book</button>
+          </div>
+          <div id="booking-confirmed"></div>
           <div id="no-calendar-message"></div>
           <div id="budget-nurture-message"></div>
         </div>
@@ -230,11 +238,38 @@ describe("Step 1 submit", () => {
   });
 });
 
-function mockGateOk(tier, dqFlag) {
-  return vi.fn().mockResolvedValue({
-    ok: true,
-    json: () => Promise.resolve({ tier: tier, dq_flag: dqFlag || (tier === "nurture" ? "nurture-budget" : "none") }),
-  });
+const SLOTS = {
+  timezone: "Australia/Brisbane",
+  window_days: 30,
+  days: [
+    { date: "2026-03-04", slots: ["2026-03-04T09:00:00+10:00", "2026-03-04T13:30:00+10:00"] },
+    { date: "2026-03-06", slots: ["2026-03-06T10:00:00+10:00"] },
+    { date: "2026-03-12", slots: ["2026-03-12T10:00:00+10:00"] },
+  ],
+};
+
+function respond(body, ok = true) {
+  return { ok, status: ok ? 200 : 502, json: () => Promise.resolve(body) };
+}
+
+// /gate answers first; the next call (/slots) answers `slots` (or fails).
+function mockGateOk(tier, dqFlag, { slots = SLOTS, slotsFail = false, token = "tok-1" } = {}) {
+  const gate = { tier: tier, dq_flag: dqFlag || (tier === "nurture" ? "nurture-budget" : "none") };
+  if (tier !== "nurture" && token) gate.booking_token = token;
+  const fn = vi.fn();
+  fn.mockResolvedValueOnce(respond(gate));
+  if (slotsFail) fn.mockRejectedValue(new Error("down"));
+  else fn.mockResolvedValue(respond(slots));
+  return fn;
+}
+
+async function submitStep2(form, step2, fetchMock) {
+  step2.dataset.contactId = "contact-abc";
+  initBookingGate(form);
+  global.fetch = fetchMock;
+  step2.querySelector(".step2-submit").click();
+  await flush();
+  await flush();
 }
 
 describe("Step 2 overlay", () => {
@@ -297,7 +332,7 @@ describe("Step 2 overlay", () => {
     expect(form.querySelector(".booking-resume").classList.contains("show")).toBe(true);
   });
 
-  it("keeps the calendar result inside the open dialog and moves focus to it", async () => {
+  it("keeps the picker inside the open dialog and moves focus to it", async () => {
     const form = mountHomepageForm();
     const dialog = form.querySelector(".booking-dialog");
     const step2 = form.querySelector(".booking-step-2");
@@ -309,8 +344,9 @@ describe("Step 2 overlay", () => {
     global.fetch = mockGateOk("priority");
     step2.querySelector(".step2-submit").click();
     await flush();
+    await flush();
 
-    const priority = dialog.querySelector("#calendar-priority");
+    const priority = dialog.querySelector("#walkthrough-picker");
     expect(dialog.hasAttribute("open")).toBe(true);
     expect(priority.classList.contains("show")).toBe(true);
     expect(document.activeElement).toBe(priority);
@@ -329,18 +365,11 @@ describe("Step 2 overlay", () => {
 });
 
 describe("Step 2 submit", () => {
-  it("posts contact_id + DQ fields to /gate and reveals the Priority calendar on a priority tier", async () => {
+  it("posts contact_id + DQ fields to /gate", async () => {
     const form = mountHomepageForm();
     const step2 = form.querySelector(".booking-step-2");
-    step2.dataset.contactId = "contact-abc";
-    initBookingGate(form);
+    await submitStep2(form, step2, mockGateOk("priority"));
 
-    global.fetch = mockGateOk("priority");
-    step2.querySelector(".step2-submit").click();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    expect(global.fetch).toHaveBeenCalledTimes(1);
     const [url, options] = global.fetch.mock.calls[0];
     expect(url).toContain("/gate");
     const body = JSON.parse(options.body);
@@ -349,45 +378,192 @@ describe("Step 2 submit", () => {
     expect(body.customFields.postcode).toBe("4211");
     expect(body.customFields.monthly_budget).toBe("3000");
     expect(body.customFields.cleaning_frequency).toBe("three_days_week");
-
-    expect(step2.querySelector(".booking-result").classList.contains("show")).toBe(true);
-    expect(step2.querySelector("#calendar-priority").classList.contains("show")).toBe(true);
-    expect(step2.querySelector("#calendar-standard").classList.contains("show")).toBe(false);
-    expect(step2.querySelector("#no-calendar-message").classList.contains("show")).toBe(false);
-    expect(step2.querySelector(".booking-step-2-questions").classList.contains("hide-after-step2")).toBe(true);
   });
 
-  it("reveals the Standard calendar on a standard tier", async () => {
+  it.each(["priority", "standard", "standard-flagged"])(
+    "posts the booking_token to /slots and draws the picker on a %s tier",
+    async (tier) => {
+      const form = mountHomepageForm();
+      const step2 = form.querySelector(".booking-step-2");
+      await submitStep2(form, step2, mockGateOk(tier));
+
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+      const [url, options] = global.fetch.mock.calls[1];
+      expect(url).toContain("/slots");
+      expect(JSON.parse(options.body)).toEqual({ booking_token: "tok-1" });
+      expect(step2.dataset.bookingToken).toBe("tok-1");
+
+      const picker = step2.querySelector("#walkthrough-picker");
+      expect(step2.querySelector(".booking-result").classList.contains("show")).toBe(true);
+      expect(picker.classList.contains("show")).toBe(true);
+      expect(step2.querySelector("#no-calendar-message").classList.contains("show")).toBe(false);
+      expect(step2.querySelector(".booking-step-2-questions").classList.contains("hide-after-step2")).toBe(true);
+      expect(document.activeElement).toBe(picker);
+    }
+  );
+
+  it("draws the first open week, disabling days with no times", async () => {
     const form = mountHomepageForm();
     const step2 = form.querySelector(".booking-step-2");
-    step2.dataset.contactId = "contact-abc";
-    initBookingGate(form);
+    await submitStep2(form, step2, mockGateOk("priority"));
 
-    global.fetch = mockGateOk("standard");
-    step2.querySelector(".step2-submit").click();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    expect(step2.querySelector("#calendar-standard").classList.contains("show")).toBe(true);
-    expect(step2.querySelector("#calendar-priority").classList.contains("show")).toBe(false);
-    expect(step2.querySelector("#no-calendar-message").classList.contains("show")).toBe(false);
+    const days = Array.from(step2.querySelectorAll(".picker-day"));
+    expect(days.map((d) => d.dataset.date)).toEqual([
+      "2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06", "2026-03-07", "2026-03-08",
+    ]);
+    expect(days.filter((d) => !d.disabled).map((d) => d.dataset.date)).toEqual(["2026-03-04", "2026-03-06"]);
+    expect(step2.querySelector(".picker-week-label").textContent).toMatch(/2 Mar.*8 Mar/);
+    expect(step2.querySelector(".picker-book").disabled).toBe(true);
   });
 
-  it("reveals the Standard calendar on a standard-flagged tier", async () => {
+  it("lists a chosen day's times in Brisbane time and marks a chosen time selected", async () => {
     const form = mountHomepageForm();
     const step2 = form.querySelector(".booking-step-2");
-    step2.dataset.contactId = "contact-abc";
-    initBookingGate(form);
+    await submitStep2(form, step2, mockGateOk("priority"));
 
-    global.fetch = mockGateOk("standard-flagged");
-    step2.querySelector(".step2-submit").click();
-    await new Promise((resolve) => setTimeout(resolve, 0));
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    step2.querySelector('.picker-day[data-date="2026-03-04"]').click();
+    const day = step2.querySelector('.picker-day[data-date="2026-03-04"]');
+    expect(day.getAttribute("aria-checked")).toBe("true");
+    const times = Array.from(step2.querySelectorAll(".picker-time"));
+    expect(times.map((t) => t.textContent.replace(/\s/g, " ").toLowerCase())).toEqual(["9:00 am", "1:30 pm"]);
 
-    expect(step2.querySelector("#calendar-standard").classList.contains("show")).toBe(true);
+    times[1].click();
+    const chosen = step2.querySelectorAll('.picker-time[aria-checked="true"]');
+    expect(chosen.length).toBe(1);
+    expect(chosen[0].dataset.start).toBe("2026-03-04T13:30:00+10:00");
+    expect(step2.querySelector("#walkthrough-picker").dataset.startTime).toBe("2026-03-04T13:30:00+10:00");
   });
 
-  it("reveals the budget message on a budget nurture — no calendar is ever shown", async () => {
+  it("pages a week at a time and disables Previous/Next at the limits", async () => {
+    const form = mountHomepageForm();
+    const step2 = form.querySelector(".booking-step-2");
+    await submitStep2(form, step2, mockGateOk("priority"));
+    const prev = step2.querySelector(".picker-prev-week");
+    const next = step2.querySelector(".picker-next-week");
+    expect(prev.disabled).toBe(true);
+    expect(next.disabled).toBe(false);
+
+    next.click();
+    expect(step2.querySelector(".picker-week-label").textContent).toMatch(/9 Mar.*15 Mar/);
+    const days = Array.from(step2.querySelectorAll(".picker-day"));
+    expect(days.filter((d) => !d.disabled).map((d) => d.dataset.date)).toEqual(["2026-03-12"]);
+    expect(prev.disabled).toBe(false);
+    expect(next.disabled).toBe(true);
+
+    prev.click();
+    expect(step2.querySelector(".picker-week-label").textContent).toMatch(/2 Mar.*8 Mar/);
+    expect(prev.disabled).toBe(true);
+  });
+
+  it("clears a choice that is no longer shown when the week changes", async () => {
+    const form = mountHomepageForm();
+    const step2 = form.querySelector(".booking-step-2");
+    await submitStep2(form, step2, mockGateOk("priority"));
+    step2.querySelector('.picker-day[data-date="2026-03-04"]').click();
+    step2.querySelector(".picker-time").click();
+    const book = step2.querySelector(".picker-book");
+    expect(book.disabled).toBe(false);
+
+    step2.querySelector(".picker-next-week").click();
+    const picker = step2.querySelector("#walkthrough-picker");
+    expect(picker.dataset.date).toBe("");
+    expect(picker.dataset.startTime).toBe("");
+    expect(step2.querySelectorAll(".picker-time").length).toBe(0);
+    expect(book.disabled).toBe(true);
+  });
+
+  it("moves focus and selection between enabled days with the keyboard", async () => {
+    const form = mountHomepageForm();
+    const step2 = form.querySelector(".booking-step-2");
+    await submitStep2(form, step2, mockGateOk("priority"));
+    const press = (key) => {
+      const el = document.activeElement.classList.contains("picker-day")
+        ? document.activeElement
+        : step2.querySelector(".picker-day[tabindex='0']");
+      el.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+    };
+    const tabbable = () => Array.from(step2.querySelectorAll(".picker-day")).filter((d) => d.tabIndex === 0);
+    expect(tabbable().map((d) => d.dataset.date)).toEqual(["2026-03-04"]);
+
+    press("ArrowRight");
+    expect(document.activeElement.dataset.date).toBe("2026-03-06");
+    expect(document.activeElement.getAttribute("aria-checked")).toBe("true");
+    expect(tabbable().map((d) => d.dataset.date)).toEqual(["2026-03-06"]);
+    press("ArrowLeft");
+    expect(document.activeElement.dataset.date).toBe("2026-03-04");
+    press("End");
+    expect(document.activeElement.dataset.date).toBe("2026-03-06");
+    press("Home");
+    expect(document.activeElement.dataset.date).toBe("2026-03-04");
+  });
+
+  it("keeps focus on a day chosen with Space/Enter", async () => {
+    const form = mountHomepageForm();
+    const step2 = form.querySelector(".booking-step-2");
+    await submitStep2(form, step2, mockGateOk("priority"));
+    const day = step2.querySelector('.picker-day[data-date="2026-03-06"]');
+    day.focus();
+    day.click(); // Space/Enter on a button fires click
+
+    expect(document.activeElement.classList.contains("picker-day")).toBe(true);
+    expect(document.activeElement.dataset.date).toBe("2026-03-06");
+  });
+
+  it("moves focus to the other week button when Next or Previous disables itself", async () => {
+    const form = mountHomepageForm();
+    const step2 = form.querySelector(".booking-step-2");
+    await submitStep2(form, step2, mockGateOk("priority"));
+    const prev = step2.querySelector(".picker-prev-week");
+    const next = step2.querySelector(".picker-next-week");
+
+    next.focus();
+    next.click(); // last week of the window — Next disables
+    expect(next.disabled).toBe(true);
+    expect(document.activeElement).toBe(prev);
+
+    prev.click(); // first week — Previous disables
+    expect(prev.disabled).toBe(true);
+    expect(document.activeElement).toBe(next);
+  });
+
+  it("keeps the picker state when the dialog is closed and reopened", async () => {
+    const form = mountHomepageForm();
+    const dialog = form.querySelector(".booking-dialog");
+    const step2 = form.querySelector(".booking-step-2");
+    global.fetch = mockLeadOk("contact-123");
+    initBookingGate(form);
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await flush();
+    global.fetch = mockGateOk("priority");
+    step2.querySelector(".step2-submit").click();
+    await flush();
+    await flush();
+    step2.querySelector('.picker-day[data-date="2026-03-06"]').click();
+    step2.querySelector(".picker-time").click();
+
+    dialog.close();
+    form.querySelector(".booking-resume-btn").click();
+
+    expect(dialog.hasAttribute("open")).toBe(true);
+    expect(step2.querySelector("#walkthrough-picker").classList.contains("show")).toBe(true);
+    expect(step2.querySelector('.picker-time[aria-checked="true"]').dataset.start).toBe("2026-03-06T10:00:00+10:00");
+  });
+
+  it.each([
+    ["no token", { token: "" }],
+    ["a /slots failure", { slotsFail: true }],
+    ["zero open days", { slots: { timezone: "Australia/Brisbane", window_days: 30, days: [] } }],
+  ])("shows the no-calendar message and hides the picker on %s", async (_label, opts) => {
+    const form = mountHomepageForm();
+    const step2 = form.querySelector(".booking-step-2");
+    await submitStep2(form, step2, mockGateOk("priority", undefined, opts));
+
+    expect(step2.querySelector("#no-calendar-message").classList.contains("show")).toBe(true);
+    expect(step2.querySelector("#walkthrough-picker").classList.contains("show")).toBe(false);
+    expect(document.activeElement).toBe(step2.querySelector("#no-calendar-message"));
+  });
+
+  it("reveals the budget message on a budget nurture — no picker is ever shown", async () => {
     const form = mountHomepageForm();
     const step2 = form.querySelector(".booking-step-2");
     step2.dataset.contactId = "contact-abc";
@@ -400,8 +576,8 @@ describe("Step 2 submit", () => {
 
     expect(step2.querySelector("#budget-nurture-message").classList.contains("show")).toBe(true);
     expect(step2.querySelector("#no-calendar-message").classList.contains("show")).toBe(false);
-    expect(step2.querySelector("#calendar-priority").classList.contains("show")).toBe(false);
-    expect(step2.querySelector("#calendar-standard").classList.contains("show")).toBe(false);
+    expect(step2.querySelector("#walkthrough-picker").classList.contains("show")).toBe(false);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 
   it.each(["nurture-frequency", "nurture-capability-gap", "nurture-out-of-area"])(
@@ -593,5 +769,139 @@ describe("Turnstile bot check", () => {
     await flush();
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("Book walkthrough", () => {
+  let form, step2, picker, book;
+  const err = (status, body) => ({ ok: false, status, json: () => Promise.resolve(body) });
+
+  async function openPicker() {
+    form = mountHomepageForm();
+    step2 = form.querySelector(".booking-step-2");
+    await submitStep2(form, step2, mockGateOk("priority"));
+    picker = step2.querySelector("#walkthrough-picker");
+    book = picker.querySelector(".picker-book");
+  }
+  function choose(date, start) {
+    step2.querySelector(`.picker-day[data-date="${date}"]`).click();
+    step2.querySelector(`.picker-time[data-start="${start}"]`).click();
+  }
+  const T = "2026-03-04T13:30:00+10:00";
+
+  it("disables Book until a time is chosen, then labels it with day and time", async () => {
+    await openPicker();
+    expect(book.disabled).toBe(true);
+    step2.querySelector('.picker-day[data-date="2026-03-04"]').click();
+    expect(book.disabled).toBe(true);
+    step2.querySelector(`.picker-time[data-start="${T}"]`).click();
+    expect(book.disabled).toBe(false);
+    expect(book.textContent).toMatch(/^Book Wed,? 4 Mar,? 1:30\s?pm$/i);
+  });
+
+  it("posts token and start_time once, even on a double click, then shows the confirmation", async () => {
+    await openPicker();
+    choose("2026-03-04", T);
+    const fn = vi.fn().mockResolvedValue(respond({ booked: true, start_time: T, end_time: "x" }));
+    global.fetch = fn;
+    book.click();
+    book.click();
+    await flush();
+    expect(fn).toHaveBeenCalledTimes(1);
+    const [url, opts] = fn.mock.calls[0];
+    expect(url).toMatch(/\/book$/);
+    expect(JSON.parse(opts.body)).toEqual({ booking_token: "tok-1", start_time: T });
+    const confirmed = step2.querySelector("#booking-confirmed");
+    expect(confirmed.classList.contains("show")).toBe(true);
+    expect(confirmed.textContent).toMatch(/You.re booked for .*4 Mar.*1:30.*confirmation by SMS and email/i);
+    expect(picker.classList.contains("show")).toBe(false);
+    expect(document.activeElement).toBe(confirmed);
+  });
+
+  it("slot_unavailable shows a message, re-fetches /slots and stays on the day", async () => {
+    await openPicker();
+    choose("2026-03-04", T);
+    const fn = vi.fn()
+      .mockResolvedValueOnce(err(409, { error: "slot_unavailable" }))
+      .mockResolvedValueOnce(respond({ timezone: "Australia/Brisbane", days: [{ date: "2026-03-04", slots: ["2026-03-04T09:00:00+10:00"] }] }));
+    global.fetch = fn;
+    book.click();
+    await flush();
+    expect(fn.mock.calls[1][0]).toMatch(/\/slots$/);
+    expect(picker.querySelector(".booking-error").textContent).toMatch(/just taken/);
+    expect(picker.dataset.date).toBe("2026-03-04");
+    expect(picker.dataset.startTime).toBe("");
+    expect(picker.querySelectorAll(".picker-time").length).toBe(1);
+    expect(book.disabled).toBe(true);
+    // Book is disabled again, so focus moves to the day row's tab stop.
+    expect(document.activeElement.classList.contains("picker-day")).toBe(true);
+    expect(document.activeElement.dataset.date).toBe("2026-03-04");
+  });
+
+  it("slot_unavailable moves off the day when it has no times left", async () => {
+    await openPicker();
+    choose("2026-03-04", T);
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce(err(409, { error: "slot_unavailable" }))
+      .mockResolvedValueOnce(respond({ days: [{ date: "2026-03-06", slots: ["2026-03-06T10:00:00+10:00"] }] }));
+    book.click();
+    await flush();
+    expect(picker.dataset.date).toBe("");
+    expect(picker.querySelectorAll(".picker-time").length).toBe(0);
+  });
+
+  it("slot_unavailable with the re-fetch failing still shows the message; no days left shows no-calendar", async () => {
+    await openPicker();
+    choose("2026-03-04", T);
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce(err(409, { error: "slot_unavailable" }))
+      .mockRejectedValueOnce(new Error("down"));
+    book.click();
+    await flush();
+    expect(picker.querySelector(".booking-error").textContent).toMatch(/just taken/);
+
+    await openPicker();
+    choose("2026-03-04", T);
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce(err(409, { error: "slot_unavailable" }))
+      .mockResolvedValueOnce(respond({ days: [] }));
+    book.click();
+    await flush();
+    expect(step2.querySelector("#no-calendar-message").classList.contains("show")).toBe(true);
+  });
+
+  it("already_booked shows the confirmation panel with the existing time", async () => {
+    await openPicker();
+    choose("2026-03-04", T);
+    global.fetch = vi.fn().mockResolvedValue(err(409, { error: "already_booked", start_time: "2026-03-10T09:00:00+10:00" }));
+    book.click();
+    await flush();
+    const confirmed = step2.querySelector("#booking-confirmed");
+    expect(confirmed.textContent).toMatch(/You already have a walkthrough booked for .*10 Mar.*9:00/i);
+    expect(document.activeElement).toBe(confirmed);
+  });
+
+  it("a generic error keeps the choice and lets the visitor retry", async () => {
+    await openPicker();
+    choose("2026-03-04", T);
+    global.fetch = vi.fn().mockResolvedValueOnce(err(502, { error: "booking_failed" }));
+    book.click();
+    await flush();
+    expect(picker.querySelector(".booking-error").textContent).toMatch(/went wrong/);
+    expect(picker.dataset.startTime).toBe(T);
+    expect(book.disabled).toBe(false);
+    global.fetch = vi.fn().mockRejectedValueOnce(new Error("net"));
+    book.click();
+    await flush();
+    expect(picker.querySelector(".booking-error").textContent).toMatch(/went wrong/);
+    expect(book.disabled).toBe(false);
+  });
+
+  it("does nothing when clicked with no time chosen", async () => {
+    await openPicker();
+    global.fetch = vi.fn();
+    book.disabled = false;
+    book.click();
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 });

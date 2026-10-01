@@ -62,8 +62,8 @@ describe.each(PAGES)("%s booking form", (page) => {
     expect(dialog.getAttribute("aria-label") || dialog.getAttribute("aria-labelledby")).toBeTruthy();
     for (const sel of [
       ".booking-step-2-questions",
-      "#calendar-priority",
-      "#calendar-standard",
+      "#walkthrough-picker",
+      "#booking-confirmed",
       "#no-calendar-message",
       "#budget-nurture-message",
     ]) {
@@ -104,5 +104,17 @@ describe.each(PAGES)("%s booking form", (page) => {
     const api = html.indexOf("challenges.cloudflare.com/turnstile/v0/api.js?render=explicit");
     expect(api).toBeGreaterThan(-1);
     expect(api).toBeLessThan(html.indexOf("assets/js/booking-gate.js"));
+  });
+
+  it("has the built-in picker and no GHL calendar embed", () => {
+    const html = readFileSync(resolve(__dirname, "..", page), "utf8");
+    expect(html).not.toMatch(/<iframe[^>]*leadconnectorhq/i);
+    expect(html).not.toContain("form_embed.js");
+    const form = mountPage(page);
+    const picker = form.querySelector(".booking-result #walkthrough-picker");
+    for (const sel of [".picker-week-label", ".picker-prev-week", ".picker-next-week", ".picker-days[role=radiogroup]", ".picker-times", ".picker-book[disabled]", ".booking-error"]) {
+      expect(picker.querySelector(sel), sel).not.toBeNull();
+    }
+    expect(form.querySelector(".booking-result #booking-confirmed").textContent.trim()).toBe("");
   });
 });

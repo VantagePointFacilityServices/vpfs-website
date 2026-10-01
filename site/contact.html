@@ -182,12 +182,20 @@
             <button type="button" class="btn btn-primary step2-submit">See availability</button>
           </div>
           <div class="booking-result">
-            <div id="calendar-priority" class="booking-calendar-embed">
-              <iframe src="https://api.leadconnectorhq.com/widget/booking/Ugunj3x67DQlmRm2aL2h" style="width: 100%;border:none;overflow: hidden;" scrolling="no" id="Ugunj3x67DQlmRm2aL2h_1790203011073"></iframe><br><script src="https://link.msgsndr.com/js/form_embed.js" type="text/javascript"></script>
+            <div id="walkthrough-picker" class="walkthrough-picker" tabindex="-1" aria-labelledby="picker-heading">
+              <h3 id="picker-heading">Pick a time for your walkthrough</h3>
+              <p class="small picker-tz">Times are shown in Brisbane time.</p>
+              <div class="picker-week-nav">
+                <button type="button" class="picker-prev-week btn btn-secondary" aria-label="Previous week">&lsaquo;</button>
+                <span class="picker-week-label" aria-live="polite"></span>
+                <button type="button" class="picker-next-week btn btn-secondary" aria-label="Next week">&rsaquo;</button>
+              </div>
+              <div class="picker-days" role="radiogroup" aria-label="Choose a day"></div>
+              <div class="picker-times" role="radiogroup" aria-label="Choose a time"></div>
+              <div class="booking-error" role="alert"></div>
+              <button type="button" class="btn btn-primary btn-block picker-book" disabled>Book walkthrough</button>
             </div>
-            <div id="calendar-standard" class="booking-calendar-embed">
-              <iframe src="https://api.leadconnectorhq.com/widget/booking/FMEE7r6jwySahTZ90S0C" style="width: 100%;border:none;overflow: hidden;" scrolling="no" id="FMEE7r6jwySahTZ90S0C_1790204390223"></iframe><br><script src="https://link.msgsndr.com/js/form_embed.js" type="text/javascript"></script>
-            </div>
+            <div id="booking-confirmed" tabindex="-1" aria-live="polite"></div>
             <div id="no-calendar-message" class="form-success" style="padding:var(--space-3) 0;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
               <h3>Thanks &mdash; we&rsquo;ll be in touch</h3>

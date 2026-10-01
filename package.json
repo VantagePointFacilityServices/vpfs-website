@@ -1,0 +1,8 @@
+{
+  "name": "vpfs-website",
+  "private": true,
+  "description": "Entry point for tooling: the site and the Worker are separate npm projects, so `npm test` installs and tests each on its own.",
+  "scripts": {
+    "test": "npm --prefix worker ci && npm --prefix worker test && npm --prefix site ci && npm --prefix site test"
+  }
+}
