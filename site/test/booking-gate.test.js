@@ -42,6 +42,8 @@ function mountHomepageForm() {
             <button type="button" class="picker-next-week">Next</button>
             <div class="picker-days" role="radiogroup"></div>
             <div class="picker-times" role="radiogroup"></div>
+            <label for="t-site-address">Site address</label>
+            <input type="text" id="t-site-address" name="site_address" autocomplete="street-address" maxlength="200" required>
             <div class="booking-error"></div>
             <button type="button" class="picker-book" disabled>Book</button>
           </div>
@@ -783,6 +785,9 @@ describe("Book walkthrough", () => {
     picker = step2.querySelector("#walkthrough-picker");
     book = picker.querySelector(".picker-book");
   }
+  const fillAddress = (v = "  12 Smith St, Southport  ") => {
+    picker.querySelector('[name="site_address"]').value = v;
+  };
   function choose(date, start) {
     step2.querySelector(`.picker-day[data-date="${date}"]`).click();
     step2.querySelector(`.picker-time[data-start="${start}"]`).click();
@@ -802,6 +807,7 @@ describe("Book walkthrough", () => {
   it("posts token and start_time once, even on a double click, then shows the confirmation", async () => {
     await openPicker();
     choose("2026-03-04", T);
+    fillAddress();
     const fn = vi.fn().mockResolvedValue(respond({ booked: true, start_time: T, end_time: "x" }));
     global.fetch = fn;
     book.click();
@@ -810,7 +816,7 @@ describe("Book walkthrough", () => {
     expect(fn).toHaveBeenCalledTimes(1);
     const [url, opts] = fn.mock.calls[0];
     expect(url).toMatch(/\/book$/);
-    expect(JSON.parse(opts.body)).toEqual({ booking_token: "tok-1", start_time: T });
+    expect(JSON.parse(opts.body)).toEqual({ booking_token: "tok-1", start_time: T, site_address: "12 Smith St, Southport" });
     const confirmed = step2.querySelector("#booking-confirmed");
     expect(confirmed.classList.contains("show")).toBe(true);
     expect(confirmed.textContent).toMatch(/You.re booked for .*4 Mar.*1:30.*confirmation by SMS and email/i);
@@ -818,9 +824,42 @@ describe("Book walkthrough", () => {
     expect(document.activeElement).toBe(confirmed);
   });
 
+  it("blank or whitespace address shows an error, focuses the field and makes no request", async () => {
+    await openPicker();
+    choose("2026-03-04", T);
+    const fn = vi.fn();
+    global.fetch = fn;
+    for (const v of ["", "   "]) {
+      fillAddress(v);
+      book.click();
+      expect(fn).not.toHaveBeenCalled();
+      expect(picker.querySelector(".booking-error").textContent).toMatch(/site address/i);
+      expect(document.activeElement).toBe(picker.querySelector('[name="site_address"]'));
+    }
+    expect(book.disabled).toBe(false);
+    expect(picker.querySelector('[name="site_address"]').required).toBe(true);
+  });
+
+  it("keeps the address after a dialog close/reopen and a slot_unavailable re-fetch", async () => {
+    await openPicker();
+    choose("2026-03-04", T);
+    fillAddress("1 Beach Rd");
+    const dialog = form.querySelector(".booking-dialog");
+    dialog.close();
+    form.querySelector(".booking-resume-btn").click();
+    expect(picker.querySelector('[name="site_address"]').value).toBe("1 Beach Rd");
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce(err(409, { error: "slot_unavailable" }))
+      .mockResolvedValueOnce(respond({ days: [{ date: "2026-03-04", slots: [T] }] }));
+    book.click();
+    await flush();
+    expect(picker.querySelector('[name="site_address"]').value).toBe("1 Beach Rd");
+  });
+
   it("slot_unavailable shows a message, re-fetches /slots and stays on the day", async () => {
     await openPicker();
     choose("2026-03-04", T);
+    fillAddress();
     const fn = vi.fn()
       .mockResolvedValueOnce(err(409, { error: "slot_unavailable" }))
       .mockResolvedValueOnce(respond({ timezone: "Australia/Brisbane", days: [{ date: "2026-03-04", slots: ["2026-03-04T09:00:00+10:00"] }] }));
@@ -841,6 +880,7 @@ describe("Book walkthrough", () => {
   it("slot_unavailable moves off the day when it has no times left", async () => {
     await openPicker();
     choose("2026-03-04", T);
+    fillAddress();
     global.fetch = vi.fn()
       .mockResolvedValueOnce(err(409, { error: "slot_unavailable" }))
       .mockResolvedValueOnce(respond({ days: [{ date: "2026-03-06", slots: ["2026-03-06T10:00:00+10:00"] }] }));
@@ -853,6 +893,7 @@ describe("Book walkthrough", () => {
   it("slot_unavailable with the re-fetch failing still shows the message; no days left shows no-calendar", async () => {
     await openPicker();
     choose("2026-03-04", T);
+    fillAddress();
     global.fetch = vi.fn()
       .mockResolvedValueOnce(err(409, { error: "slot_unavailable" }))
       .mockRejectedValueOnce(new Error("down"));
@@ -862,6 +903,7 @@ describe("Book walkthrough", () => {
 
     await openPicker();
     choose("2026-03-04", T);
+    fillAddress();
     global.fetch = vi.fn()
       .mockResolvedValueOnce(err(409, { error: "slot_unavailable" }))
       .mockResolvedValueOnce(respond({ days: [] }));
@@ -873,6 +915,7 @@ describe("Book walkthrough", () => {
   it("already_booked shows the confirmation panel with the existing time", async () => {
     await openPicker();
     choose("2026-03-04", T);
+    fillAddress();
     global.fetch = vi.fn().mockResolvedValue(err(409, { error: "already_booked", start_time: "2026-03-10T09:00:00+10:00" }));
     book.click();
     await flush();
@@ -884,6 +927,7 @@ describe("Book walkthrough", () => {
   it("a generic error keeps the choice and lets the visitor retry", async () => {
     await openPicker();
     choose("2026-03-04", T);
+    fillAddress();
     global.fetch = vi.fn().mockResolvedValueOnce(err(502, { error: "booking_failed" }));
     book.click();
     await flush();

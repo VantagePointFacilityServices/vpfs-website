@@ -1565,6 +1565,7 @@ describe("/book", () => {
   };
   const NOW = new Date("2026-03-02T00:00:00Z").getTime();
   const START = "2026-03-05T09:00:00+10:00";
+  const ADDR = "12 Smith St, Southport QLD";
   beforeEach(() => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(NOW);
@@ -1578,15 +1579,16 @@ describe("/book", () => {
     text: () => Promise.resolve(typeof body === "string" ? body : JSON.stringify(body)),
   });
   // Routes GHL calls by URL/method.
-  const ghl = ({ events = [], cal = { calendar: { slotDuration: 45, slotDurationUnit: "mins" } }, create = res({}) } = {}) =>
+  const ghl = ({ events = [], cal = { calendar: { slotDuration: 45, slotDurationUnit: "mins" } }, create = res({}), contact = res({}) } = {}) =>
     (global.fetch = vi.fn((url, opts) => {
+      if (opts.method === "PUT" && url.includes("/contacts/")) return Promise.resolve(contact);
       if (url.includes("/appointments") && opts.method === "GET") return Promise.resolve(res({ events }));
       if (url.endsWith("/calendars/events/appointments")) return Promise.resolve(create);
       return Promise.resolve(res(cal));
     }));
   const post = async (body, tier = "priority", e = bookEnv) => {
     const token = await signBookingToken({ cid: "c1", tier }, bookEnv);
-    return worker.fetch(makeRequest("/book", { booking_token: token, ...body }), e);
+    return worker.fetch(makeRequest("/book", { booking_token: token, site_address: ADDR, ...body }), e);
   };
 
   it("403 for bad token, 503 without secret", async () => {
@@ -1636,9 +1638,44 @@ describe("/book", () => {
         title: "Walkthrough",
         appointmentStatus: "confirmed",
         toNotify: true,
+        address: ADDR,
       });
-      expect(body.address).toBeUndefined();
     }
+  });
+
+  it("400 for missing, blank or over-200-character site_address, with no GHL calls", async () => {
+    global.fetch = vi.fn();
+    for (const site_address of [undefined, "", "   ", 5, "a".repeat(201)]) {
+      expect((await post({ start_time: START, site_address })).status).toBe(400);
+    }
+    expect(global.fetch).not.toHaveBeenCalled();
+    ghl();
+    expect((await post({ start_time: START, site_address: "a".repeat(200) })).status).toBe(200);
+  });
+
+  it("trims the address and saves it to the contact as address1", async () => {
+    ghl();
+    const r = await post({ start_time: START, site_address: "  " + ADDR + "  " });
+    expect(r.status).toBe(200);
+    expect((await r.json()).contact_address_saved).toBeUndefined();
+    const create = global.fetch.mock.calls.find(([u]) => u.endsWith("/calendars/events/appointments"));
+    expect(JSON.parse(create[1].body).address).toBe(ADDR);
+    const put = global.fetch.mock.calls.find(([, o]) => o.method === "PUT");
+    expect(put[0]).toMatch(/\/contacts\/c1$/);
+    expect(JSON.parse(put[1].body)).toEqual({ address1: ADDR });
+  });
+
+  it("still returns 200 with contact_address_saved:false when the contact update fails", async () => {
+    ghl({ contact: res({}, false, 500) });
+    let r = await post({ start_time: START });
+    expect(r.status).toBe(200);
+    expect(await r.json()).toEqual({ booked: true, start_time: START, end_time: "2026-03-05T09:45:00+10:00", contact_address_saved: false });
+    const base = ghl();
+    global.fetch = vi.fn((url, opts) =>
+      opts.method === "PUT" ? Promise.reject(new Error("net")) : base(url, opts));
+    r = await post({ start_time: START });
+    expect(r.status).toBe(200);
+    expect((await r.json()).contact_address_saved).toBe(false);
   });
 
   it("409 slot_unavailable when GHL refuses the slot", async () => {

@@ -115,6 +115,12 @@ describe.each(PAGES)("%s booking form", (page) => {
     for (const sel of [".picker-week-label", ".picker-prev-week", ".picker-next-week", ".picker-days[role=radiogroup]", ".picker-times", ".picker-book[disabled]", ".booking-error"]) {
       expect(picker.querySelector(sel), sel).not.toBeNull();
     }
+    const addr = picker.querySelector('input[name="site_address"]');
+    expect(addr.getAttribute("autocomplete")).toBe("street-address");
+    expect(addr.getAttribute("aria-required")).toBe("true"); // JS sets `required` once the picker is live
+    expect(addr.getAttribute("maxlength")).toBe("200");
+    expect(picker.querySelector(`label[for="${addr.id}"]`)).not.toBeNull();
+    expect(addr.compareDocumentPosition(picker.querySelector(".picker-book")) & 4).toBeTruthy();
     expect(form.querySelector(".booking-result #booking-confirmed").textContent.trim()).toBe("");
   });
 });
