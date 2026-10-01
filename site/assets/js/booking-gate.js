@@ -342,11 +342,13 @@ function initPicker(picker) {
       handleBook(picker, book);
     });
   }
-  picker.querySelector(".picker-prev-week").addEventListener("click", function () {
-    changeWeek(picker, -7);
+  var prevWeek = picker.querySelector(".picker-prev-week");
+  var nextWeek = picker.querySelector(".picker-next-week");
+  prevWeek.addEventListener("click", function () {
+    changeWeek(picker, -7, prevWeek, nextWeek);
   });
-  picker.querySelector(".picker-next-week").addEventListener("click", function () {
-    changeWeek(picker, 7);
+  nextWeek.addEventListener("click", function () {
+    changeWeek(picker, 7, nextWeek, prevWeek);
   });
   picker.querySelector(".picker-days").addEventListener("keydown", function (e) {
     var keys = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1, Home: "first", End: "last" };
@@ -368,7 +370,8 @@ function initPicker(picker) {
   picker.querySelector(".picker-days").addEventListener("click", function (e) {
     var btn = e.target.closest(".picker-day");
     if (!btn || btn.disabled) return;
-    selectDay(picker, btn.dataset.date, false);
+    // Redrawing replaces the button, so focus goes back to its replacement.
+    selectDay(picker, btn.dataset.date, true);
   });
   picker.querySelector(".picker-times").addEventListener("click", function (e) {
     var btn = e.target.closest(".picker-time");
@@ -390,8 +393,10 @@ function selectDay(picker, date, focus) {
 }
 
 // Steps the shown week by 7 days within the window; a choice that is no
-// longer on screen is dropped, which re-disables the Book button.
-function changeWeek(picker, delta) {
+// longer on screen is dropped, which re-disables the Book button. A week
+// button that disables itself at the window's edge can't keep focus, so
+// focus moves to the other one (or the day row).
+function changeWeek(picker, delta, clicked, other) {
   var state = pickerState(picker);
   var next = addDays(state.weekStart, delta);
   if (next < state.firstWeek || next > state.lastDate) return;
@@ -401,6 +406,16 @@ function changeWeek(picker, delta) {
     state.startTime = "";
   }
   drawPicker(picker);
+  if (clicked.disabled) {
+    if (!other.disabled) other.focus();
+    else focusDayStop(picker);
+  }
+}
+
+// Focuses the day row's tab stop (the chosen day, else the first open one).
+function focusDayStop(picker) {
+  var stop = picker.querySelector('.picker-day[tabindex="0"]');
+  if (stop) stop.focus();
 }
 
 // (Re)draws the week label, day row and time grid from the picker's state.
@@ -548,10 +563,12 @@ function refreshSlots(step2, picker, errorBox) {
       }
       drawPicker(picker);
       showError(errorBox, SLOT_TAKEN_MESSAGE);
+      focusDayStop(picker); // Book is disabled again, so it can't keep focus
     })
     .catch(function () {
       drawPicker(picker);
       showError(errorBox, SLOT_TAKEN_MESSAGE);
+      focusDayStop(picker);
     });
 }
 

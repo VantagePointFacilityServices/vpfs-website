@@ -497,6 +497,35 @@ describe("Step 2 submit", () => {
     expect(document.activeElement.dataset.date).toBe("2026-03-04");
   });
 
+  it("keeps focus on a day chosen with Space/Enter", async () => {
+    const form = mountHomepageForm();
+    const step2 = form.querySelector(".booking-step-2");
+    await submitStep2(form, step2, mockGateOk("priority"));
+    const day = step2.querySelector('.picker-day[data-date="2026-03-06"]');
+    day.focus();
+    day.click(); // Space/Enter on a button fires click
+
+    expect(document.activeElement.classList.contains("picker-day")).toBe(true);
+    expect(document.activeElement.dataset.date).toBe("2026-03-06");
+  });
+
+  it("moves focus to the other week button when Next or Previous disables itself", async () => {
+    const form = mountHomepageForm();
+    const step2 = form.querySelector(".booking-step-2");
+    await submitStep2(form, step2, mockGateOk("priority"));
+    const prev = step2.querySelector(".picker-prev-week");
+    const next = step2.querySelector(".picker-next-week");
+
+    next.focus();
+    next.click(); // last week of the window — Next disables
+    expect(next.disabled).toBe(true);
+    expect(document.activeElement).toBe(prev);
+
+    prev.click(); // first week — Previous disables
+    expect(prev.disabled).toBe(true);
+    expect(document.activeElement).toBe(next);
+  });
+
   it("keeps the picker state when the dialog is closed and reopened", async () => {
     const form = mountHomepageForm();
     const dialog = form.querySelector(".booking-dialog");
@@ -804,6 +833,9 @@ describe("Book walkthrough", () => {
     expect(picker.dataset.startTime).toBe("");
     expect(picker.querySelectorAll(".picker-time").length).toBe(1);
     expect(book.disabled).toBe(true);
+    // Book is disabled again, so focus moves to the day row's tab stop.
+    expect(document.activeElement.classList.contains("picker-day")).toBe(true);
+    expect(document.activeElement.dataset.date).toBe("2026-03-04");
   });
 
   it("slot_unavailable moves off the day when it has no times left", async () => {
