@@ -3,15 +3,15 @@
 // Step 1: name/email/phone/postcode -> POST /lead -> creates
 // the GHL contact and reveals the Step 2 DQ questions. Step 2: facility
 // type/budget/frequency -> POST /gate (the same DQ scoring the AI
-// Receptionist already calls live on the phone) -> shows the Priority
-// calendar, the Standard calendar, or a no-calendar "we'll be in touch"
-// message, based on the returned tier. Postcode is only asked once, in
-// Step 1, but /gate's DQ check still needs it — buildGatePayload() reads
-// it back out of the (by then hidden, but still populated) Step 1 field
-// rather than asking again. Both calendar containers exist in the page's
-// static HTML from load (issue 06 fills in the real GHL embeds) — this
-// module only toggles which one is visible; it never injects a <script>
-// tag.
+// Receptionist already calls live on the phone). A qualifying tier returns
+// a signed booking_token; the site posts it to POST /slots and draws the
+// open walkthrough days/times in the built-in #walkthrough-picker (no GHL
+// widget, no injected <script> tags). A nurture tier, a missing token, a
+// /slots failure or zero open days shows the no-calendar "we'll be in
+// touch" message instead. Postcode is only asked once, in Step 1, but
+// /gate's DQ check still needs it — buildGatePayload() reads it back out
+// of the (by then hidden, but still populated) Step 1 field rather than
+// asking again.
 //
 // Shared between the homepage hero form and contact.html's form — see
 // data-channel on each <form class="assessment-form"> for which page a
@@ -205,12 +205,18 @@ function handleStep2Submit(form, step2, submitBtn) {
 
   postJson(WORKER_BASE + "/gate", payload)
     .then(function (data) {
-      setLoading(submitBtn, false);
       if (!data || !data.tier) {
+        setLoading(submitBtn, false);
         showError(errorBox, GENERIC_ERROR_MESSAGE);
         return;
       }
-      revealCalendarForTier(step2, data.tier, data.dq_flag);
+      if (data.tier === "nurture") setLoading(submitBtn, false);
+      if (data.tier === "nurture") {
+        revealResult(step2, data.dq_flag === "nurture-budget" ? "#budget-nurture-message" : "#no-calendar-message");
+        return;
+      }
+      step2.dataset.bookingToken = data.booking_token || "";
+      loadPicker(step2, submitBtn);
     })
     .catch(function () {
       setLoading(submitBtn, false);
@@ -246,33 +252,280 @@ function isGatePayloadComplete(payload) {
   return Boolean(cf.facility_type && cf.monthly_budget && cf.postcode && cf.cleaning_frequency);
 }
 
-// tier is one of "priority" / "standard" / "standard-flagged" / "nurture"
-// (tierFromScore() in worker.js). Exactly one result panel is ever shown.
-// A nurture lead disqualified on budget gets its own message; every other
-// nurture reason (frequency, capability, area) gets the general one.
-function revealCalendarForTier(step2, tier, dqFlag) {
+// Exactly one result panel is ever shown. A nurture lead disqualified on
+// budget gets its own message; every other nurture reason (frequency,
+// capability, area) gets the general one.
+function revealResult(step2, selector) {
   var questions = step2.querySelector(".booking-step-2-questions");
   var result = step2.querySelector(".booking-result");
-  var priority = step2.querySelector("#calendar-priority");
-  var standard = step2.querySelector("#calendar-standard");
-  var noCalendar = step2.querySelector("#no-calendar-message");
-  var budgetNurture = step2.querySelector("#budget-nurture-message");
-
   if (questions) questions.classList.add("hide-after-step2");
   if (result) result.classList.add("show");
 
-  [priority, standard, noCalendar, budgetNurture].forEach(function (el) {
+  [
+    "#walkthrough-picker",
+    "#no-calendar-message",
+    "#budget-nurture-message",
+    "#booking-confirmed",
+  ].forEach(function (sel) {
+    var el = step2.querySelector(sel);
     if (el) el.classList.remove("show");
   });
 
-  var nurtureMessage = dqFlag === "nurture-budget" ? budgetNurture : noCalendar;
-  var target = tier === "priority" ? priority : tier === "nurture" ? nurtureMessage : standard;
-  if (!target) return;
+  var target = step2.querySelector(selector);
+  if (!target) return null;
   target.classList.add("show");
   // The button that had focus is now hidden — move focus to what replaced it
   // so keyboard and screen-reader users land on the result.
   target.setAttribute("tabindex", "-1");
   target.focus();
+  return target;
+}
+
+// ---- Walkthrough picker — /slots -> day row + time grid ------------------
+// State lives in a WeakMap keyed by the picker element so it survives the
+// dialog being closed and reopened (the DOM is never torn down). Issues 03
+// (week paging) and 04 (/book) read/re-draw via pickerState(picker) and
+// drawPicker(picker); the chosen time is state.startTime (also mirrored to
+// picker.dataset.date / picker.dataset.startTime).
+
+var pickerStates = new WeakMap();
+var NO_CALENDAR = "#no-calendar-message";
+
+export function pickerState(picker) {
+  return pickerStates.get(picker);
+}
+
+function loadPicker(step2, submitBtn) {
+  var token = step2.dataset.bookingToken;
+  var picker = step2.querySelector("#walkthrough-picker");
+  if (!token || !picker) {
+    setLoading(submitBtn, false);
+    revealResult(step2, NO_CALENDAR);
+    return;
+  }
+  postJson(WORKER_BASE + "/slots", { booking_token: token })
+    .then(function (data) {
+      setLoading(submitBtn, false);
+      var days = data && Array.isArray(data.days) ? data.days.filter(function (d) {
+        return d && d.date && Array.isArray(d.slots) && d.slots.length;
+      }) : [];
+      if (!days.length) {
+        revealResult(step2, NO_CALENDAR);
+        return;
+      }
+      pickerStates.set(picker, {
+        timezone: data.timezone || "Australia/Brisbane",
+        days: days,
+        weekStart: weekStartOf(days[0].date),
+        date: "",
+        startTime: "",
+      });
+      initPicker(picker);
+      drawPicker(picker);
+      revealResult(step2, "#walkthrough-picker");
+    })
+    .catch(function () {
+      setLoading(submitBtn, false);
+      revealResult(step2, NO_CALENDAR);
+    });
+}
+
+function initPicker(picker) {
+  if (picker.dataset.ready) return;
+  picker.dataset.ready = "1";
+  var book = picker.querySelector(".picker-book");
+  if (book) {
+    book.addEventListener("click", function () {
+      if (book.disabled) return; // already in flight / nothing chosen
+      handleBook(picker, book);
+    });
+  }
+  picker.querySelector(".picker-days").addEventListener("click", function (e) {
+    var btn = e.target.closest(".picker-day");
+    if (!btn || btn.disabled) return;
+    var state = pickerState(picker);
+    state.date = btn.dataset.date;
+    state.startTime = "";
+    drawPicker(picker);
+  });
+  picker.querySelector(".picker-times").addEventListener("click", function (e) {
+    var btn = e.target.closest(".picker-time");
+    if (!btn) return;
+    var state = pickerState(picker);
+    state.startTime = btn.dataset.start;
+    drawPicker(picker);
+    var again = picker.querySelector('.picker-time[data-start="' + state.startTime + '"]');
+    if (again) again.focus();
+  });
+}
+
+// (Re)draws the week label, day row and time grid from the picker's state.
+export function drawPicker(picker) {
+  var state = pickerState(picker);
+  if (!state) return;
+  var byDate = {};
+  state.days.forEach(function (d) {
+    byDate[d.date] = d.slots;
+  });
+
+  var label = picker.querySelector(".picker-week-label");
+  var lastDay = addDays(state.weekStart, 6);
+  if (label) label.textContent = formatDay(state.weekStart, { day: "numeric", month: "short" }) + " – " + formatDay(lastDay, { day: "numeric", month: "short" });
+
+  var daysEl = picker.querySelector(".picker-days");
+  daysEl.textContent = "";
+  for (var i = 0; i < 7; i++) {
+    var date = addDays(state.weekStart, i);
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "picker-day";
+    btn.dataset.date = date;
+    btn.setAttribute("role", "radio");
+    btn.setAttribute("aria-checked", state.date === date ? "true" : "false");
+    btn.textContent = formatDay(date, { weekday: "short", day: "numeric" });
+    if (!byDate[date]) btn.disabled = true;
+    daysEl.appendChild(btn);
+  }
+
+  var timesEl = picker.querySelector(".picker-times");
+  timesEl.textContent = "";
+  var slots = state.date && byDate[state.date] ? byDate[state.date] : [];
+  slots.forEach(function (iso) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "picker-time";
+    btn.dataset.start = iso;
+    btn.setAttribute("role", "radio");
+    btn.setAttribute("aria-checked", state.startTime === iso ? "true" : "false");
+    btn.textContent = formatTime(iso, state.timezone);
+    timesEl.appendChild(btn);
+  });
+
+  picker.dataset.date = state.date;
+  picker.dataset.startTime = state.startTime;
+
+  var bookBtn = picker.querySelector(".picker-book");
+  if (bookBtn) {
+    bookBtn.disabled = !state.startTime || Boolean(state.booking);
+    bookBtn.textContent = state.startTime
+      ? "Book " + formatDay(state.date, { weekday: "short", day: "numeric", month: "short" }) + ", " + formatTime(state.startTime, state.timezone)
+      : "Book walkthrough";
+  }
+}
+
+// ---- Book — /book -> confirmation ---------------------------------------
+
+var SLOT_TAKEN_MESSAGE = "That time was just taken — please pick another.";
+
+function handleBook(picker, bookBtn) {
+  var state = pickerState(picker);
+  var step2 = picker.closest(".booking-step-2");
+  if (!state || !state.startTime || state.booking || !step2) return;
+  var errorBox = picker.querySelector(".booking-error");
+  clearError(errorBox);
+
+  var startTime = state.startTime;
+  state.booking = true;
+  setLoading(bookBtn, true);
+
+  postJson(WORKER_BASE + "/book", { booking_token: step2.dataset.bookingToken, start_time: startTime })
+    .then(function (data) {
+      state.booking = false;
+      var when = formatWhen(data && data.start_time ? data.start_time : startTime, state.timezone);
+      showConfirmation(step2, "You\u2019re booked for " + when + " \u2014 we\u2019ve sent a confirmation by SMS and email.");
+    })
+    .catch(function (err) {
+      state.booking = false;
+      var code = err && err.data && err.data.error;
+      if (err && err.status === 409 && code === "already_booked") {
+        var t = err.data.start_time || startTime;
+        showConfirmation(step2, "You already have a walkthrough booked for " + formatWhen(t, state.timezone) + ".");
+        return;
+      }
+      if (err && err.status === 409 && code === "slot_unavailable") {
+        refreshSlots(step2, picker, errorBox);
+        return;
+      }
+      // Keep the chosen time so the visitor can simply retry.
+      drawPicker(picker);
+      showError(errorBox, GENERIC_ERROR_MESSAGE);
+    });
+}
+
+function formatWhen(iso, timezone) {
+  return new Intl.DateTimeFormat("en-AU", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: timezone,
+  }).format(new Date(iso));
+}
+
+function showConfirmation(step2, text) {
+  var panel = revealResult(step2, "#booking-confirmed");
+  if (panel) panel.textContent = text;
+}
+
+// The chosen time was taken: re-fetch /slots, drop the choice, and stay on
+// the same day when it still has times.
+function refreshSlots(step2, picker, errorBox) {
+  var state = pickerState(picker);
+  state.startTime = "";
+  postJson(WORKER_BASE + "/slots", { booking_token: step2.dataset.bookingToken })
+    .then(function (data) {
+      var days = data && Array.isArray(data.days) ? data.days.filter(function (d) {
+        return d && d.date && Array.isArray(d.slots) && d.slots.length;
+      }) : [];
+      if (!days.length) {
+        revealResult(step2, NO_CALENDAR);
+        return;
+      }
+      state.days = days;
+      var stillOpen = days.some(function (d) { return d.date === state.date; });
+      if (!stillOpen) {
+        state.date = "";
+        state.weekStart = weekStartOf(days[0].date);
+      }
+      drawPicker(picker);
+      showError(errorBox, SLOT_TAKEN_MESSAGE);
+    })
+    .catch(function () {
+      drawPicker(picker);
+      showError(errorBox, SLOT_TAKEN_MESSAGE);
+    });
+}
+
+// Dates are "YYYY-MM-DD" strings in Brisbane's calendar; do day arithmetic
+// in UTC so the browser's own timezone never shifts them.
+function parseDate(str) {
+  var p = str.split("-");
+  return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2], 12));
+}
+
+function addDays(str, n) {
+  var d = parseDate(str);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+// Monday of the week holding the date.
+function weekStartOf(str) {
+  var dow = parseDate(str).getUTCDay(); // 0 = Sunday
+  return addDays(str, -((dow + 6) % 7));
+}
+
+function formatDay(str, opts) {
+  return new Intl.DateTimeFormat("en-AU", Object.assign({ timeZone: "UTC" }, opts)).format(parseDate(str));
+}
+
+function formatTime(iso, timezone) {
+  return new Intl.DateTimeFormat("en-AU", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: timezone,
+  }).format(new Date(iso));
 }
 
 // ---- Shared helpers ------------------------------------------------------
@@ -306,7 +559,14 @@ function postJson(url, payload) {
   })
     .then(function (res) {
       clearTimeout(timer);
-      if (!res.ok) throw new Error("request failed: " + res.status);
+      if (!res.ok) {
+        var err = new Error("request failed: " + res.status);
+        err.status = res.status;
+        return res.json().then(
+          function (body) { err.data = body; throw err; },
+          function () { throw err; }
+        );
+      }
       return res.json();
     })
     .catch(function (err) {

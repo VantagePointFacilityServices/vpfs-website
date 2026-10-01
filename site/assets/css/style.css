@@ -717,7 +717,23 @@ input:focus,select:focus,textarea:focus{ outline:none; border-color:var(--vp-nav
 .booking-result.show{ display:block; }
 .booking-result > div{ display:none; }
 .booking-result > div.show{ display:block; }
-.booking-calendar-embed{ min-height:420px; }
+.picker-week-nav{ display:flex; align-items:center; justify-content:space-between; gap:var(--space-3); margin:var(--space-4) 0; }
+.picker-week-label{ font-weight:600; color:var(--text-strong); text-align:center; }
+.picker-week-nav .btn{ min-width:44px; padding-left:var(--space-3); padding-right:var(--space-3); }
+.picker-days{ display:grid; grid-template-columns:repeat(auto-fit, minmax(64px, 1fr)); gap:var(--space-2); margin-bottom:var(--space-4); }
+.picker-times{ display:grid; grid-template-columns:repeat(auto-fill, minmax(88px, 1fr)); gap:var(--space-2); margin-bottom:var(--space-4); }
+.picker-day, .picker-time{
+  font:inherit; padding:var(--space-3) var(--space-2); cursor:pointer; text-align:center;
+  border:1px solid var(--border-hairline); border-radius:var(--radius-sm);
+  background:var(--surface-card); color:var(--text-body);
+}
+.picker-day:hover:not(:disabled), .picker-time:hover{ background:var(--surface-wash); }
+.picker-day:disabled{ opacity:.45; cursor:not-allowed; }
+.picker-day[aria-checked="true"], .picker-time[aria-checked="true"]{ background:var(--vp-navy); color:var(--vp-white); border-color:var(--vp-navy); }
+.picker-day:focus-visible, .picker-time:focus-visible, .walkthrough-picker button:focus-visible{ outline:3px solid var(--focus-ring); outline-offset:2px; }
+.walkthrough-picker:focus, #booking-confirmed:focus{ outline:none; }
+.picker-book:disabled{ opacity:.5; cursor:not-allowed; }
+@media (max-width:480px){ .picker-days{ grid-template-columns:repeat(3, 1fr); } }
 
 /* Step 2 + its result open in a modal <dialog> over the page (booking-gate.js) */
 .booking-dialog{

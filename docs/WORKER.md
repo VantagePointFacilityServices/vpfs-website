@@ -78,28 +78,32 @@ flowchart LR
     V -->|fills in form| BG
     BG -->|"Step 1 — /lead"| W
     BG -->|"Step 2 — /gate"| W
+    BG -->|"booking_token — /slots"| W
     AI -->|"live DQ check — /gate"| W
     W -->|"create / update contact,<br/>add tag, write score"| C
     C -->|"tag added, stage changed,<br/>survey submitted"| WF
     WF -->|"webhooks — /enrich /confirm<br/>/outcome /apply /apply-screen"| W
-    BG -->|"shows the right calendar<br/>for the tier"| CAL
+    W -->|"free-slots for the tier's calendar"| CAL
+    W -->|"open days and times"| BG
 ```
 
 There are **two ways in**:
 
 - **Directly from the browser** — the website's booking form calls `/lead`
-  (Step 1) and `/gate` (Step 2). The AI Receptionist also calls `/gate`
+  (Step 1), `/gate` (Step 2), `/slots` (open walkthrough times) and `/book` (confirm a time). The AI Receptionist also calls `/gate`
   mid-call.
 - **From GHL workflows** — when something happens in GHL (a survey comes
   back, a walkthrough is a no-show, a proposal is lost), a workflow sends
   a webhook to one of the other five endpoints.
 
-### The seven endpoints at a glance
+### The eight endpoints at a glance
 
 | Endpoint | Called by | When | What it does |
 |---|---|---|---|
 | `/lead` | Website (Step 1) | Visitor submits name/email/phone/postcode | Creates or matches the GHL contact, tags it `website-lead`, returns its ID |
-| `/gate` | Website (Step 2), AI Receptionist | Visitor answers facility type / budget / frequency | Checks disqualifiers, scores, sets the tier, picks which calendar to show |
+| `/gate` | Website (Step 2), AI Receptionist | Visitor answers facility type / budget / frequency | Checks disqualifiers, scores, sets the tier, returns a signed `booking_token` for Priority / Standard leads |
+| `/slots` | Website (after Step 2) | Qualified visitor's Step 2 dialog opens the picker | Verifies the `booking_token`, reads GHL free slots (next 30 days, Brisbane time) from the calendar matching the token's tier, returns `{ timezone, window_days, days: [{ date, slots }] }`. 403 bad/expired token, 503 if `BOOKING_TOKEN_SECRET` unset, 502 `slots_unavailable` on a GHL error |
+| `/book` | Website (picker) | Visitor clicks Book on a chosen time | Body `{ booking_token, start_time }`. Verifies the token, then checks `start_time` is within now → now + 30 days (the same window `/slots` offers). If the contact already has an upcoming, non-cancelled appointment it creates nothing. Otherwise reads the calendar's slot length (GHL does not work out `endTime`) and creates a confirmed "Walkthrough" appointment on the tier's calendar for the token's contact with `toNotify: true` and no address. Responses: `200 { booked: true, start_time, end_time }`; `400` missing/invalid/past/beyond-30-day `start_time`; `403` bad/expired token; `409 { error: "already_booked", start_time }`; `409 { error: "slot_unavailable" }` (GHL refused the slot); `502 { error: "booking_failed" }` (other GHL failure); `503` if `BOOKING_TOKEN_SECRET` unset |
 | `/enrich` | GHL workflow | Booked lead returns the optional facility-detail survey | Saves facility detail; can bump Standard → Priority |
 | `/confirm` | GHL workflow | Disqualified lead answers "is your budget/frequency flexible?" | Re-qualifies them if their flexed answer clears the minimum |
 | `/outcome` | GHL workflow | Walkthrough no-show, or proposal marked Lost | Moves them to the right nurture segment |
@@ -125,7 +129,11 @@ There are **two ways in**:
 
 | Name | Kind | What it is | How to set it |
 |---|---|---|---|
-| `GHL_API_KEY` | **Secret** | GHL Private Integration Token for the sub-account. Needs scopes `contacts.write` and `contacts.readonly`. | `cd worker && npx wrangler secret put GHL_API_KEY` — write-only; Cloudflare never shows it again |
+| `GHL_API_KEY` | **Secret** | GHL Private Integration Token for the sub-account. Needs scopes `contacts.write`, `contacts.readonly`, `calendars.readonly`, `calendars/events.readonly` and `calendars/events.write` (the three calendar scopes are used by `/slots` and `/book`). | `cd worker && npx wrangler secret put GHL_API_KEY` — write-only; Cloudflare never shows it again |
+| `BOOKING_TOKEN_SECRET` | **Secret** | Key used to sign the `booking_token` returned by `/gate`. If unset, `/gate` simply omits the token. | `cd worker && npx wrangler secret put BOOKING_TOKEN_SECRET` |
+| `CALENDAR_PRIORITY_ID` | Plain setting | GHL calendar id for Priority leads (`Ugunj3x67DQlmRm2aL2h`). | `[vars]` in `worker/wrangler.toml` |
+| `CALENDAR_STANDARD_ID` | Plain setting | GHL calendar id for Standard / standard-flagged leads (`FMEE7r6jwySahTZ90S0C`). | `[vars]` in `worker/wrangler.toml` |
+| `BOOKING_TIMEZONE` | Plain setting | Time zone for booking slots (`Australia/Brisbane`). | `[vars]` in `worker/wrangler.toml` |
 | `GHL_LOCATION_ID` | Plain setting | The GHL sub-account ID (`i1xCcUSRa8PDofaJ1Oyz`). Required when creating contacts. Not secret — it appears in GHL's public webhook URLs. | `[vars]` in `worker/wrangler.toml`, deployed with the code |
 | `CLOUDFLARE_WORKER_API_TOKEN` | GitHub repo secret | Lets GitHub Actions deploy the Worker. Scoped to `Account: Workers Scripts: Edit` only. | GitHub → Settings → Secrets and variables → Actions |
 
@@ -362,6 +370,14 @@ touch"* panel remains as a fallback for any other nurture reason.)
 **Service-area postcodes** are currently only **4211, 4212, 4226, 4227**.
 Any other postcode is flagged `out-of-area` (see [section 12](#12-changing-the-business-rules)).
 
+**`booking_token`.** For tiers `priority`, `standard` and `standard-flagged`
+(never `nurture`), the response includes `booking_token`: a signed,
+stateless token `base64url({cid,tier,exp}) + "." + base64url(HMAC-SHA256)`
+using `BOOKING_TOKEN_SECRET`, valid for 2 hours. It lets the website book a
+walkthrough later without re-entering details, and the browser can't forge
+it or change the tier. If `BOOKING_TOKEN_SECRET` is unset the field is
+omitted and everything else is unchanged.
+
 The **AI Receptionist** calls this same `/gate` endpoint live on the phone,
 so phone and web leads are judged by identical rules.
 
@@ -565,7 +581,8 @@ flowchart LR
    must exist before you can pick it in the workflow trigger).
 2. **GHL token.** Switch into the **sub-account** (not agency view) →
    Settings → Private Integrations → Create new integration → scopes
-   `contacts.write` and `contacts.readonly` → copy the token (shown once;
+   `contacts.write`, `contacts.readonly`, `calendars.readonly`,
+   `calendars/events.readonly` and `calendars/events.write` → copy the token (shown once;
    keep it in your password manager).
 3. **Store the token in Cloudflare.** From the repo:
    `cd worker && npx wrangler secret put GHL_API_KEY`, then paste.

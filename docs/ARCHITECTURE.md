@@ -32,17 +32,19 @@ flowchart TD
     Z2 -. "edge fires Redirect Rule\nbefore any origin contact" .-> Z1
     Z1 -- "resolves to (DNS only,\napex and www both)" --> GHP["GitHub Pages\nsite/ — served via\n.github/workflows/deploy-website.yml\nsite/CNAME = www (canonical);\nGitHub 301s bare apex -> www"]
 
-    GHP -- "Step 1: name/email/phone\n(assets/js/booking-gate.js)" --> W["Cloudflare Worker\nworker/worker.js\n/lead /gate /enrich /confirm /outcome /apply /apply-screen"]
+    GHP -- "Step 1: name/email/phone\n(assets/js/booking-gate.js)" --> W["Cloudflare Worker\nworker/worker.js\n/lead /gate /slots /enrich /confirm /outcome /apply /apply-screen"]
     W -- "upserts contact, tags website-lead,\nreturns contact_id" --> GHP
     GHP -- "Step 2: facility/budget/frequency/postcode\n(same booking-gate.js, direct /gate call)" --> W
     W -- "writes lead_tier / dq_flag / score,\nreturns tier synchronously" --> GHP
-    GHP -- "tier decides: Priority calendar,\nStandard calendar, or no-calendar message" --> GHL["GoHighLevel"]
+    GHP -- "qualified: POST /slots with booking_token" --> W
+    W -- "GET free-slots on the tier's calendar\n(Priority / Standard), returns open days+times" --> GHL["GoHighLevel"]
+    W -- "open days and times, or 'we'll be in touch'\nmessage (nurture / no slots)" --> GHP
     GHP -. "careers.html form — NOT connected yet\n(see docs/WORKER.md Known gaps)" .-> GHL
     GHL -- "webhook on booking/outcome/application" --> W
     W -- "writes applicant_tier / applicant_dq_flag / applicant_score" --> GHL
 ```
 
-`/lead` and `/gate` are called directly by the browser (not via a GHL-hosted
+`/lead`, `/gate` and `/slots` are called directly by the browser (not via a GHL-hosted
 embedded form) — see [`WORKER.md`](WORKER.md) for the full end-to-end Worker
 guide, and `worker/README.md` and `assets/js/booking-gate.js` for
 the two-step gate this implements. `careers.html`'s application form is
