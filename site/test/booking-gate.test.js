@@ -434,6 +434,69 @@ describe("Step 2 submit", () => {
     expect(step2.querySelector("#walkthrough-picker").dataset.startTime).toBe("2026-03-04T13:30:00+10:00");
   });
 
+  it("pages a week at a time and disables Previous/Next at the limits", async () => {
+    const form = mountHomepageForm();
+    const step2 = form.querySelector(".booking-step-2");
+    await submitStep2(form, step2, mockGateOk("priority"));
+    const prev = step2.querySelector(".picker-prev-week");
+    const next = step2.querySelector(".picker-next-week");
+    expect(prev.disabled).toBe(true);
+    expect(next.disabled).toBe(false);
+
+    next.click();
+    expect(step2.querySelector(".picker-week-label").textContent).toMatch(/9 Mar.*15 Mar/);
+    const days = Array.from(step2.querySelectorAll(".picker-day"));
+    expect(days.filter((d) => !d.disabled).map((d) => d.dataset.date)).toEqual(["2026-03-12"]);
+    expect(prev.disabled).toBe(false);
+    expect(next.disabled).toBe(true);
+
+    prev.click();
+    expect(step2.querySelector(".picker-week-label").textContent).toMatch(/2 Mar.*8 Mar/);
+    expect(prev.disabled).toBe(true);
+  });
+
+  it("clears a choice that is no longer shown when the week changes", async () => {
+    const form = mountHomepageForm();
+    const step2 = form.querySelector(".booking-step-2");
+    await submitStep2(form, step2, mockGateOk("priority"));
+    step2.querySelector('.picker-day[data-date="2026-03-04"]').click();
+    step2.querySelector(".picker-time").click();
+    const book = step2.querySelector(".picker-book");
+    expect(book.disabled).toBe(false);
+
+    step2.querySelector(".picker-next-week").click();
+    const picker = step2.querySelector("#walkthrough-picker");
+    expect(picker.dataset.date).toBe("");
+    expect(picker.dataset.startTime).toBe("");
+    expect(step2.querySelectorAll(".picker-time").length).toBe(0);
+    expect(book.disabled).toBe(true);
+  });
+
+  it("moves focus and selection between enabled days with the keyboard", async () => {
+    const form = mountHomepageForm();
+    const step2 = form.querySelector(".booking-step-2");
+    await submitStep2(form, step2, mockGateOk("priority"));
+    const press = (key) => {
+      const el = document.activeElement.classList.contains("picker-day")
+        ? document.activeElement
+        : step2.querySelector(".picker-day[tabindex='0']");
+      el.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+    };
+    const tabbable = () => Array.from(step2.querySelectorAll(".picker-day")).filter((d) => d.tabIndex === 0);
+    expect(tabbable().map((d) => d.dataset.date)).toEqual(["2026-03-04"]);
+
+    press("ArrowRight");
+    expect(document.activeElement.dataset.date).toBe("2026-03-06");
+    expect(document.activeElement.getAttribute("aria-checked")).toBe("true");
+    expect(tabbable().map((d) => d.dataset.date)).toEqual(["2026-03-06"]);
+    press("ArrowLeft");
+    expect(document.activeElement.dataset.date).toBe("2026-03-04");
+    press("End");
+    expect(document.activeElement.dataset.date).toBe("2026-03-06");
+    press("Home");
+    expect(document.activeElement.dataset.date).toBe("2026-03-04");
+  });
+
   it("keeps the picker state when the dialog is closed and reopened", async () => {
     const form = mountHomepageForm();
     const dialog = form.querySelector(".booking-dialog");

@@ -317,6 +317,8 @@ function loadPicker(step2, submitBtn) {
         timezone: data.timezone || "Australia/Brisbane",
         days: days,
         weekStart: weekStartOf(days[0].date),
+        firstWeek: weekStartOf(days[0].date),
+        lastDate: days[days.length - 1].date,
         date: "",
         startTime: "",
       });
@@ -340,13 +342,33 @@ function initPicker(picker) {
       handleBook(picker, book);
     });
   }
+  picker.querySelector(".picker-prev-week").addEventListener("click", function () {
+    changeWeek(picker, -7);
+  });
+  picker.querySelector(".picker-next-week").addEventListener("click", function () {
+    changeWeek(picker, 7);
+  });
+  picker.querySelector(".picker-days").addEventListener("keydown", function (e) {
+    var keys = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1, Home: "first", End: "last" };
+    if (!(e.key in keys) || e.altKey || e.ctrlKey || e.metaKey) return;
+    var btn = e.target.closest(".picker-day");
+    if (!btn) return;
+    var enabled = Array.prototype.filter.call(picker.querySelectorAll(".picker-day"), function (b) {
+      return !b.disabled;
+    });
+    if (!enabled.length) return;
+    e.preventDefault();
+    var step = keys[e.key];
+    var idx = enabled.indexOf(btn);
+    var next = step === "first" ? enabled[0]
+      : step === "last" ? enabled[enabled.length - 1]
+      : enabled[(idx + step + enabled.length) % enabled.length];
+    selectDay(picker, next.dataset.date, true);
+  });
   picker.querySelector(".picker-days").addEventListener("click", function (e) {
     var btn = e.target.closest(".picker-day");
     if (!btn || btn.disabled) return;
-    var state = pickerState(picker);
-    state.date = btn.dataset.date;
-    state.startTime = "";
-    drawPicker(picker);
+    selectDay(picker, btn.dataset.date, false);
   });
   picker.querySelector(".picker-times").addEventListener("click", function (e) {
     var btn = e.target.closest(".picker-time");
@@ -357,6 +379,28 @@ function initPicker(picker) {
     var again = picker.querySelector('.picker-time[data-start="' + state.startTime + '"]');
     if (again) again.focus();
   });
+}
+
+function selectDay(picker, date, focus) {
+  var state = pickerState(picker);
+  if (state.date !== date) state.startTime = "";
+  state.date = date;
+  drawPicker(picker);
+  if (focus) picker.querySelector('.picker-day[data-date="' + date + '"]').focus();
+}
+
+// Steps the shown week by 7 days within the window; a choice that is no
+// longer on screen is dropped, which re-disables the Book button.
+function changeWeek(picker, delta) {
+  var state = pickerState(picker);
+  var next = addDays(state.weekStart, delta);
+  if (next < state.firstWeek || next > state.lastDate) return;
+  state.weekStart = next;
+  if (state.date && (state.date < next || state.date > addDays(next, 6))) {
+    state.date = "";
+    state.startTime = "";
+  }
+  drawPicker(picker);
 }
 
 // (Re)draws the week label, day row and time grid from the picker's state.
@@ -372,6 +416,11 @@ export function drawPicker(picker) {
   var lastDay = addDays(state.weekStart, 6);
   if (label) label.textContent = formatDay(state.weekStart, { day: "numeric", month: "short" }) + " – " + formatDay(lastDay, { day: "numeric", month: "short" });
 
+  var prev = picker.querySelector(".picker-prev-week");
+  var nextBtn = picker.querySelector(".picker-next-week");
+  if (prev) prev.disabled = state.weekStart <= state.firstWeek;
+  if (nextBtn) nextBtn.disabled = addDays(state.weekStart, 7) > state.lastDate;
+
   var daysEl = picker.querySelector(".picker-days");
   daysEl.textContent = "";
   for (var i = 0; i < 7; i++) {
@@ -384,8 +433,14 @@ export function drawPicker(picker) {
     btn.setAttribute("aria-checked", state.date === date ? "true" : "false");
     btn.textContent = formatDay(date, { weekday: "short", day: "numeric" });
     if (!byDate[date]) btn.disabled = true;
+    btn.tabIndex = -1;
     daysEl.appendChild(btn);
   }
+  // Roving tabindex: the chosen day, else the first enabled day.
+  var all = Array.prototype.slice.call(daysEl.children);
+  var stop = all.filter(function (b) { return b.dataset.date === state.date && !b.disabled; })[0] ||
+    all.filter(function (b) { return !b.disabled; })[0];
+  if (stop) stop.tabIndex = 0;
 
   var timesEl = picker.querySelector(".picker-times");
   timesEl.textContent = "";
@@ -483,6 +538,9 @@ function refreshSlots(step2, picker, errorBox) {
         return;
       }
       state.days = days;
+      // Keep week paging inside the refreshed window.
+      state.firstWeek = weekStartOf(days[0].date);
+      state.lastDate = days[days.length - 1].date;
       var stillOpen = days.some(function (d) { return d.date === state.date; });
       if (!stillOpen) {
         state.date = "";
