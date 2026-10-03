@@ -96,7 +96,7 @@
 
 // ---- CONFIG ---------------------------------------------------------
 
-const MIN_MONTHLY_SPEND = 2000; // under this -> nurture-budget
+const MIN_MONTHLY_SPEND = 2500; // under this -> nurture-budget
 const PRIORITY_MONTHLY_SPEND = 5000; // at or over this -> always Priority (see calculateGateScore)
 const MIN_WEEKLY_CLEANS = 3; // hard floor — anything under this is DQ'd
 const SERVICE_POSTCODES = ["4227", "4226", "4211", "4212"]; // Gold Coast coverage zone — extend as needed
@@ -723,7 +723,7 @@ function extractGateFields(payload) {
   };
 }
 
-// Budget is the only disqualifier: under $2,000/month -> nurture, no
+// Budget is the only disqualifier: under $2,500/month -> nurture, no
 // calendar. Everything else a lead can fall short on is recorded by
 // leadFlags() for the team to review, but never blocks a booking.
 function checkDisqualifiers(f) {
@@ -750,7 +750,7 @@ function leadFlags(f) {
 }
 
 // Budget decides the tier on its own: $5,000+ scores 70 (always Priority,
-// since tierFromScore's cut-off is 70), $2,000–$4,999 scores 30 and can reach
+// since tierFromScore's cut-off is 70), $2,500–$4,999 scores 30 and can reach
 // at most 60 with the other factors (always Standard). Frequency and facility
 // fit only rank leads within their tier.
 function calculateGateScore(f) {

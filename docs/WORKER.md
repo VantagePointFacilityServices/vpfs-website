@@ -299,7 +299,7 @@ those plus the postcode from Step 1 and the `contact_id`.
 flowchart TD
     IN["POST /gate<br/>contact_id + facility_type,<br/>monthly_budget, cleaning_frequency, postcode"]
     IN --> FL["Record lead_flags for review:<br/>low-frequency, capability-gap,<br/>out-of-area (never block booking)"]
-    FL --> D1{"Budget under $2,000/month?"}
+    FL --> D1{"Budget under $2,500/month?"}
     D1 -- yes --> N1["dq_flag: nurture-budget"]
     D1 -- no --> SC["Calculate score 0–100"]
 
@@ -318,7 +318,7 @@ flowchart TD
     OUT --> C4["any other nurture →<br/>'we'll be in touch' message, no calendar"]
 ```
 
-**Budget is the only disqualifier.** Under $2,000/month is `nurture-budget`
+**Budget is the only disqualifier.** Under $2,500/month is `nurture-budget`
 and gets no calendar. A blank budget never disqualifies.
 
 **Everything else is a flag, not a disqualifier.** `/gate` writes
@@ -337,7 +337,7 @@ booking:
 | Factor | Points |
 |---|---|
 | Budget $5,000+/month | 70 |
-| Budget $2,000–$4,999 | 30 |
+| Budget $2,500–$4,999 | 30 |
 | Daily (7 days a week) | 20 |
 | 5 days a week | 15 |
 | 3 days a week | 10 |
@@ -345,15 +345,15 @@ booking:
 | Construction / industrial | 5 |
 
 **Budget alone decides the calendar.** Any $5,000+ budget scores at least
-70 + 10 + 5 = **85 → Priority**; a $2,000–$4,999 budget scores at most
+70 + 10 + 5 = **85 → Priority**; a $2,500–$4,999 budget scores at most
 30 + 20 + 10 = **60 → Standard**. Frequency and facility type only rank
 leads *within* a tier (e.g. in GHL views sorted by `lead_score`).
 
 | Monthly budget | Result |
 |---|---|
 | $5,000+ | Priority calendar |
-| $2,000–$4,999 | Standard calendar |
-| Under $2,000 | No calendar — budget message: *"Unfortunately, your monthly budget is below the minimum we need…we'll check in from time to time to see if anything has changed."* |
+| $2,500–$4,999 | Standard calendar |
+| Under $2,500 | No calendar — budget message: *"Unfortunately, your monthly budget is below the minimum we need…we'll check in from time to time to see if anything has changed."* |
 
 **Frequency options** on the form: Daily, 3 days a week, 5 days a week,
 Weekly, Fortnightly (values `daily`, `three_days_week`, `five_days_week`,
@@ -412,13 +412,13 @@ frequency path below only applies to older contacts still carrying
 flowchart TD
     IN["POST /confirm<br/>dq_flag + flexibility answers"] --> WHICH{"Which disqualifier?"}
 
-    WHICH -- "nurture-budget (default)" --> B1{"Budget flexible AND<br/>flexed amount $2,000+?"}
+    WHICH -- "nurture-budget (default)" --> B1{"Budget flexible AND<br/>flexed amount $2,500+?"}
     B1 -- no --> BN["dq_flag: nurture-budget-confirmed<br/>stays in nurture"]
     B1 -- yes --> BR["Re-score with flexed budget<br/>→ new tier, dq_flag: none"]
 
     WHICH -- nurture-frequency --> F1{"Frequency flexible AND<br/>flexed to 3+/week?"}
     F1 -- no --> FN["dq_flag: nurture-frequency-confirmed<br/>stays in nurture"]
-    F1 -- yes --> F2{"Budget still under $2,000?"}
+    F1 -- yes --> F2{"Budget still under $2,500?"}
     F2 -- yes --> FB["dq_flag: nurture-budget<br/>stays in nurture"]
     F2 -- no --> FR["Re-score with flexed frequency<br/>→ new tier, dq_flag: none"]
 ```
