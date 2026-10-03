@@ -37,7 +37,7 @@ reads. Setup runbooks live elsewhere — this file points to them.
 ## 2. Business rules the code encodes (as of 2026-09-29)
 
 - **Budget alone decides booking:** $5,000+/month → Priority calendar,
-  $2,000–$4,999 → Standard, under $2,000 → nurture (budget message, no
+  $2,500–$4,999 → Standard, under $2,500 → nurture (budget message, no
   calendar). Frequency, facility type and postcode are `lead_flags`
   (`low-frequency`, `capability-gap`, `out-of-area`), never blockers.
 - **SLA flags:** Priority `call-within-5min`, Standard/standard-flagged

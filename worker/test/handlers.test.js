@@ -620,7 +620,7 @@ describe("POST /gate — budget is the only thing that decides the calendar", ()
     expect(fieldsFromLastCall(global.fetch).lead_flags).toBe("none");
   });
 
-  it("sends an under-$2,000 budget to nurture even with other flags", async () => {
+  it("sends an under-$2,500 budget to nurture even with other flags", async () => {
     global.fetch = mockGhlOk();
     const req = makeRequest("/gate", {
       contact_id: "c-nurture",
@@ -707,6 +707,19 @@ describe("POST /confirm", () => {
     expect(json.tier).toBe("standard");
   });
 
+  it("keeps a budget-DQ'd lead in nurture when the flexible amount is $2,000 (below the $2,500 floor)", async () => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/confirm", {
+      contact_id: "c6b",
+      customFields: { dq_flag: "nurture-budget", budget_flexible: "yes", flexible_budget_amount: "2000" },
+    });
+
+    const json = await (await worker.fetch(req, env)).json();
+
+    expect(json.dimension).toBe("budget");
+    expect(json.requalified).toBe(false);
+  });
+
   it("keeps a budget-DQ'd lead in nurture when the flexible amount is still below the floor", async () => {
     global.fetch = mockGhlOk();
     const req = makeRequest("/confirm", {
@@ -733,7 +746,7 @@ describe("POST /confirm", () => {
         dq_flag: "nurture-frequency",
         frequency_flexible: "yes",
         flexible_frequency: "few_times_week",
-        monthly_budget: "2000",
+        monthly_budget: "2500",
         facility_type: "strata",
       },
     });
@@ -895,7 +908,7 @@ describe("field defaults and alternate payload shapes", () => {
     global.fetch = mockGhlOk();
     const req = makeRequest("/confirm", {
       contact_id: "c17",
-      customFields: { budget_flexible: "yes", flexible_budget_amount: "2000" },
+      customFields: { budget_flexible: "yes", flexible_budget_amount: "2500" },
     });
 
     const res = await worker.fetch(req, env);
@@ -955,7 +968,7 @@ describe("field defaults and alternate payload shapes", () => {
     global.fetch = mockGhlOk();
     const req = makeRequest("/confirm", {
       contact_id: "c22",
-      custom_fields: { dq_flag: "nurture-budget", budget_flexible: "yes", flexible_budget_amount: "2000" },
+      custom_fields: { dq_flag: "nurture-budget", budget_flexible: "yes", flexible_budget_amount: "2500" },
     });
 
     const res = await worker.fetch(req, env);
