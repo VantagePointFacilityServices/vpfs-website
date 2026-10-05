@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import { mkdirSync, mkdtempSync, writeFileSync, readFileSync, existsSync } from "fs";
+import { describe, it, expect, beforeEach, afterAll } from "vitest";
+import { mkdirSync, mkdtempSync, writeFileSync, readFileSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join, resolve, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -15,9 +15,12 @@ const page = (fm, body = "") => `---\n${Object.entries({ description: `Descripti
 const live = { status: "published", published: "2026-01-01", updated: "2026-01-01" };
 
 let site, content;
+const roots = [];
+afterAll(() => roots.forEach((r) => rmSync(r, { recursive: true, force: true })));
 function put(rel, text) { const f = join(content, "resources", rel); mkdirSync(dirname(f), { recursive: true }); writeFileSync(f, text); }
 beforeEach(() => {
   const root = mkdtempSync(join(tmpdir(), "res-"));
+  roots.push(root);
   site = join(root, "site"); content = join(root, "content");
   mkdirSync(site); mkdirSync(content);
   writeFileSync(join(site, "why-us.html"), `<header class="site-header"><a href="index.html" class="active">Home</a></header><footer class="site-footer"><a href="about.html">About</a><a href="tel:0756512257">call</a></footer>`);
