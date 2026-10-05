@@ -8,7 +8,7 @@ updated: 2026-10-06
 order: 3
 sources:
   - WorkSafe Queensland, Labelling and safety data sheets | https://www.worksafe.qld.gov.au/safety-and-prevention/hazards/hazardous-chemicals/managing-hazchem-risks/labelling-and-safety-data-sheets
-  - Business Queensland, Assess the risks of hazardous chemicals | https://www.business.qld.gov.au/running-business/protecting-business/risk-management/hazardous-chemicals/assess-risks
+  - Business Queensland, Assess the risks of hazardous chemicals | https://www.business.qld.gov.au/running-business/whs/hazardous-chemicals/assess-risks
 ---
 A cleaning contractor should be able to give you a current safety data sheet for every hazardous chemical it uses on your site, show a chemical register, explain how products are stored, labelled and used, and show that its staff are trained. If it cannot, it is not managing chemical risk, and your people and building are exposed.
 
@@ -20,7 +20,7 @@ A safety data sheet (SDS) is a document from the manufacturer or importer that d
 
 ## What else should the contractor have?
 
-Business Queensland's guidance on [assessing the risks of hazardous chemicals](https://www.business.qld.gov.au/running-business/protecting-business/risk-management/hazardous-chemicals/assess-risks) describes the usual building blocks: identify the hazardous chemicals, keep a register with current safety data sheets and manage the risks. For a cleaning contractor on your site, that means:
+Business Queensland's guidance on [assessing the risks of hazardous chemicals](https://www.business.qld.gov.au/running-business/whs/hazardous-chemicals/assess-risks) describes the usual building blocks: identify the hazardous chemicals, keep a register with current safety data sheets and manage the risks. For a cleaning contractor on your site, that means:
 
 - A list of products used on your site, with SDS attached.
 - Clear labelling on containers, including any decanted into smaller bottles.

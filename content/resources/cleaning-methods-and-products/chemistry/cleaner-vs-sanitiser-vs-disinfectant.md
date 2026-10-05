@@ -7,7 +7,7 @@ published: 2026-10-06
 updated: 2026-10-06
 order: 1
 sources:
-  - TGA, Regulation of cleaners and disinfectants | https://www.tga.gov.au/resources/resource/guidance/regulation-cleaners-and-disinfectants-information-sponsors-and-manufacturers
+  - TGA, Regulation of cleaners and disinfectants | https://www.tga.gov.au/products/other-therapeutic-good/disinfectants-and-sterilants/overview/regulation-cleaners-and-disinfectants
 ---
 A cleaner removes dirt and soil, a sanitiser reduces germs to a safer level on surfaces, and a disinfectant is designed to kill specified germs when used as directed. Cleaning comes first, because dirt can stop disinfectants working. Most commercial areas need regular cleaning and only some need disinfection, so ask your contractor which products they use and why.
 
@@ -23,7 +23,7 @@ This is written for the person buying or managing cleaning, so you can understan
 
 ## How does Australia regulate them?
 
-The Therapeutic Goods Administration (TGA) regulates disinfectants. According to its guidance on the [regulation of cleaners and disinfectants](https://www.tga.gov.au/resources/resource/guidance/regulation-cleaners-and-disinfectants-information-sponsors-and-manufacturers), products that claim to kill or be active against specific organisms such as viruses, spores or fungi must be on the Australian Register of Therapeutic Goods before supply. General cleaners and sanitisers that make no disinfectant claims are generally not regulated by the TGA. Hospital grade and household or commercial grade disinfectants face different requirements. Read the TGA page for the current position.
+The Therapeutic Goods Administration (TGA) regulates disinfectants. According to its guidance on the [regulation of cleaners and disinfectants](https://www.tga.gov.au/products/other-therapeutic-good/disinfectants-and-sterilants/overview/regulation-cleaners-and-disinfectants), products that claim to kill or be active against specific organisms such as viruses, spores or fungi must be on the Australian Register of Therapeutic Goods before supply. General cleaners and sanitisers that make no disinfectant claims are generally not regulated by the TGA. Hospital grade and household or commercial grade disinfectants face different requirements. Read the TGA page for the current position.
 
 ## What should you take from this?
 

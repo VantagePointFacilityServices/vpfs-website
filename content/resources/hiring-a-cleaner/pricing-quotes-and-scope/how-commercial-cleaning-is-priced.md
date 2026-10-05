@@ -7,7 +7,7 @@ published: 2026-10-06
 updated: 2026-10-06
 order: 1
 sources:
-  - Fair Work Ombudsman, Cleaning Services Award | https://awards.fairwork.gov.au/MA000022
+  - Fair Work Ombudsman, Cleaning Services Award | https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000022-summary
   - ISSA, How to Calculate Cleaning Times | https://www.issa.com/articles/how-to-calculate-cleaning-times/
 ---
 A commercial cleaning quote is built from the time needed to complete your scope each visit, multiplied by the cost of the labour doing it, plus supplies, equipment, insurance, overheads and the contractor's margin. Labour is the biggest part, so anything that changes the hours or the cost of those hours changes the price.
@@ -18,7 +18,7 @@ Cleaning is hands-on work, so the time to do it is the product. Contractors esti
 
 ## What rules set the cost of an hour?
 
-For most commercial cleaners the [Cleaning Services Award](https://awards.fairwork.gov.au/MA000022) sets minimum pay rates and loadings, including higher rates for evenings, weekends and public holidays and minimum engagement periods for shifts. On top of wages come superannuation, workers' compensation insurance and leave entitlements. A contractor who pays correctly cannot price an hour below those combined costs, which is why very low quotes deserve questions.
+For most commercial cleaners the [Cleaning Services Award](https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000022-summary) sets minimum pay rates and loadings, including higher rates for evenings, weekends and public holidays and minimum engagement periods for shifts. On top of wages come superannuation, workers' compensation insurance and leave entitlements. A contractor who pays correctly cannot price an hour below those combined costs, which is why very low quotes deserve questions.
 
 ## What else goes into the price?
 

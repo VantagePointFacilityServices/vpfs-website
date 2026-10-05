@@ -8,7 +8,7 @@ updated: 2026-10-06
 order: 1
 sources:
   - GECA, Cleaning Products standard (CPv3.0-2022) | https://www.geca.eco/cleaning-products-cpv3-0-2022
-  - TGA, Regulation of cleaners and disinfectants | https://www.tga.gov.au/resources/resource/guidance/regulation-cleaners-and-disinfectants-information-sponsors-and-manufacturers
+  - TGA, Regulation of cleaners and disinfectants | https://www.tga.gov.au/products/other-therapeutic-good/disinfectants-and-sterilants/overview/regulation-cleaners-and-disinfectants
 ---
 Plant-based, enzymatic and conventional cleaners all have a place in commercial cleaning. The right choice depends on the soil, the surface and the risk, not on the label. Marketing for all three is strong, so the best test is the safety data sheet, any independent certification and a trial on your own site.
 

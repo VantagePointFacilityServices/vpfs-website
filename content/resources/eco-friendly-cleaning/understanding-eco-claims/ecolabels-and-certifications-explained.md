@@ -11,7 +11,7 @@ sources:
   - GECA, Cleaning Products standard (CPv3.0-2022) | https://www.geca.eco/cleaning-products-cpv3-0-2022
   - GECA, Cleaning Services standard | https://www.geca.eco/cleaning-services-csv2-0-2021
   - GECA, Certified product and service directory (cleaning products) | https://www.geca.eco/products/cleaning-products
-  - TGA, Regulation of cleaners and disinfectants | https://www.tga.gov.au/resources/resource/guidance/regulation-cleaners-and-disinfectants-information-sponsors-and-manufacturers
+  - TGA, Regulation of cleaners and disinfectants | https://www.tga.gov.au/products/other-therapeutic-good/disinfectants-and-sterilants/overview/regulation-cleaners-and-disinfectants
 ---
 An ecolabel is an independent certification that a product or service has been assessed against a published environmental standard. In Australian commercial cleaning the one to know is GECA, which certifies both cleaning products and cleaning services. Overseas labels such as Green Seal, the EU Ecolabel and the Nordic Swan also exist, but you should check each claim against the certifier's own directory.
 

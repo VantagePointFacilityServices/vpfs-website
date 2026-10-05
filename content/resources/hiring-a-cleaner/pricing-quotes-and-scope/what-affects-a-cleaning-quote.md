@@ -21,7 +21,7 @@ Cleaning five nights a week costs more than three, but not in a straight line, b
 
 ## Access: when can cleaners be there?
 
-Evening, weekend and public holiday work attracts higher pay rates under the [Cleaning Services Award](https://awards.fairwork.gov.au/MA000022), so a site that can only be cleaned at those times costs more than one with weekday access. Tight access windows, security procedures and lift or key logistics add time too.
+Evening, weekend and public holiday work attracts higher pay rates under the [Cleaning Services Award](https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000022-summary), so a site that can only be cleaned at those times costs more than one with weekday access. Tight access windows, security procedures and lift or key logistics add time too.
 
 ## Space type and layout
 

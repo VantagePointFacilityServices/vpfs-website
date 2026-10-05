@@ -2,7 +2,7 @@
 title: Commercial Cleaning Tenders and RFQs
 nav_title: Tenders and RFQs
 description: How to run a commercial cleaning tender or request for quote: what to send contractors, what to ask for and how to score the responses fairly.
-status: draft
+status: published
 published: 2026-10-06
 updated: 2026-10-06
 order: 2
