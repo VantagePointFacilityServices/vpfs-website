@@ -123,6 +123,16 @@ covers the five original screens (Home, Services, Areas, Why us, Contact), not
 `about.html`. See that folder's own `README.md` for the full handoff notes, including
 which copy and numbers are placeholders pending client confirmation.
 
+## Resource silos (`/resources/`)
+
+Nested SEO guides (hub → pillar → cluster → guide) are written as markdown in `content/resources/`
+(folder = URL = hierarchy) and built into `site/resources/` by `site/scripts/build-resources.mjs`.
+This is the one build step in an otherwise hand-written site: output is committed, never hand-edited,
+and CI runs `node site/scripts/build-resources.mjs --check` so a content change that was not rebuilt
+fails the deploy. Pages are `status: draft` until published; drafts emit nothing. Strategy, topic map
+and the authoring workflow are in the `vpos` repo (`commercial/res/seo-silo-research-and-topic-map.md`
+and the `seo-silo-pages` skill).
+
 ## SEO
 
 `site/robots.txt` and `site/sitemap.xml` are served as static files at the site root

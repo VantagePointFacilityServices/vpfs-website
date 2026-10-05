@@ -15,7 +15,7 @@ import { readdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 import { fileURLToPath } from "url";
 
-const HTML_ASSET = /((?:href|src)=")(assets\/[^"?#]+\.(?:css|js))(?:\?v=[^"]*)?(")/g;
+const HTML_ASSET = /((?:href|src)=")(\/?assets\/[^"?#]+\.(?:css|js))(?:\?v=[^"]*)?(")/g;
 const JS_RELATIVE_IMPORT = /(from\s+")(\.{1,2}\/[^"?#]+\.js)(?:\?v=[^"]*)?(")/g;
 
 export function bustHtml(html, version) {
@@ -32,12 +32,20 @@ function rewrite(file, transform, version) {
   if (after !== before) writeFileSync(file, after);
 }
 
+const SKIP_DIRS = new Set(["node_modules", "assets", "scripts", "test", "branding"]);
+function htmlFiles(dir) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>
+    e.isDirectory()
+      ? SKIP_DIRS.has(e.name) ? [] : htmlFiles(join(dir, e.name))
+      : e.name.endsWith(".html") ? [join(dir, e.name)] : []);
+}
+
 export function bustSite(siteDir, version) {
   if (!version) throw new Error("cache-bust: a version (e.g. the commit SHA) is required");
 
-  for (const name of readdirSync(siteDir)) {
-    if (name.endsWith(".html")) rewrite(join(siteDir, name), bustHtml, version);
-  }
+  // Pages live at the root and, for generated resource silos, in nested folders (which use
+  // root-absolute /assets/ URLs).
+  for (const file of htmlFiles(siteDir)) rewrite(file, bustHtml, version);
 
   const jsDir = join(siteDir, "assets", "js");
   for (const name of readdirSync(jsDir)) {
