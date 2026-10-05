@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { cpSync, mkdtempSync, readFileSync, readdirSync } from "fs";
+import { describe, it, expect, afterAll } from "vitest";
+import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join, resolve } from "path";
 import { bustHtml, bustJs, bustSite } from "../scripts/cache-bust.mjs";
@@ -39,11 +39,15 @@ describe("bustJs", () => {
 });
 
 describe("bustSite on the real site", () => {
+  const copies = [];
+  afterAll(() => copies.forEach((d) => rmSync(d, { recursive: true, force: true })));
+
   function copyOfSite() {
     const dir = mkdtempSync(join(tmpdir(), "cache-bust-"));
+    copies.push(dir);
     cpSync(resolve(__dirname, ".."), dir, {
       recursive: true,
-      filter: (src) => !src.includes("node_modules"),
+      filter: (src) => !src.includes("node_modules") && !src.includes("/branding"), // branding holds large client PDFs the test does not need
     });
     return dir;
   }
