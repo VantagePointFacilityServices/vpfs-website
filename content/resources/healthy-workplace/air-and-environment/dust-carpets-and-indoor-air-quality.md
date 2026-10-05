@@ -7,13 +7,13 @@ published: 2026-10-06
 updated: 2026-10-06
 order: 1
 sources:
-  - Comcare, HSR helper: indoor air quality | https://www.comcare.gov.au/about/forms-pubs/docs/pubs/safety/hsr-helper-indoor-air-quality.pdf
+  - Comcare, HSR helper: indoor air quality | https://www.comcare.gov.au/sites/default/files/docs/hsr-helper-indoor-air-quality.pdf
 ---
 Routine cleaning controls the dust that builds up on floors, ledges and carpets, and good vacuuming and dusting help keep an office comfortable. But indoor air quality depends on several things, and cleaning is only one of them. If staff report stuffiness, odours or symptoms, ask for a proper look at ventilation and the building, not just more cleaning.
 
 ## What affects indoor air quality?
 
-Guidance for workplaces, such as Comcare's [health and safety representative helper on indoor air quality](https://www.comcare.gov.au/about/forms-pubs/docs/pubs/safety/hsr-helper-indoor-air-quality.pdf), treats air quality as a combination of factors: sources of contaminants in the building, how well the ventilation system is designed and maintained, and how the building is used. Cleaning materials and activities are among the possible sources, which is a reason to choose and use products carefully.
+Guidance for workplaces, such as Comcare's [health and safety representative helper on indoor air quality](https://www.comcare.gov.au/sites/default/files/docs/hsr-helper-indoor-air-quality.pdf), treats air quality as a combination of factors: sources of contaminants in the building, how well the ventilation system is designed and maintained, and how the building is used. Cleaning materials and activities are among the possible sources, which is a reason to choose and use products carefully.
 
 ## What can cleaning do?
 

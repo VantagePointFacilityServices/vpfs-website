@@ -2,12 +2,12 @@
 title: What to Ask for in a Commercial Cleaning RFQ
 nav_title: What to ask for in an RFQ
 description: The information and documents to request in a commercial cleaning RFQ so every response is complete, comparable and easy to check.
-status: draft
+status: published
 published: 2026-10-06
 updated: 2026-10-06
 order: 2
 sources:
-  - Fair Work Ombudsman, Cleaning Services Award | https://awards.fairwork.gov.au/MA000022
+  - Fair Work Ombudsman, Cleaning Services Award | https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000022-summary
 ---
 A good cleaning RFQ asks every contractor for the same things: pricing against your written scope, the hours behind it, who does the work and how it is supervised, how quality is checked, proof of insurance and compliance, references and any changes they want to your terms. Asking in a fixed structure is what makes the responses comparable.
 
@@ -26,7 +26,7 @@ Send the scope of work, the site address and areas, access days and hours, the p
 
 ### People and supervision
 
-- Who will clean the site, whether as employees or subcontractors, and how they are engaged and paid under the [Cleaning Services Award](https://awards.fairwork.gov.au/MA000022).
+- Who will clean the site, whether as employees or subcontractors, and how they are engaged and paid under the [Cleaning Services Award](https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000022-summary).
 - How staff are screened and inducted for your site.
 - Who supervises, how often they visit and how you reach them.
 

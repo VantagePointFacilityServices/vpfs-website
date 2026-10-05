@@ -7,7 +7,7 @@ published: 2026-10-06
 updated: 2026-10-06
 order: 1
 sources:
-  - Fair Work Ombudsman, Cleaning Services Award | https://awards.fairwork.gov.au/MA000022
+  - Fair Work Ombudsman, Cleaning Services Award | https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000022-summary
 ---
 To hire a commercial cleaner well, define what you need cleaned and how often in writing, get quotes against that same written scope, then judge contractors on how they will deliver and prove it, not on the lowest price. Most bad cleaning contracts fail at the first step: the scope was vague, so every quote priced something different.
 
@@ -23,7 +23,7 @@ Writing this down is the single most useful step. [How to write a cleaning scope
 
 Commercial cleaning is priced mainly on labour: the time needed to do the agreed scope at the agreed frequency, multiplied by what that labour costs, plus supplies, equipment, insurance and the contractor's overheads and margin. Floor area matters because it drives time, but it is not the price on its own.
 
-Because labour is the largest part of the cost, the rules that govern what cleaners must be paid, including higher rates for evenings, weekends and public holidays under the [Cleaning Services Award](https://awards.fairwork.gov.au/MA000022), set a floor under any honest quote. For the full breakdown, read [how commercial cleaning is priced](/resources/hiring-a-cleaner/pricing-quotes-and-scope/how-commercial-cleaning-is-priced/).
+Because labour is the largest part of the cost, the rules that govern what cleaners must be paid, including higher rates for evenings, weekends and public holidays under the [Cleaning Services Award](https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000022-summary), set a floor under any honest quote. For the full breakdown, read [how commercial cleaning is priced](/resources/hiring-a-cleaner/pricing-quotes-and-scope/how-commercial-cleaning-is-priced/).
 
 ## What makes one quote higher than another?
 
@@ -42,6 +42,10 @@ At Vantage Point Facility Services we scope every building room by room, task by
 ## What does a good contract include?
 
 A good cleaning contract names the scope, the frequency, the price, how quality is measured, how issues are raised and fixed, how the scope can change, and how either side can end the agreement. Keep the scope document as a schedule to the contract so it is enforceable.
+
+## Running a formal tender or RFQ
+
+For a larger or higher-risk contract, or where your organisation requires competitive quotes, run a structured process. [How to run a cleaning tender](/resources/hiring-a-cleaner/tenders-and-rfqs/how-to-run-a-cleaning-tender/) walks through it, [what to ask for in a cleaning RFQ](/resources/hiring-a-cleaner/tenders-and-rfqs/what-to-ask-for-in-a-cleaning-rfq/) lists the information to request and the [tender evaluation scorecard](/resources/hiring-a-cleaner/tenders-and-rfqs/cleaning-tender-evaluation-scorecard/) shows how to score the responses.
 
 ## Where to start
 

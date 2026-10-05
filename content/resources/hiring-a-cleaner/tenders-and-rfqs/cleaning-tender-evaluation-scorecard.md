@@ -2,7 +2,7 @@
 title: Cleaning Tender Evaluation Scorecard
 nav_title: Tender scorecard
 description: A weighted scorecard for evaluating commercial cleaning tender responses: criteria, suggested weightings, scoring method and how to record the decision.
-status: draft
+status: published
 published: 2026-10-06
 updated: 2026-10-06
 order: 3
@@ -42,7 +42,7 @@ Use a simple, written scale and apply it the same way to everyone:
 
 ## How do you score price fairly?
 
-Score price by comparing each bid to the lowest compliant bid, after you have checked that the scope is the same. Do not give top marks to a price that is low because tasks are missing or because it could not cover correct wages under the [Cleaning Services Award](https://awards.fairwork.gov.au/MA000022). Ask the bidder to explain unusually low prices before you score them.
+Score price by comparing each bid to the lowest compliant bid, after you have checked that the scope is the same. Do not give top marks to a price that is low because tasks are missing or because it could not cover correct wages under the [Cleaning Services Award](https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000022-summary). Ask the bidder to explain unusually low prices before you score them.
 
 ## What should you record?
 

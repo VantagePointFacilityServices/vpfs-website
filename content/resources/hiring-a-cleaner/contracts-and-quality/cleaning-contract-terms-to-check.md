@@ -7,7 +7,7 @@ published: 2026-10-06
 updated: 2026-10-06
 order: 1
 sources:
-  - Fair Work Ombudsman, Cleaning Services Award | https://awards.fairwork.gov.au/MA000022
+  - Fair Work Ombudsman, Cleaning Services Award | https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000022-summary
 ---
 Before signing a commercial cleaning contract, check that it attaches your written scope, states the term and price, explains how prices and scope can change, sets performance standards and a way to fix failures, confirms the contractor's insurance and workforce obligations, and lets you exit if standards are not met. This is general guidance, not legal advice, so have a lawyer review any contract of real value.
 
@@ -33,7 +33,7 @@ Look for a defined standard, an inspection routine and a process for raising and
 
 ## What does the contract say about insurance and workers?
 
-The contract should require current public liability and workers' compensation cover and make the contractor responsible for meeting its workers' pay and entitlements, including under the [Cleaning Services Award](https://awards.fairwork.gov.au/MA000022) where it applies. Ask to see certificates before the start date.
+The contract should require current public liability and workers' compensation cover and make the contractor responsible for meeting its workers' pay and entitlements, including under the [Cleaning Services Award](https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000022-summary) where it applies. Ask to see certificates before the start date.
 
 ## How can either side end it?
 

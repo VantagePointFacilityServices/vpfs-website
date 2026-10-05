@@ -2,7 +2,7 @@
 title: How to Run a Commercial Cleaning Tender
 nav_title: Run a cleaning tender
 description: A step-by-step process for running a commercial cleaning tender, from brief and site inspection to scoring and appointment, plus the mistakes to avoid.
-status: draft
+status: published
 published: 2026-10-06
 updated: 2026-10-06
 order: 1
@@ -35,7 +35,7 @@ Ask each bidder to respond in the same structure, so you can compare like with l
 
 ## Step 7: Score, then verify
 
-Score each response using criteria you wrote before opening them, using the [cleaning tender evaluation scorecard](/resources/hiring-a-cleaner/tenders-and-rfqs/cleaning-tender-evaluation-scorecard/). Then verify before you appoint: call references, check certificates of currency and ask the lead contenders to confirm in writing how their cleaners are engaged and paid under the [Cleaning Services Award](https://awards.fairwork.gov.au/MA000022).
+Score each response using criteria you wrote before opening them, using the [cleaning tender evaluation scorecard](/resources/hiring-a-cleaner/tenders-and-rfqs/cleaning-tender-evaluation-scorecard/). Then verify before you appoint: call references, check certificates of currency and ask the lead contenders to confirm in writing how their cleaners are engaged and paid under the [Cleaning Services Award](https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000022-summary).
 
 ## Step 8: Appoint and brief the unsuccessful bidders
 

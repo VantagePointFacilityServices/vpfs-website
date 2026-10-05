@@ -7,7 +7,7 @@ published: 2026-10-06
 updated: 2026-10-06
 order: 3
 sources:
-  - Fair Work Ombudsman, Cleaning Services Award | https://awards.fairwork.gov.au/MA000022
+  - Fair Work Ombudsman, Cleaning Services Award | https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000022-summary
 ---
 To compare commercial cleaning quotes fairly, line each one up against the same written scope and check the same list of items: what is included, how often, who supplies what, how quality is checked, what insurance is held and what the contract allows. Only after those match does the price comparison mean anything.
 
@@ -25,7 +25,7 @@ Ask each contractor how many labour hours per week sit behind the price. A quote
 
 ## Step 4: Test the pay assumption
 
-Wages are the largest cost, and the [Cleaning Services Award](https://awards.fairwork.gov.au/MA000022) sets minimums. A quote far below the rest may rely on underpayment or on contractors who are not covering insurance and entitlements. That can become your problem as the engaging business, so ask each contractor to confirm in writing how their cleaners are engaged and paid.
+Wages are the largest cost, and the [Cleaning Services Award](https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000022-summary) sets minimums. A quote far below the rest may rely on underpayment or on contractors who are not covering insurance and entitlements. That can become your problem as the engaging business, so ask each contractor to confirm in writing how their cleaners are engaged and paid.
 
 ## Step 5: Compare how quality is proven
 

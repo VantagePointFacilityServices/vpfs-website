@@ -7,7 +7,7 @@ published: 2026-10-06
 updated: 2026-10-06
 order: 1
 sources:
-  - Fair Work Ombudsman, Cleaning Services Award | https://awards.fairwork.gov.au/MA000022
+  - Fair Work Ombudsman, Cleaning Services Award | https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000022-summary
 ---
 Before hiring a commercial cleaner, ask who will actually clean your building and how they are paid, how the work is supervised and proven, what insurance and safety systems they hold, and what the contract lets you do if things go wrong. A good contractor answers each question specifically and will put the answers in writing.
 
@@ -17,7 +17,7 @@ Ask whether the cleaners are employees or subcontractors, whether the same peopl
 
 ## How are your cleaners paid?
 
-Ask the contractor to confirm in writing how cleaners are engaged and that pay meets the [Cleaning Services Award](https://awards.fairwork.gov.au/MA000022). Wages are the largest cost in cleaning, and as the engaging business you do not want to inherit a pay problem. A contractor with nothing to hide answers this plainly.
+Ask the contractor to confirm in writing how cleaners are engaged and that pay meets the [Cleaning Services Award](https://www.fairwork.gov.au/employment-conditions/awards/awards-summary/ma000022-summary). Wages are the largest cost in cleaning, and as the engaging business you do not want to inherit a pay problem. A contractor with nothing to hide answers this plainly.
 
 ## Who supervises and how often?
 

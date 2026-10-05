@@ -7,13 +7,13 @@ published: 2026-10-06
 updated: 2026-10-06
 order: 3
 sources:
-  - Queensland Small Business Commissioner, Make good | https://www.qsbc.qld.gov.au/factsheets/make-good
+  - Queensland Small Business Commissioner, Make good | https://www.qsbc.qld.gov.au/small-business-help/factsheets/make-good
 ---
 For an office handover, read your lease to see exactly what it requires on exit, document the condition against the start-of-lease report, then scope the cleaning to match and book it before the inspection. Cleaning is only part of the obligation, and what counts as "clean" depends on the wording of your lease.
 
 ## What does your lease actually say?
 
-Make good clauses vary a great deal. The Queensland Small Business Commissioner's [make good factsheet](https://www.qsbc.qld.gov.au/factsheets/make-good) lists leaving the premises clean and tidy as a common term, but notes that some leases require far more, such as removing fit-out or restoring walls. Read your lease before you plan anything, and get legal advice if it is unclear.
+Make good clauses vary a great deal. The Queensland Small Business Commissioner's [make good factsheet](https://www.qsbc.qld.gov.au/small-business-help/factsheets/make-good) lists leaving the premises clean and tidy as a common term, but notes that some leases require far more, such as removing fit-out or restoring walls. Read your lease before you plan anything, and get legal advice if it is unclear.
 
 ## What should you check against?
 
