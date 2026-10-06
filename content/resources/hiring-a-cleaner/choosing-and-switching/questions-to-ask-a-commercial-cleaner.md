@@ -2,7 +2,7 @@
 title: Questions to Ask a Commercial Cleaner Before You Hire
 nav_title: Questions to ask
 description: The questions to ask a commercial cleaning contractor before you sign, grouped by people, quality, safety and contract, with what a good answer looks like.
-status: draft
+status: published
 published: 2026-10-06
 updated: 2026-10-06
 order: 1
