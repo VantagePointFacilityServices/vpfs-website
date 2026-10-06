@@ -2,7 +2,7 @@
 title: How Commercial Cleaning Quality Is Audited
 nav_title: How quality is audited
 description: How commercial cleaning quality is inspected and measured: who audits, what is checked against the scope, how often, and how failures are recorded and fixed.
-status: draft
+status: published
 published: 2026-10-06
 updated: 2026-10-06
 order: 2
