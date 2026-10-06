@@ -17,20 +17,6 @@ const LANDING_PAGES = ALL_PAGES.filter((p) => parse(p).body.dataset.pageType ===
 // landing marker or Service schema.
 const SEO_PAGES = [...LANDING_PAGES, "services.html"];
 
-// Legacy page checks that issue 06 (services.html hub rewrite, D16) will make
-// pass: reported with a warning, not failed, until then. Shrink-only.
-const LEGACY_SEO_EXEMPT = {
-  "services.html": ["h1", "images"], // issue 06: JS-filled <h1>, CSS-background carousel, logos without width/height
-};
-const exempt = (page, check) => (LEGACY_SEO_EXEMPT[page] || []).includes(check);
-const guard = (page, check, fn) => {
-  if (!exempt(page, check)) return fn();
-  try {
-    fn();
-  } catch (e) {
-    console.warn(`[issue 06] ${page} fails "${check}" check: ${String(e.message).split("\n")[0]}`);
-  }
-};
 
 const titleOf = (p) => parse(p).title.trim();
 const descOf = (p) => (parse(p).querySelector('meta[name="description"]')?.content || "").trim();
@@ -76,6 +62,14 @@ describe("landing page discovery", () => {
   });
 });
 
+describe.each(ALL_PAGES)("%s title/description uniqueness", (page) => {
+  it("has a title and description no other site/*.html page shares", () => {
+    const others = ALL_PAGES.filter((p) => p !== page);
+    expect(others.filter((p) => titleOf(p) === titleOf(page)), "duplicate title").toEqual([]);
+    expect(others.filter((p) => descOf(p) === descOf(page)), "duplicate description").toEqual([]);
+  });
+});
+
 describe.each(SEO_PAGES)("%s on-page SEO", (page) => {
   const isLanding = LANDING_PAGES.includes(page);
 
@@ -84,29 +78,16 @@ describe.each(SEO_PAGES)("%s on-page SEO", (page) => {
     expect(descOf(page)).not.toBe("");
   });
 
-  it("has a title and description no other page shares", () => {
-    const others = ALL_PAGES.filter((p) => p !== page);
-    const dupTitle = others.filter((p) => titleOf(p) === titleOf(page));
-    const dupDesc = others.filter((p) => descOf(p) === descOf(page));
-    // Legacy pages share copy until issue 06 rewrites them: report, don't fail.
-    const offenders = (list) => (isLanding ? list : list.filter((p) => LANDING_PAGES.includes(p)));
-    expect(offenders(dupTitle), "duplicate title").toEqual([]);
-    expect(offenders(dupDesc), "duplicate description").toEqual([]);
-    if (!isLanding && (dupTitle.length || dupDesc.length)) {
-      console.warn(`[issue 06] ${page} shares title/description with: ${[...dupTitle, ...dupDesc].join(", ")}`);
-    }
-  });
-
   it("has a self-referencing canonical", () => {
     expect(parse(page).querySelector('link[rel="canonical"]')?.href).toBe(`${ORIGIN}/${page}`);
   });
 
   it("has exactly one non-empty hard-coded <h1>", () => {
-    guard(page, "h1", () => {
+    {
       const h1s = parse(page).querySelectorAll("h1");
       expect(h1s.length).toBe(1);
       expect(h1s[0].textContent.trim()).not.toBe("");
-    });
+    }
   });
 
   it("has JSON-LD that parses and uses no banned types", () => {
@@ -116,7 +97,7 @@ describe.each(SEO_PAGES)("%s on-page SEO", (page) => {
     }
   });
 
-  it("has an alt, width and height on every image, and no inline background-image", () => guard(page, "images", () => {
+  it("has an alt, width and height on every image, and no inline background-image", () => {
     const doc = parse(page);
     for (const img of doc.querySelectorAll("img")) {
       const id = img.getAttribute("src");
@@ -129,7 +110,7 @@ describe.each(SEO_PAGES)("%s on-page SEO", (page) => {
         expect(el.getAttribute("style"), el.outerHTML.slice(0, 80)).not.toMatch(/background-image/i);
       }
     }
-  }));
+  });
 
   it("is listed in sitemap.xml", () => {
     expect(sitemap).toContain(`<loc>${ORIGIN}/${page}</loc>`);
@@ -182,12 +163,8 @@ const BANNED = [
   /\d+\s?%[^.]{0,60}(productiv|sick)/i, /(productiv|sick)[^.]{0,60}\d+\s?%/i,
 ];
 const MEDICAL_EXTRA = [/infection[- ]control/i, /AGPAL|QIP|RACGP/, /TGA/, /clinical waste/i, /accredit/i];
-// page -> banned patterns (as source strings) tolerated until issue 06.
-const LEGACY_ALLOW = {
-  "services.html": ["clinical-grade", "sharps", "eco products"], // issue 06 rewrites services.html (D16)
-  "why-us.html": ["clinical-grade"], // issue 06 reviews legacy claims copy ("clinical-grade where the site requires it")
-  "about.html": ["\\bbest\\b"], // issue 06 reviews legacy claims copy ("the best strata committees…")
-};
+// page -> banned patterns (as source strings) tolerated. Empty now that issue 06 is done.
+const LEGACY_ALLOW = {};
 
 function visibleText(page) {
   const doc = parse(page);
@@ -246,23 +223,6 @@ describe("warehouse landing page", () => {
   });
 });
 
-describe("Services dropdown links each vertical to its own page", () => {
-  const TARGETS = {
-    Office: "office-cleaning-gold-coast.html",
-    "Strata & body corporate": "strata-cleaning-gold-coast.html",
-    School: "school-cleaning-gold-coast.html",
-    Childcare: "childcare-cleaning-gold-coast.html",
-    "Medical centre": "medical-centre-cleaning-gold-coast.html",
-    "Warehouse & industrial": "warehouse-industrial-cleaning-gold-coast.html",
-  };
-  it.each(LANDING_PAGES)("%s", (page) => {
-    for (const a of parse(page).querySelectorAll("#nav-services a")) {
-      const label = a.textContent.trim();
-      if (TARGETS[label]) expect(a.getAttribute("href"), label).toBe(TARGETS[label]);
-    }
-  });
-});
-
 describe("services dropdown links each vertical to its own page", () => {
   const EXPECTED = {
     Office: "office-cleaning-gold-coast.html",
@@ -281,4 +241,116 @@ describe("services dropdown links each vertical to its own page", () => {
       }
     });
   }
+});
+
+describe("site-wide navigation (D15)", () => {
+  const VERTICALS = [
+    "office-cleaning-gold-coast.html", "strata-cleaning-gold-coast.html", "school-cleaning-gold-coast.html",
+    "childcare-cleaning-gold-coast.html", "medical-centre-cleaning-gold-coast.html", "warehouse-industrial-cleaning-gold-coast.html",
+  ];
+  const hrefs = (nodes) => Array.from(nodes, (a) => a.getAttribute("href"));
+  describe.each(ALL_PAGES)("%s", (page) => {
+    const doc = parse(page);
+    it("header dropdown links the six vertical pages", () => {
+      expect(hrefs(doc.querySelectorAll("#nav-services a"))).toEqual(VERTICALS);
+    });
+    it("footer Services column links the six vertical pages", () => {
+      const h4 = Array.from(doc.querySelectorAll("footer h4")).find((h) => h.textContent.trim() === "Services");
+      expect(hrefs(h4.parentElement.querySelectorAll("a"))).toEqual(VERTICALS);
+    });
+    it("has no services.html# anchors", () => {
+      expect(hrefs(doc.querySelectorAll("a")).filter((h) => h.startsWith("services.html#"))).toEqual([]);
+    });
+  });
+  it("services.html links every vertical page from its body", () => {
+    expect(hrefs(parse("services.html").querySelectorAll("main a, body > section a"))).toEqual(expect.arrayContaining(VERTICALS));
+  });
+  it("services.html has no eco badge or clinical claims", () => {
+    expect(visibleText("services.html")).not.toMatch(/eco products|clinical-grade|sharps/i);
+  });
+});
+
+describe("JSON-LD string values", () => {
+  const strings = (v) => (typeof v === "string" ? [v] : v && typeof v === "object" ? Object.values(v).flatMap(strings) : []);
+  it.each(LANDING_PAGES)("%s has no HTML-escaped &amp; in JSON-LD", (page) => {
+    for (const s of strings(jsonLd(page))) expect(s).not.toContain("&amp;");
+  });
+});
+
+// ---- Precinct pages (PRD D5) ----------------------------------------------
+// Precinct pages are discovered by filename so issue 08 can add its pages
+// without editing this block.
+const PRECINCT_PAGES = LANDING_PAGES.filter((p) => p.startsWith("commercial-cleaning-"));
+const VERTICAL_PAGES = [
+  "office-cleaning-gold-coast.html", "strata-cleaning-gold-coast.html", "school-cleaning-gold-coast.html",
+  "childcare-cleaning-gold-coast.html", "medical-centre-cleaning-gold-coast.html", "warehouse-industrial-cleaning-gold-coast.html",
+];
+
+// Main-content sentences of a precinct page, minus the shared chrome, the form,
+// and the quality/trust block marked data-boilerplate.
+function precinctSentences(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  doc.querySelectorAll("script, style, header, footer, form, nav, [data-boilerplate]").forEach((n) => n.remove());
+  const text = doc.body.textContent.replace(/\s+/g, " ");
+  return new Set(text.split(/(?<=[.!?])\s+/).map((s) => s.trim().toLowerCase()).filter((s) => s.length > 25));
+}
+function sharedRatio(a, b) {
+  const shared = [...a].filter((s) => b.has(s)).length;
+  return shared / Math.min(a.size, b.size);
+}
+const SIMILARITY_LIMIT = 0.25;
+
+describe("precinct pages", () => {
+  it("discovers the central precinct pages", () => {
+    for (const p of ["commercial-cleaning-southport.html", "commercial-cleaning-bundall.html", "commercial-cleaning-surfers-paradise-broadbeach.html"]) {
+      expect(PRECINCT_PAGES).toContain(p);
+    }
+  });
+
+  describe.each(PRECINCT_PAGES)("%s", (page) => {
+    const doc = parse(page);
+    it("has a precinct H1, website-lp channel and no pre-selected facility type", () => {
+      expect(doc.querySelector("h1").textContent.trim()).toMatch(/^Commercial Cleaning /);
+      expect(doc.querySelector("form.assessment-form").dataset.channel).toBe(`website-lp-${doc.body.dataset.pageKey}`);
+      expect(doc.querySelector("select[name=facility_type] option[selected]")).toBeNull();
+    });
+    it("links all six vertical pages and service-areas.html from the page body", () => {
+      const body = Array.from(doc.querySelectorAll("body > section a, main a"), (a) => a.getAttribute("href"));
+      for (const v of [...VERTICAL_PAGES, "service-areas.html"]) expect(body, v).toContain(v);
+    });
+    it("records at least four sourced facts as URLs in a foot comment", () => {
+      const html = read(page);
+      const comment = html.slice(html.lastIndexOf("<!--"), html.lastIndexOf("</body>"));
+      const facts = comment.match(/^Fact \d+ .*https?:\/\/\S+/gm) || [];
+      expect(facts.length).toBeGreaterThanOrEqual(4);
+    });
+    it("makes no response-time promises", () => {
+      expect(visibleText(page)).not.toMatch(/within \d+ ?(minutes?|hours?)|same[- ]day|24\/7|\bASAP\b|within the hour|next[- ]day/i);
+    });
+    it("has Breadcrumb Home > Areas > precinct and Service areaServed", () => {
+      const ld = jsonLd(page);
+      const crumbs = ld.find((b) => b["@type"] === "BreadcrumbList").itemListElement.map((i) => i.name);
+      expect(crumbs[0]).toBe("Home");
+      expect(crumbs[1]).toBe("Areas");
+      const svc = ld.find((b) => b["@type"] === "Service");
+      expect([].concat(svc.areaServed).length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("distinctness (no suburb-swap pages)", () => {
+    it("keeps shared main-content sentences between any two precinct pages below the limit", () => {
+      for (let i = 0; i < PRECINCT_PAGES.length; i++) {
+        for (let j = i + 1; j < PRECINCT_PAGES.length; j++) {
+          const r = sharedRatio(precinctSentences(read(PRECINCT_PAGES[i])), precinctSentences(read(PRECINCT_PAGES[j])));
+          expect(r, `${PRECINCT_PAGES[i]} vs ${PRECINCT_PAGES[j]}`).toBeLessThan(SIMILARITY_LIMIT);
+        }
+      }
+    });
+    it("fails a suburb-swap copy of a precinct page", () => {
+      const [first] = PRECINCT_PAGES;
+      const html = read(first);
+      const swapped = html.replace(/Southport|Bundall/g, "Elsewhere");
+      expect(sharedRatio(precinctSentences(html), precinctSentences(swapped))).toBeGreaterThanOrEqual(SIMILARITY_LIMIT);
+    });
+  });
 });

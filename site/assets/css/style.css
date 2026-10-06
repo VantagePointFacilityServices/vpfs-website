@@ -489,6 +489,8 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
   font-size:var(--fs-p3);
   color:var(--text-body);
 }
+a.suburb-tag{ text-decoration:none; }
+a.suburb-tag:hover,a.suburb-tag:focus-visible{ border-color:currentColor; color:var(--text-strong,var(--text-body)); }
 
 /* ===== Services carousel ===== */
 .carousel{ position:relative; }

@@ -65,3 +65,74 @@ Page: `site/warehouse-industrial-cleaning-gold-coast.html`
 | `assets/img/warehouse-industrial-floor-zone-cleaning.svg` | Wide shot of an open warehouse floor with one marked zone being cleaned, racking and painted aisles visible. 4:3, 800x600. | Open warehouse floor cleaned zone by zone with racking and marked aisles | Visible stock labels or client names, people standing in machine lanes |
 | `assets/img/warehouse-industrial-site-induction-ppe.svg` | Cleaner in hi-vis and safety footwear signing in at a site office or induction board. 4:3, 800x600. | Cleaner in high-visibility clothing checking in at a warehouse site office before starting a shift | Hard-hat or construction-site settings, readable client documents, missing PPE |
 | `assets/img/warehouse-industrial-shift-changeover-clean.svg` | Cleaner working a barriered loading-dock zone during a quiet window, no forklifts moving. 4:3, 800x600. | Cleaner working a marked-off warehouse dock zone during a quiet window between shifts | Moving forklifts, post-construction or builder's-clean scenes, chemical hazard signage |
+
+## Southport precinct
+
+Page: `site/commercial-cleaning-southport.html`
+
+| Filename | Scene | Alt text | Avoid |
+|---|---|---|---|
+| `assets/img/commercial-cleaning-southport-hero.svg` | Cleaner vacuuming a mid-rise Southport office floor after hours | Cleaner vacuuming an open-plan office floor after hours in a Gold Coast CBD building | Identifiable people, client logos or signage, recognisable client buildings without written permission |
+| `assets/img/southport-clinic-reception-clean.svg` | Reception and waiting area of a suburban consulting suite, empty and clean. 4:3, 800x600. | Reception and waiting area of a Southport consulting suite cleaned after hours | Identifiable people, client logos or signage, recognisable client buildings without written permission |
+| `assets/img/southport-tower-basement-access.svg` | Cleaner unloading a trolley at a basement loading bay of an apartment or office tower, no signage visible. 4:3, 800x600. | Cleaning crew unloading equipment at a tower basement loading bay | Identifiable people, client logos or signage, recognisable client buildings without written permission |
+
+## Bundall precinct
+
+Page: `site/commercial-cleaning-bundall.html`
+
+| Filename | Scene | Alt text | Avoid |
+|---|---|---|---|
+| `assets/img/commercial-cleaning-bundall-hero.svg` | Cleaner wiping a meeting-room table in an empty corporate office tenancy. Landscape 3:2, 960x640. | Cleaner wiping a meeting-room table in an empty corporate office | Identifiable people, client logos or signage, recognisable client buildings without written permission |
+| `assets/img/bundall-serviced-office-kitchenette-clean.svg` | Tidy shared kitchenette in a serviced office floor, no people. 4:3, 800x600. | Shared kitchenette in a serviced office floor, cleaned and tidy | Identifiable people, client logos or signage, recognisable client buildings without written permission |
+| `assets/img/bundall-tower-lift-lobby-access.svg` | Cleaner with a trolley waiting at a security-controlled lift lobby, no readable signage. 4:3, 800x600. | Cleaner with a trolley waiting at an office tower lift lobby | Identifiable people, client logos or signage, recognisable client buildings without written permission |
+
+## Surfers Paradise and Broadbeach precinct
+
+Page: `site/commercial-cleaning-surfers-paradise-broadbeach.html`
+
+| Filename | Scene | Alt text | Avoid |
+|---|---|---|---|
+| `assets/img/commercial-cleaning-surfers-paradise-broadbeach-hero.svg` | Cleaner mopping a high-rise apartment tower lobby with a wet-floor sign, no signage or residents visible. Landscape 3:2, 960x640. | Cleaner mopping a coastal apartment tower lobby with a wet-floor sign in place | Identifiable people, client logos or signage, recognisable client buildings without written permission |
+| `assets/img/broadbeach-podium-loading-dock-clean.svg` | Shared loading dock of a mixed-use podium building, swept and tidy, no people. 4:3, 800x600. | Shared loading dock of a mixed-use building swept and tidy | Identifiable people, client logos or signage, recognisable client buildings without written permission |
+| `assets/img/surfers-paradise-tower-car-park-clean.svg` | Basement car park of an apartment tower, floor swept and bays clear, no vehicles identifiable. 4:3, 800x600. | Basement car park of an apartment tower with a swept floor and clear bays | Identifiable people, client logos or signage, recognisable client buildings without written permission |
+
+
+## Robina and Varsity Lakes precinct
+
+Page: `site/commercial-cleaning-robina-varsity-lakes.html`
+
+| Filename | Scene | Alt text | Avoid |
+|---|---|---|---|
+| `assets/img/commercial-cleaning-robina-varsity-lakes-hero.svg` | Cleaner wiping a reception counter in a business park office, no signage. Landscape 3:2, 960x640. | Cleaner wiping a reception counter in a business park office | Identifiable people, client logos or signage, recognisable client buildings without written permission |
+| `assets/img/robina-town-centre-suite-clean.svg` | Waiting area of a consulting suite near a shopping centre, empty and tidy. 4:3, 800x600. | Consulting suite waiting room near a shopping centre, cleaned and tidy | Identifiable people, client logos or signage, recognisable client buildings without written permission |
+| `assets/img/varsity-lakes-business-park-access.svg` | Cleaner unloading a trolley at the entrance of a low-rise business park, no signage. 4:3, 800x600. | Cleaner unloading a trolley at a business park entrance | Identifiable people, client logos or signage, recognisable client buildings without written permission |
+
+## Burleigh Heads precinct
+
+Page: `site/commercial-cleaning-burleigh-heads.html`
+
+| Filename | Scene | Alt text | Avoid |
+|---|---|---|---|
+| `assets/img/commercial-cleaning-burleigh-heads-hero.svg` | Cleaner mopping a small retail suite floor, no branding. Landscape 3:2, 960x640. | Cleaner mopping the floor of a small retail suite | Identifiable people, client logos or signage, recognisable client buildings without written permission |
+| `assets/img/burleigh-james-street-retail-suite-clean.svg` | Small shopfront office interior, tidy, no people. 4:3, 800x600. | Small shopfront office interior, cleaned and tidy | Identifiable people, client logos or signage, recognisable client buildings without written permission |
+| `assets/img/burleigh-west-business-estate-access.svg` | Cleaner at the open roller door of a small business estate unit, no signage. 4:3, 800x600. | Cleaner at the roller door of a small business estate unit | Identifiable people, client logos or signage, recognisable client buildings without written permission |
+
+## Helensvale and Coomera precinct
+
+Page: `site/commercial-cleaning-helensvale-coomera.html`
+
+| Filename | Scene | Alt text | Avoid |
+|---|---|---|---|
+| `assets/img/commercial-cleaning-helensvale-coomera-hero.svg` | Cleaner vacuuming a new open-plan office suite, no branding. Landscape 3:2, 960x640. | Cleaner vacuuming a new office suite | Identifiable people, client logos or signage, recognisable client buildings without written permission |
+| `assets/img/helensvale-transport-hub-office-clean.svg` | Open-plan office suite with large windows, empty and tidy. 4:3, 800x600. | Open-plan office suite near a transport hub, cleaned and tidy | Identifiable people, client logos or signage, recognisable client buildings without written permission |
+| `assets/img/coomera-business-park-access.svg` | Cleaner entering a newly built business park building with a trolley, no signage. 4:3, 800x600. | Cleaner entering a new business park building with a trolley | Identifiable people, client logos or signage, recognisable client buildings without written permission |
+
+## Nerang and Carrara precinct
+
+Page: `site/commercial-cleaning-nerang-carrara.html`
+
+| Filename | Scene | Alt text | Avoid |
+|---|---|---|---|
+| `assets/img/commercial-cleaning-nerang-carrara-hero.svg` | Cleaner sweeping the front office of a light industrial unit, no branding. Landscape 3:2, 960x640. | Cleaner sweeping the front office of a light industrial unit | Identifiable people, client logos or signage, recognisable client buildings without written permission |
+| `assets/img/nerang-industrial-unit-office-clean.svg` | Front office and counter of a trade unit, tidy, no people. 4:3, 800x600. | Front office of a trade unit, cleaned and tidy | Identifiable people, client logos or signage, recognisable client buildings without written permission |
+| `assets/img/carrara-sports-precinct-amenities-clean.svg` | Clean public amenities block at a sports ground, no spectators, no signage. 4:3, 800x600. | Public amenities block at a sports ground, cleaned | Identifiable people, client logos or signage, recognisable client buildings without written permission |
