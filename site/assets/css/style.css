@@ -327,6 +327,7 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 .hero-ctas{ display:flex; flex-wrap:wrap; gap:var(--space-4); margin:var(--space-6) 0 var(--space-7); }
 .hero-inner .hero-ctas{ margin:0; }
 @media (max-width:560px){ .hero-ctas .btn{ white-space:normal; } }
+@media (max-width:560px){ .assessment-form .btn-block{ white-space:normal; } }
 .hero-checks{ list-style:none; margin:0; padding:0; display:grid; gap:var(--space-3); }
 .hero-checks li{ display:flex; align-items:center; gap:var(--space-3); font-weight:600; font-size:var(--fs-p2); color:rgba(255,255,255,.92); }
 .hero-checks svg{ width:14px; height:14px; flex:none; box-sizing:content-box; padding:6px; border-radius:50%; color:var(--vp-white); background:rgba(255,255,255,.15); }

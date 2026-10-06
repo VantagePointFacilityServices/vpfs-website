@@ -225,3 +225,60 @@ describe("landing page shot lists", () => {
     });
   }
 });
+
+describe("facility_type construction option label (D14)", () => {
+  it.each(ALL_PAGES)("%s labels every construction option 'Warehouse / industrial'", (page) => {
+    for (const opt of parse(page).querySelectorAll('select[name="facility_type"] option[value="construction"]')) {
+      expect(opt.textContent.trim()).toBe("Warehouse / industrial");
+    }
+  });
+});
+
+describe("warehouse landing page", () => {
+  const doc = parse("warehouse-industrial-cleaning-gold-coast.html");
+  it("has the warehouse channel, construction default and Industrial in title", () => {
+    expect(doc.body.dataset.pageKey).toBe("warehouse");
+    expect(doc.querySelector("form.assessment-form").dataset.channel).toBe("website-lp-warehouse");
+    expect(doc.querySelector('option[value="construction"]').selected).toBe(true);
+    expect(doc.title).toMatch(/Industrial/);
+    expect(doc.querySelector("h1").textContent.trim()).toBe("Warehouse Cleaning Gold Coast");
+    expect(doc.body.textContent).not.toMatch(/post-construction|construction site/i);
+  });
+});
+
+describe("Services dropdown links each vertical to its own page", () => {
+  const TARGETS = {
+    Office: "office-cleaning-gold-coast.html",
+    "Strata & body corporate": "strata-cleaning-gold-coast.html",
+    School: "school-cleaning-gold-coast.html",
+    Childcare: "childcare-cleaning-gold-coast.html",
+    "Medical centre": "medical-centre-cleaning-gold-coast.html",
+    "Warehouse & industrial": "warehouse-industrial-cleaning-gold-coast.html",
+  };
+  it.each(LANDING_PAGES)("%s", (page) => {
+    for (const a of parse(page).querySelectorAll("#nav-services a")) {
+      const label = a.textContent.trim();
+      if (TARGETS[label]) expect(a.getAttribute("href"), label).toBe(TARGETS[label]);
+    }
+  });
+});
+
+describe("services dropdown links each vertical to its own page", () => {
+  const EXPECTED = {
+    Office: "office-cleaning-gold-coast.html",
+    "Strata & body corporate": "strata-cleaning-gold-coast.html",
+    School: "school-cleaning-gold-coast.html",
+    Childcare: "childcare-cleaning-gold-coast.html",
+    "Medical centre": "medical-centre-cleaning-gold-coast.html",
+    "Warehouse & industrial": "warehouse-industrial-cleaning-gold-coast.html",
+  };
+  for (const page of LANDING_PAGES) {
+    it(`${page} dropdown labels point at their own pages`, () => {
+      const links = [...parse(page).querySelectorAll("#nav-services a")];
+      const got = Object.fromEntries(links.map((a) => [a.textContent.trim(), a.getAttribute("href")]));
+      for (const [label, href] of Object.entries(EXPECTED)) {
+        if (ALL_PAGES.includes(href)) expect(got[label], `${label} link on ${page}`).toBe(href);
+      }
+    });
+  }
+});
