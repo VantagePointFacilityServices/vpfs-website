@@ -51,6 +51,10 @@ For a larger or higher-risk contract, or where your organisation requires compet
 
 Before you hire, put the right questions to every contractor: [questions to ask a commercial cleaner](/resources/hiring-a-cleaner/choosing-and-switching/questions-to-ask-a-commercial-cleaner/). If you are unhappy with your current cleaner, see the [warning signs your cleaner is underperforming](/resources/hiring-a-cleaner/choosing-and-switching/warning-signs-your-cleaner-is-underperforming/) and [how to change cleaning contractor without disruption](/resources/hiring-a-cleaner/choosing-and-switching/change-cleaning-contractor-without-disruption/).
 
+## Contracts and quality control
+
+The contract and the way you check the work protect you together. See [cleaning contract terms to check](/resources/hiring-a-cleaner/contracts-and-quality/cleaning-contract-terms-to-check/), [how cleaning quality is audited](/resources/hiring-a-cleaner/contracts-and-quality/how-cleaning-quality-is-audited/) and [what a monthly cleaning report should show](/resources/hiring-a-cleaner/contracts-and-quality/what-a-monthly-cleaning-report-should-show/).
+
 ## Where to start
 
 If you are early in the process, start with the scope: [write a cleaning scope of work](/resources/hiring-a-cleaner/pricing-quotes-and-scope/write-a-cleaning-scope-of-work/). If you already have quotes, go to [comparing cleaning quotes](/resources/hiring-a-cleaner/pricing-quotes-and-scope/compare-cleaning-quotes/). If you would rather see a scope built for your building, [book a free walkthrough](/contact.html).

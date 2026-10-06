@@ -2,7 +2,7 @@
 title: Cleaning Contract Terms to Check Before You Sign
 nav_title: Contract terms to check
 description: The clauses to read in a commercial cleaning contract before signing: scope, term, price changes, variations, performance standards, insurance and exit.
-status: draft
+status: published
 published: 2026-10-06
 updated: 2026-10-06
 order: 1

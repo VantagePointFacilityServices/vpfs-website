@@ -2,7 +2,7 @@
 title: What a Monthly Cleaning Report Should Show
 nav_title: Monthly cleaning report
 description: What a useful monthly commercial cleaning report contains: results against scope, photos, issues and fixes, trends and next month, and what to ignore.
-status: draft
+status: published
 published: 2026-10-06
 updated: 2026-10-06
 order: 3
