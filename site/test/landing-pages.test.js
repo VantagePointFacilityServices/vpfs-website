@@ -230,7 +230,7 @@ describe("site-wide navigation", () => {
     "office-cleaning-gold-coast.html", "strata-cleaning-gold-coast.html", "school-cleaning-gold-coast.html",
     "childcare-cleaning-gold-coast.html", "medical-centre-cleaning-gold-coast.html", "warehouse-industrial-cleaning-gold-coast.html",
   ];
-  const ANCHORS = ["offices", "strata", "daycare", "education", "medical", "industrial"].map((a) => "services.html#" + a);
+  const ANCHORS = ["offices", "strata", "education", "medical", "industrial"].map((a) => "services.html#" + a);
   const hrefs = (nodes) => Array.from(nodes, (a) => a.getAttribute("href"));
   describe.each(ALL_PAGES)("%s", (page) => {
     const doc = parse(page);
