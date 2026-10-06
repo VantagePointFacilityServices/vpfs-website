@@ -47,6 +47,10 @@ A good cleaning contract names the scope, the frequency, the price, how quality 
 
 For a larger or higher-risk contract, or where your organisation requires competitive quotes, run a structured process. [How to run a cleaning tender](/resources/hiring-a-cleaner/tenders-and-rfqs/how-to-run-a-cleaning-tender/) walks through it, [what to ask for in a cleaning RFQ](/resources/hiring-a-cleaner/tenders-and-rfqs/what-to-ask-for-in-a-cleaning-rfq/) lists the information to request and the [tender evaluation scorecard](/resources/hiring-a-cleaner/tenders-and-rfqs/cleaning-tender-evaluation-scorecard/) shows how to score the responses.
 
+## Choosing a contractor, or changing one
+
+Before you hire, put the right questions to every contractor: [questions to ask a commercial cleaner](/resources/hiring-a-cleaner/choosing-and-switching/questions-to-ask-a-commercial-cleaner/). If you are unhappy with your current cleaner, see the [warning signs your cleaner is underperforming](/resources/hiring-a-cleaner/choosing-and-switching/warning-signs-your-cleaner-is-underperforming/) and [how to change cleaning contractor without disruption](/resources/hiring-a-cleaner/choosing-and-switching/change-cleaning-contractor-without-disruption/).
+
 ## Where to start
 
 If you are early in the process, start with the scope: [write a cleaning scope of work](/resources/hiring-a-cleaner/pricing-quotes-and-scope/write-a-cleaning-scope-of-work/). If you already have quotes, go to [comparing cleaning quotes](/resources/hiring-a-cleaner/pricing-quotes-and-scope/compare-cleaning-quotes/). If you would rather see a scope built for your building, [book a free walkthrough](/contact.html).

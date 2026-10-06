@@ -2,7 +2,7 @@
 title: How to Change Cleaning Contractor Without Disruption
 nav_title: Change cleaning contractor
 description: How to switch commercial cleaners smoothly: checking your notice terms, choosing a start date, handing over keys and access, and managing the first weeks.
-status: draft
+status: published
 published: 2026-10-06
 updated: 2026-10-06
 order: 2

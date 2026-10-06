@@ -2,7 +2,7 @@
 title: Warning Signs Your Commercial Cleaner Is Underperforming
 nav_title: Signs your cleaner is slipping
 description: The early signs a commercial cleaning contract is slipping, how to document them against your scope, and when to raise it, fix it or switch.
-status: draft
+status: published
 published: 2026-10-06
 updated: 2026-10-06
 order: 3

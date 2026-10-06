@@ -2,7 +2,7 @@
 title: Choosing and Switching Commercial Cleaners
 nav_title: Choosing and switching
 description: How to choose a commercial cleaning contractor, what to ask before you hire, how to change cleaner without disruption and how to spot underperformance early.
-status: draft
+status: published
 published: 2026-10-06
 updated: 2026-10-06
 order: 3
