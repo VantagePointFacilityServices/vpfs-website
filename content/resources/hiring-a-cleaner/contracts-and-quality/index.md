@@ -2,7 +2,7 @@
 title: Commercial Cleaning Contracts and Quality Control
 nav_title: Contracts and quality
 description: What to look for in a commercial cleaning contract, how cleaning quality is audited, and what a useful monthly cleaning report should show you.
-status: draft
+status: published
 published: 2026-10-06
 updated: 2026-10-06
 order: 4
