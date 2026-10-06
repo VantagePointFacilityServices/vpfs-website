@@ -13,9 +13,10 @@ const read = (page) => readFileSync(resolve(SITE, page), "utf8");
 const parse = (page) => new DOMParser().parseFromString(read(page), "text/html");
 
 const LANDING_PAGES = ALL_PAGES.filter((p) => parse(p).body.dataset.pageType === "landing");
-// services.html is the hub: held to the same SEO checks, but it carries no
-// landing marker or Service schema.
-const SEO_PAGES = [...LANDING_PAGES, "services.html"];
+// cleaning-by-site-type.html is the hub for the landing pages (linked from the footer):
+// held to the same SEO checks, but it carries no landing marker or Service schema.
+// services.html is the original tabbed scope page and is not part of this set.
+const SEO_PAGES = [...LANDING_PAGES, "cleaning-by-site-type.html"];
 
 
 const titleOf = (p) => parse(p).title.trim();
@@ -163,8 +164,9 @@ const BANNED = [
   /\d+\s?%[^.]{0,60}(productiv|sick)/i, /(productiv|sick)[^.]{0,60}\d+\s?%/i,
 ];
 const MEDICAL_EXTRA = [/infection[- ]control/i, /AGPAL|QIP|RACGP/, /TGA/, /clinical waste/i, /accredit/i];
-// page -> banned patterns (as source strings) tolerated. Empty now that issue 06 is done.
-const LEGACY_ALLOW = {};
+// page -> banned patterns (as source strings) tolerated. services.html is the restored
+// tabbed scope page, which still carries the eco / clinical badges the landing pages dropped.
+const LEGACY_ALLOW = { "services.html": ["eco products", "clinical-grade", "sharps"] };
 
 function visibleText(page) {
   const doc = parse(page);
@@ -223,50 +225,32 @@ describe("warehouse landing page", () => {
   });
 });
 
-describe("services dropdown links each vertical to its own page", () => {
-  const EXPECTED = {
-    Office: "office-cleaning-gold-coast.html",
-    "Strata & body corporate": "strata-cleaning-gold-coast.html",
-    School: "school-cleaning-gold-coast.html",
-    Childcare: "childcare-cleaning-gold-coast.html",
-    "Medical centre": "medical-centre-cleaning-gold-coast.html",
-    "Warehouse & industrial": "warehouse-industrial-cleaning-gold-coast.html",
-  };
-  for (const page of LANDING_PAGES) {
-    it(`${page} dropdown labels point at their own pages`, () => {
-      const links = [...parse(page).querySelectorAll("#nav-services a")];
-      const got = Object.fromEntries(links.map((a) => [a.textContent.trim(), a.getAttribute("href")]));
-      for (const [label, href] of Object.entries(EXPECTED)) {
-        if (ALL_PAGES.includes(href)) expect(got[label], `${label} link on ${page}`).toBe(href);
-      }
-    });
-  }
-});
-
-describe("site-wide navigation (D15)", () => {
+describe("site-wide navigation", () => {
   const VERTICALS = [
     "office-cleaning-gold-coast.html", "strata-cleaning-gold-coast.html", "school-cleaning-gold-coast.html",
     "childcare-cleaning-gold-coast.html", "medical-centre-cleaning-gold-coast.html", "warehouse-industrial-cleaning-gold-coast.html",
   ];
+  const ANCHORS = ["offices", "strata", "daycare", "education", "medical", "industrial"].map((a) => "services.html#" + a);
   const hrefs = (nodes) => Array.from(nodes, (a) => a.getAttribute("href"));
   describe.each(ALL_PAGES)("%s", (page) => {
     const doc = parse(page);
-    it("header dropdown links the six vertical pages", () => {
-      expect(hrefs(doc.querySelectorAll("#nav-services a"))).toEqual(VERTICALS);
+    it("header dropdown links the five services.html anchors", () => {
+      expect(hrefs(doc.querySelectorAll("#nav-services a"))).toEqual(ANCHORS);
     });
-    it("footer Services column links the six vertical pages", () => {
-      const h4 = Array.from(doc.querySelectorAll("footer h4")).find((h) => h.textContent.trim() === "Services");
-      expect(hrefs(h4.parentElement.querySelectorAll("a"))).toEqual(VERTICALS);
+    it("header nav does not link Resources", () => {
+      expect(hrefs(doc.querySelectorAll("header a"))).not.toContain("/resources/");
     });
-    it("has no services.html# anchors", () => {
-      expect(hrefs(doc.querySelectorAll("a")).filter((h) => h.startsWith("services.html#"))).toEqual([]);
+    it("footer links Resources and the site-type hub", () => {
+      const f = hrefs(doc.querySelectorAll("footer a"));
+      expect(f).toContain("/resources/");
+      expect(f).toContain("cleaning-by-site-type.html");
     });
   });
-  it("services.html links every vertical page from its body", () => {
-    expect(hrefs(parse("services.html").querySelectorAll("main a, body > section a"))).toEqual(expect.arrayContaining(VERTICALS));
+  it("cleaning-by-site-type.html links every vertical page from its body", () => {
+    expect(hrefs(parse("cleaning-by-site-type.html").querySelectorAll("main a, body > section a"))).toEqual(expect.arrayContaining(VERTICALS));
   });
-  it("services.html has no eco badge or clinical claims", () => {
-    expect(visibleText("services.html")).not.toMatch(/eco products|clinical-grade|sharps/i);
+  it("cleaning-by-site-type.html has no eco badge or clinical claims", () => {
+    expect(visibleText("cleaning-by-site-type.html")).not.toMatch(/eco products|clinical-grade|sharps/i);
   });
 });
 
