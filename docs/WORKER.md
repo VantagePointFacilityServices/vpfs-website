@@ -273,8 +273,11 @@ Things worth knowing:
   new contact; someone already in GHL gets their existing contact updated
   and their existing ID back — so a repeat enquiry works instead of
   erroring.
-- **`channel`** records which form was used: `website-homepage` or
-  `website-contact` (from the form's `data-channel` attribute).
+- **`channel`** records which page's form was used (from the form's
+  `data-channel` attribute). Every page has its own value: `website-homepage`,
+  `website-services`, `website-areas`, `website-why-us`, `website-contact`, and
+  `website-lp-<page>` for each landing page. `site/test/form-channels.test.js`
+  fails if a page is missing one or two pages share one.
 - **The tag is added separately**, through GHL's "add tags" endpoint, which
   appends. Sending tags inside the upsert could overwrite a returning
   contact's existing tags.
