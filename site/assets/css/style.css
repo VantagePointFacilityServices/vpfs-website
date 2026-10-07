@@ -438,6 +438,7 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 
 /* ===== Process steps ===== */
 .process-wrap{ display:grid; grid-template-columns:1.1fr .9fr; gap:var(--space-8); align-items:center; }
+.process-wrap .image-slot-square{ aspect-ratio:1/1; }
 .process-wrap .eyebrow{ color:var(--text-muted); }
 .process-wrap .eyebrow::before{ background:var(--vp-navy); }
 .process-lead{ color:var(--text-muted); margin-bottom:var(--space-6); }
