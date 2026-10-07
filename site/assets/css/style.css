@@ -533,6 +533,8 @@ a.suburb-tag:hover,a.suburb-tag:focus-visible{ border-color:currentColor; color:
 @media (max-width:900px){ .carousel-bottom h1{ max-width:none; } }
 .carousel-caption h2{ font-weight:400; font-size:var(--fs-p1); line-height:var(--lh-body); letter-spacing:normal; color:var(--text-on-inverse-muted); margin:0; max-width:50%; }
 @media (max-width:900px){ .carousel-caption h2{ max-width:none; } }
+/* Contact / Areas text heroes match the homepage hero height (desktop) */
+@media (min-width:1001px){ .hero-form-height{ min-height:610px; display:flex; align-items:center; } .hero-form-height > .wrap{ width:100%; } }
 /* Booking form over the carousel — same right-hand column as the homepage hero */
 .carousel-form-wrap{ position:absolute; left:0; right:0; top:0; z-index:3; padding-top:56px; pointer-events:none; }
 .carousel-form-grid{ display:grid; grid-template-columns:1.15fr .85fr; gap:var(--space-8); }
@@ -855,15 +857,13 @@ html:has(.booking-dialog[open]){ overflow:hidden; } /* stop the page scrolling b
 .lp-breadcrumb ol{ list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:var(--space-2); }
 .lp-breadcrumb li + li::before{ content:"\203A"; margin-right:var(--space-2); }
 .lp-breadcrumb a{ color:var(--vp-navy); font-weight:700; }
-.lp-hero .hero-grid{ grid-template-rows:auto 1fr; }
 .lp-hero .hero-inner{ grid-column:1; grid-row:1; }
-.lp-hero .assessment-form{ grid-column:2; grid-row:1 / span 2; }
-.lp-hero .lp-hero-img{ grid-column:1; grid-row:2; width:100%; max-width:640px; height:auto; aspect-ratio:3/2; object-fit:cover; border-radius:var(--radius-lg); }
+.lp-hero .assessment-form{ grid-column:2; grid-row:1; }
 .lp-hero .contact-form h3{ white-space:normal; }
 @media (max-width:1000px){
-  .lp-hero .hero-inner, .lp-hero .assessment-form, .lp-hero .lp-hero-img{ grid-column:1; grid-row:auto; }
+  .lp-hero .hero-inner, .lp-hero .assessment-form{ grid-column:1; grid-row:auto; }
   .lp-hero .hero-grid{ grid-template-columns:minmax(0,1fr); }
-  .lp-hero .hero-inner, .lp-hero .assessment-form, .lp-hero .lp-hero-img{ min-width:0; }
+  .lp-hero .hero-inner, .lp-hero .assessment-form{ min-width:0; }
 }
 .lp-section h2{ margin-bottom:var(--space-4); }
 .lp-two-col{ display:grid; grid-template-columns:1fr 1fr; gap:var(--space-8); align-items:center; }
