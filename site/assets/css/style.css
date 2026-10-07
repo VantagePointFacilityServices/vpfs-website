@@ -864,7 +864,10 @@ html:has(.booking-dialog[open]){ overflow:hidden; } /* stop the page scrolling b
 .lp-hero .hero-inner{ grid-column:1; grid-row:1; }
 .lp-hero .assessment-form{ grid-column:2; grid-row:1; }
 .lp-hero .contact-form h3{ white-space:normal; }
-@media (min-width:1001px){ .lp-hero .contact-form h3{ white-space:nowrap; font-size:clamp(1.05rem, .55rem + 1.65vw, 1.5rem); } }
+@media (min-width:1001px){
+  .lp-hero .assessment-form{ container-type:inline-size; }
+  .lp-hero .contact-form h3{ white-space:nowrap; font-size:clamp(.85rem, 5.2cqw, 1.5rem); line-height:30px; }
+}
 @media (max-width:1000px){
   .lp-hero .hero-inner, .lp-hero .assessment-form{ grid-column:1; grid-row:auto; }
   .lp-hero .hero-grid{ grid-template-columns:minmax(0,1fr); }
