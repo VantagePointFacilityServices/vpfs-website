@@ -775,6 +775,8 @@ html:has(.booking-dialog[open]){ overflow:hidden; } /* stop the page scrolling b
   .booking-dialog .booking-step-2.contact-form{ padding:var(--space-5) var(--space-4); }
 }
 .hp-field{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+/* Cloudflare Turnstile: centre the challenge when it is shown (interaction-only keeps it hidden otherwise) */
+.turnstile-widget{ display:flex; justify-content:center; }
 .field-help{ margin-top:-10px; margin-bottom:var(--space-4); font-size:.8rem; color:var(--text-faint); }
 .input-icon-wrap{ position:relative; }
 .input-icon-wrap svg{ position:absolute; left:14px; top:50%; transform:translateY(-50%); width:18px; height:18px; color:var(--text-faint); pointer-events:none; }
