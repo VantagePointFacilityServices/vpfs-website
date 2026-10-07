@@ -535,6 +535,10 @@ a.suburb-tag:hover,a.suburb-tag:focus-visible{ border-color:currentColor; color:
 @media (max-width:900px){ .carousel-caption h2{ max-width:none; } }
 /* Contact / Areas text heroes match the homepage hero height (desktop) */
 @media (min-width:1001px){ .hero-form-height{ min-height:610px; display:flex; align-items:center; } .hero-form-height > .wrap{ width:100%; } }
+/* Services: centre the carousel copy against the form, as the homepage hero does */
+@media (min-width:1001px){
+  .carousel-bottom{ top:56px; bottom:48px; display:flex; flex-direction:column; justify-content:center; }
+}
 /* Booking form over the carousel — same right-hand column as the homepage hero */
 .carousel-form-wrap{ position:absolute; left:0; right:0; top:0; z-index:3; padding-top:56px; pointer-events:none; }
 .carousel-form-grid{ display:grid; grid-template-columns:1.15fr .85fr; gap:var(--space-8); }
@@ -860,6 +864,7 @@ html:has(.booking-dialog[open]){ overflow:hidden; } /* stop the page scrolling b
 .lp-hero .hero-inner{ grid-column:1; grid-row:1; }
 .lp-hero .assessment-form{ grid-column:2; grid-row:1; }
 .lp-hero .contact-form h3{ white-space:normal; }
+@media (min-width:1001px){ .lp-hero .contact-form h3{ white-space:nowrap; font-size:clamp(1.05rem, .55rem + 1.65vw, 1.5rem); } }
 @media (max-width:1000px){
   .lp-hero .hero-inner, .lp-hero .assessment-form{ grid-column:1; grid-row:auto; }
   .lp-hero .hero-grid{ grid-template-columns:minmax(0,1fr); }
