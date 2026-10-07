@@ -132,15 +132,12 @@ describe.each(LANDING_PAGES)("%s landing markup", (page) => {
     expect(parse(page).querySelector('nav[aria-label="Breadcrumb"] a')).not.toBeNull();
   });
 
-  it("lazy-loads every image except the hero, which is high priority", () => {
+  it("keeps the hero text-and-form only (same height as the homepage hero) and lazy-loads every image", () => {
     const imgs = Array.from(parse(page).querySelectorAll("main img, body > section img, body > nav img")).filter(
       (i) => !i.closest("header") && !i.closest("footer"),
     );
-    const hero = imgs.find((i) => i.closest(".hero-grid"));
-    expect(hero, "hero image").toBeTruthy();
-    expect(hero.getAttribute("fetchpriority")).toBe("high");
-    expect(hero.getAttribute("loading")).not.toBe("lazy");
-    for (const img of imgs.filter((i) => i !== hero)) {
+    expect(imgs.find((i) => i.closest(".hero-grid")), "hero image").toBeUndefined();
+    for (const img of imgs) {
       expect(img.getAttribute("loading"), img.getAttribute("src")).toBe("lazy");
     }
   });
