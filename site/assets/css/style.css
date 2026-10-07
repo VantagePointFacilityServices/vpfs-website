@@ -533,6 +533,19 @@ a.suburb-tag:hover,a.suburb-tag:focus-visible{ border-color:currentColor; color:
 @media (max-width:900px){ .carousel-bottom h1{ max-width:none; } }
 .carousel-caption h2{ font-weight:400; font-size:var(--fs-p1); line-height:var(--lh-body); letter-spacing:normal; color:var(--text-on-inverse-muted); margin:0; max-width:50%; }
 @media (max-width:900px){ .carousel-caption h2{ max-width:none; } }
+/* Booking form over the carousel — same right-hand column as the homepage hero */
+.carousel-form-wrap{ position:absolute; left:0; right:0; top:0; z-index:3; padding-top:56px; pointer-events:none; }
+.carousel-form-grid{ display:grid; grid-template-columns:1.15fr .85fr; gap:var(--space-8); }
+.carousel-form-grid .assessment-form{ grid-column:2; pointer-events:auto; }
+.carousel-form-grid .contact-form h3{ font-size:1.5rem; white-space:nowrap; text-align:center; }
+.carousel .carousel-slide.active{ min-height:610px; }
+@media (max-width:1000px){
+  .carousel-form-wrap{ position:relative; padding-top:0; padding-bottom:var(--space-7); pointer-events:auto; }
+  .carousel-form-grid{ grid-template-columns:1fr; }
+  .carousel-form-grid .assessment-form{ grid-column:1; }
+  .carousel .carousel-slide.active{ min-height:560px; }
+  .carousel-dots-wrap{ bottom:auto; top:512px; }
+}
 .carousel-dots-wrap{ position:absolute; left:0; right:0; bottom:32px; z-index:2; }
 .carousel-dots{ display:flex; gap:var(--space-2); margin-top:0; justify-content:flex-start; }
 .carousel-dots button{
