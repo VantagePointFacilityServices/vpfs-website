@@ -44,7 +44,7 @@
     "@type": "OpeningHoursSpecification",
     "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
     "opens": "07:00",
-    "closes": "19:00"
+    "closes": "21:00"
   },
   "areaServed": [
     { "@type": "City", "name": "Brisbane" },
@@ -90,7 +90,7 @@
 </header>
 
 <!-- ============ CONTACT HERO ============ -->
-<section class="hero-inverse page-hero hero-match-home hero-photo">
+<section class="hero-inverse page-hero hero-match-home hero-photo hero-form-height">
   <div class="wrap">
     <div class="hero-single">
       <h1>Get a Commercial Cleaning Quote &mdash; Gold Coast</h1>
@@ -144,6 +144,13 @@
             <label for="website-url">Website</label>
             <input id="website-url" name="url" type="text" tabindex="-1" autocomplete="off">
           </div>
+          <!-- Cloudflare Turnstile bot check; site key from the Turnstile dashboard (see docs/WORKER.md) -->
+          <div class="turnstile-widget" data-sitekey="0x4AAAAAAFKpftSypIZ3KEQk"></div>
+          <div class="check-row marketing-consent">
+            <input type="checkbox" id="marketing-consent-8" name="marketing_consent" value="yes">
+            <label for="marketing-consent-8">Send me occasional offers and updates from Vantage Point Facility Services by email and SMS. I can unsubscribe at any time.</label>
+          </div>
+          <p class="form-privacy-notice">We collect these details to assess your site and offer a walkthrough. How we handle them: <a href="/privacy.html#collection-notice">collection notice</a> · <a href="/privacy.html">Privacy Policy</a>.</p>
           <button type="submit" class="btn btn-primary">Start Booking<span class="btn-chip"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></button>
           <p class="form-note" style="text-align:left;">The booking is instant and confirmed via sms.</p>
         </div>
@@ -162,7 +169,7 @@
                   <option value="strata">Strata &amp; body corporate</option>
                   <option value="education">Education</option>
                   <option value="medical">Medical</option>
-                  <option value="construction">Construction / industrial</option>
+                  <option value="construction">Warehouse / industrial</option>
                 </select>
               </div>
             </div>
@@ -180,12 +187,24 @@
             <button type="button" class="btn btn-primary step2-submit">See availability</button>
           </div>
           <div class="booking-result">
-            <div id="calendar-priority" class="booking-calendar-embed">
-              <iframe src="https://api.leadconnectorhq.com/widget/booking/Ugunj3x67DQlmRm2aL2h" style="width: 100%;border:none;overflow: hidden;" scrolling="no" id="Ugunj3x67DQlmRm2aL2h_1790203011073"></iframe><br><script src="https://link.msgsndr.com/js/form_embed.js" type="text/javascript"></script>
+            <div id="walkthrough-picker" class="walkthrough-picker" tabindex="-1" aria-labelledby="picker-heading">
+              <h3 id="picker-heading">Pick a time for your walkthrough</h3>
+              <p class="small picker-tz">Times are shown in Brisbane time.</p>
+              <div class="picker-week-nav">
+                <button type="button" class="picker-prev-week btn btn-secondary" aria-label="Previous week">&lsaquo;</button>
+                <span class="picker-week-label" aria-live="polite"></span>
+                <button type="button" class="picker-next-week btn btn-secondary" aria-label="Next week">&rsaquo;</button>
+              </div>
+              <div class="picker-days" role="radiogroup" aria-label="Choose a day"></div>
+              <div class="picker-times" role="radiogroup" aria-label="Choose a time"></div>
+              <div class="picker-address">
+                <label for="contact-site-address">Site address</label>
+                <input type="text" id="contact-site-address" name="site_address" autocomplete="street-address" maxlength="200" aria-required="true">
+              </div>
+              <div class="booking-error" role="alert"></div>
+              <button type="button" class="btn btn-primary btn-block picker-book" disabled>Book walkthrough</button>
             </div>
-            <div id="calendar-standard" class="booking-calendar-embed">
-              <iframe src="https://api.leadconnectorhq.com/widget/booking/FMEE7r6jwySahTZ90S0C" style="width: 100%;border:none;overflow: hidden;" scrolling="no" id="FMEE7r6jwySahTZ90S0C_1790204390223"></iframe><br><script src="https://link.msgsndr.com/js/form_embed.js" type="text/javascript"></script>
-            </div>
+            <div id="booking-confirmed" tabindex="-1" aria-live="polite"></div>
             <div id="no-calendar-message" class="form-success" style="padding:var(--space-3) 0;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
               <h3>Thanks &mdash; we&rsquo;ll be in touch</h3>
@@ -230,7 +249,7 @@
           </div>
           <div class="talk-card-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Mon&ndash;Sun, 7am&ndash;7pm
+            Mon&ndash;Sun, 7am&ndash;9pm
           </div>
         </div>
         <div class="hero-social">
@@ -279,6 +298,7 @@
           <li><a href="services.html">Education</a></li>
           <li><a href="services.html">Medical</a></li>
           <li><a href="services.html">Industrial</a></li>
+          <li><a href="cleaning-by-site-type.html">Cleaning by site type</a></li>
         </ul>
       </div>
       <div>
@@ -286,6 +306,7 @@
         <ul>
           <li><a href="why-us.html">Why us</a></li>
           <li><a href="about.html">About Us</a></li>
+          <li><a href="/resources/">Resources</a></li>
           <li><a href="index.html#how-it-works">Our process</a></li>
           <li><a href="careers.html">Careers</a></li>
           <li><a href="contact.html">Contact</a></li>
@@ -297,20 +318,21 @@
           <li><a href="tel:0756512257">07 5651 2257</a></li>
           <li><a href="mailto:blake@vantagepointfacilityservices.com">blake@vantagepointfacilityservices.com</a></li>
           <li>Gold Coast, Queensland</li>
-          <li>Mon&ndash;Sun 7am&ndash;7pm</li>
+          <li>Mon&ndash;Sun 7am&ndash;9pm</li>
         </ul>
       </div>
     </div>
     <div class="footer-bottom">
       <span>&copy; 2026 Vantage Point Facility Services Pty Ltd. All rights reserved.</span>
       <div class="legal-links">
-        <a href="#">Privacy</a>
-        <a href="#">Terms</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
       </div>
     </div>
   </div>
 </footer>
 
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
 <script type="module" src="assets/js/booking-gate.js"></script>
 <script src="assets/js/main.js"></script>
 </body>

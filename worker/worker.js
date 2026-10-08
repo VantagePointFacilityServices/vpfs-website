@@ -1,8 +1,8 @@
 /**
  * Vantage Point — GHL Lead Scoring Worker (v3, two-stage lead gate + two-stage applicant funnel)
  *
- * Seven endpoints, routed by path. Most fire on GHL workflow webhooks, but
- * /lead and /gate are also called directly by the public browser (the
+ * Eight endpoints, routed by path. Most fire on GHL workflow webhooks, but
+ * /lead, /gate and /slots are also called directly by the public browser (the
  * website's own two-step booking-gate JS), and /gate is additionally
  * called live by the AI Receptionist mid-call — see corsHeaders()/
  * withCors() below for the resulting origin-allowlist requirement:
@@ -14,6 +14,16 @@
  *                    contact_id, which the browser carries into /gate.
  *                    Never scores anything; channel is a pass-through
  *                    tag only.
+ *
+ *   POST /slots    — takes the signed booking_token from /gate and
+ *                    returns the open walkthrough days/times from the
+ *                    GHL calendar matching the token's tier.
+ *
+ *   POST /book     — takes the booking_token, a chosen start_time and
+ *                    the site_address, books the walkthrough on the tier's
+ *                    GHL calendar against the token's contact (address as
+ *                    the appointment location) and saves it as the
+ *                    contact's address1.
  *
  *   POST /gate     — fires on the SHORT qualifying form (contact
  *                    details + facility_type + monthly_budget +
@@ -86,7 +96,7 @@
 
 // ---- CONFIG ---------------------------------------------------------
 
-const MIN_MONTHLY_SPEND = 2000; // under this -> nurture-budget
+const MIN_MONTHLY_SPEND = 2500; // under this -> nurture-budget
 const PRIORITY_MONTHLY_SPEND = 5000; // at or over this -> always Priority (see calculateGateScore)
 const MIN_WEEKLY_CLEANS = 3; // hard floor — anything under this is DQ'd
 const SERVICE_POSTCODES = ["4227", "4226", "4211", "4212"]; // Gold Coast coverage zone — extend as needed
@@ -103,11 +113,22 @@ const CONTRACT_RENEWAL_PRIORITY_THRESHOLD_MONTHS = 6;
 
 const GHL_API_BASE = "https://services.leadconnectorhq.com";
 const GHL_API_VERSION = "2021-07-28";
+// Calendars API (free-slots) is versioned separately from the Contacts API.
+const GHL_CALENDARS_API_VERSION = "2021-04-15";
+const SLOTS_WINDOW_DAYS = 30;
+const DEFAULT_BOOKING_TIMEZONE = "Australia/Brisbane";
 
 // Added to every contact /lead captures. GHL workflows start on a
 // "Contact Tag → Tag Added: website-lead" trigger rather than an Inbound
 // Webhook (a premium, per-execution trigger with a public URL).
 const WEBSITE_LEAD_TAG = "website-lead";
+
+// Cloudflare Turnstile — /lead's bot check. Only enforced once the
+// TURNSTILE_SECRET_KEY secret is set, so the Worker can ship before the
+// widget exists. A lead that couldn't be checked because Cloudflare itself
+// was unreachable is still taken, but tagged so it can be eyeballed.
+const TURNSTILE_SITEVERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+const TURNSTILE_UNVERIFIED_TAG = "turnstile-unverified";
 
 // frequency string -> cleans-per-week, used against MIN_WEEKLY_CLEANS
 const FREQUENCY_TO_WEEKLY = {
@@ -212,7 +233,13 @@ async function route(request, env) {
   }
 
   if (url.pathname === "/lead") {
-    return handleLead(payload, env);
+    return handleLead(payload, env, request);
+  }
+  if (url.pathname === "/slots") {
+    return handleSlots(payload, env);
+  }
+  if (url.pathname === "/book") {
+    return handleBook(payload, env);
   }
 
   const contactId = payload.contact_id || payload.contactId;
@@ -249,7 +276,7 @@ async function route(request, env) {
 // contact and returns its id, which the browser then carries into the
 // Step 2 DQ questions and passes to /gate. See
 // commercial/docs/lead-scoring-and-two-stage-gate-form.md in the vpos repo.
-async function handleLead(payload, env) {
+async function handleLead(payload, env, request) {
   const f = extractLeadFields(payload);
 
   if (f.honeypot) {
@@ -257,6 +284,15 @@ async function handleLead(payload, env) {
     // ever calling the GHL API, so nothing is created and the bot isn't
     // tipped off that it was caught.
     return jsonResponse({ contact_id: null });
+  }
+
+  const turnstile = await verifyTurnstile(
+    payload.turnstile_token,
+    request.headers.get("CF-Connecting-IP"),
+    env
+  );
+  if (turnstile === "rejected") {
+    return new Response("Verification failed", { status: 403 });
   }
 
   if (!f.email || !f.phone) {
@@ -272,9 +308,34 @@ async function handleLead(payload, env) {
   // The contact already exists by now, so a failed tag call must not stop
   // the visitor reaching Step 2 — it only means the tag-triggered GHL
   // workflow won't fire for this lead.
-  await addTagsInGHL(result.contactId, [WEBSITE_LEAD_TAG], env);
+  const tags = [WEBSITE_LEAD_TAG];
+  if (turnstile === "unverified") tags.push(TURNSTILE_UNVERIFIED_TAG);
+  await addTagsInGHL(result.contactId, tags, env);
 
   return jsonResponse({ contact_id: result.contactId });
+}
+
+// Returns "passed", "rejected", or "unverified" (Cloudflare unreachable —
+// fail open so a Cloudflare outage never costs a real enquiry), or "skipped"
+// when no secret is configured.
+async function verifyTurnstile(token, remoteIp, env) {
+  if (!env.TURNSTILE_SECRET_KEY) return "skipped";
+  if (!token) return "rejected";
+
+  try {
+    const res = await fetch(TURNSTILE_SITEVERIFY_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(
+        stripUndefined({ secret: env.TURNSTILE_SECRET_KEY, response: token, remoteip: remoteIp })
+      ),
+    });
+    if (!res.ok) return "unverified";
+    const data = await res.json();
+    return data.success ? "passed" : "rejected";
+  } catch (err) {
+    return "unverified";
+  }
 }
 
 function extractLeadFields(payload) {
@@ -292,12 +353,281 @@ function extractLeadFields(payload) {
     // checkDisqualifiers()/calculateGateScore() never read it.
     channel: payload.channel || "",
     honeypot: payload.url || "",
+    // Strict boolean only: consent is never inferred from "true", "on" or 1.
+    marketingConsent: payload.marketing_consent === true,
     utm_source: payload.utm_source,
     utm_medium: payload.utm_medium,
     utm_campaign: payload.utm_campaign,
     utm_term: payload.utm_term,
     utm_content: payload.utm_content,
   };
+}
+
+// ---- Booking token (signed, stateless) ----------------------------------
+// base64url(JSON{cid,tier,exp}) + "." + base64url(HMAC-SHA256(payloadPart)).
+// Lets /slots and /book trust the contact + tier without re-asking the browser.
+
+const BOOKING_TOKEN_TTL_MS = 2 * 60 * 60 * 1000;
+const BOOKING_TIERS = ["priority", "standard", "standard-flagged"];
+
+function b64urlEncode(bytes) {
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function b64urlDecode(str) {
+  if (!/^[A-Za-z0-9_-]*$/.test(str)) throw new Error("bad base64url");
+  const b64 = str.replace(/-/g, "+").replace(/_/g, "/");
+  const bin = atob(b64 + "=".repeat((4 - (b64.length % 4)) % 4));
+  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+}
+
+function hmacKey(env, usage) {
+  return crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(env.BOOKING_TOKEN_SECRET),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    [usage]
+  );
+}
+
+async function signBookingToken({ cid, tier }, env) {
+  if (!env.BOOKING_TOKEN_SECRET) return null;
+  const payload = b64urlEncode(
+    new TextEncoder().encode(JSON.stringify({ cid, tier, exp: Date.now() + BOOKING_TOKEN_TTL_MS }))
+  );
+  const key = await hmacKey(env, "sign");
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
+  return `${payload}.${b64urlEncode(new Uint8Array(sig))}`;
+}
+
+async function verifyBookingToken(token, env) {
+  if (!env.BOOKING_TOKEN_SECRET || typeof token !== "string") return null;
+  const parts = token.split(".");
+  if (parts.length !== 2) return null;
+  try {
+    const key = await hmacKey(env, "verify");
+    // crypto.subtle.verify compares in constant time.
+    const ok = await crypto.subtle.verify(
+      "HMAC",
+      key,
+      b64urlDecode(parts[1]),
+      new TextEncoder().encode(parts[0])
+    );
+    if (!ok) return null;
+    const { cid, tier, exp } = JSON.parse(new TextDecoder().decode(b64urlDecode(parts[0])));
+    if (typeof cid !== "string" || !cid || !BOOKING_TIERS.includes(tier)) return null;
+    if (typeof exp !== "number" || Date.now() >= exp) return null;
+    return { cid, tier };
+  } catch {
+    return null;
+  }
+}
+
+function calendarIdForTier(tier, env) {
+  if (tier === "priority") return env.CALENDAR_PRIORITY_ID || null;
+  if (tier === "standard" || tier === "standard-flagged") return env.CALENDAR_STANDARD_ID || null;
+  return null;
+}
+
+// ---- /slots — OPEN WALKTHROUGH TIMES -----------------------------------
+// Browser-called with the signed booking_token from /gate. The calendar is
+// chosen only from the verified token's tier — never from the request body.
+async function handleSlots(payload, env) {
+  if (!env.BOOKING_TOKEN_SECRET) {
+    return new Response("Booking not configured", { status: 503 });
+  }
+  const claims = await verifyBookingToken(payload && payload.booking_token, env);
+  if (!claims) {
+    return new Response("Invalid booking token", { status: 403 });
+  }
+  const calendarId = calendarIdForTier(claims.tier, env);
+  if (!calendarId) {
+    return slotsUnavailable();
+  }
+
+  const timezone = env.BOOKING_TIMEZONE || DEFAULT_BOOKING_TIMEZONE;
+  const now = Date.now();
+  const params = new URLSearchParams({
+    startDate: String(now),
+    endDate: String(now + SLOTS_WINDOW_DAYS * 24 * 60 * 60 * 1000),
+    timezone,
+  });
+
+  let data;
+  try {
+    const res = await fetch(`${GHL_API_BASE}/calendars/${calendarId}/free-slots?${params}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${env.GHL_API_KEY}`,
+        Version: GHL_CALENDARS_API_VERSION,
+      },
+    });
+    if (!res.ok) return slotsUnavailable();
+    data = await res.json();
+  } catch {
+    return slotsUnavailable();
+  }
+
+  // GHL returns { "YYYY-MM-DD": { slots: [...] }, ... } plus a traceId.
+  const days = Object.keys(data || {})
+    .filter((k) => /^\d{4}-\d{2}-\d{2}$/.test(k))
+    .sort()
+    .map((date) => {
+      const raw = data[date];
+      const list = Array.isArray(raw) ? raw : raw && raw.slots;
+      return { date, slots: Array.isArray(list) ? [...list].sort() : [] };
+    })
+    .filter((d) => d.slots.length > 0);
+
+  return jsonResponse({ timezone, window_days: SLOTS_WINDOW_DAYS, days });
+}
+
+function slotsUnavailable() {
+  return new Response(JSON.stringify({ error: "slots_unavailable" }), {
+    status: 502,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+// ---- /book — CONFIRM A WALKTHROUGH TIME --------------------------------
+// Browser-called. Contact and calendar come only from the verified token;
+// start_time is validated server-side (now → now + 30 days).
+async function handleBook(payload, env) {
+  if (!env.BOOKING_TOKEN_SECRET) {
+    return new Response("Booking not configured", { status: 503 });
+  }
+  const claims = await verifyBookingToken(payload && payload.booking_token, env);
+  if (!claims) {
+    return new Response("Invalid booking token", { status: 403 });
+  }
+
+  const startRaw = payload && payload.start_time;
+  const startMs = typeof startRaw === "string" ? Date.parse(startRaw) : NaN;
+  const now = Date.now();
+  if (
+    !Number.isFinite(startMs) ||
+    startMs <= now ||
+    startMs > now + SLOTS_WINDOW_DAYS * 24 * 60 * 60 * 1000
+  ) {
+    return new Response("Invalid start_time", { status: 400 });
+  }
+
+  const siteAddress = typeof (payload && payload.site_address) === "string" ? payload.site_address.trim() : "";
+  if (!siteAddress || siteAddress.length > 200) {
+    return new Response("Invalid site_address", { status: 400 });
+  }
+
+  const calendarId = calendarIdForTier(claims.tier, env);
+  if (!calendarId) return bookingFailed();
+
+  const headers = {
+    Authorization: `Bearer ${env.GHL_API_KEY}`,
+    Version: GHL_CALENDARS_API_VERSION,
+    "Content-Type": "application/json",
+  };
+
+  let endTime;
+  try {
+    // Already has an upcoming, non-cancelled appointment? Create nothing.
+    const listRes = await fetch(
+      `${GHL_API_BASE}/contacts/${encodeURIComponent(claims.cid)}/appointments`,
+      { method: "GET", headers }
+    );
+    if (!listRes.ok) return bookingFailed();
+    const listed = await listRes.json();
+    const existing = (Array.isArray(listed && listed.events) ? listed.events : [])
+      .filter((e) => {
+        const status = String(e.appointmentStatus || e.status || "").toLowerCase();
+        const t = Date.parse(e.startTime);
+        return status !== "cancelled" && status !== "canceled" && Number.isFinite(t) && t > now;
+      })
+      .sort((a, b) => Date.parse(a.startTime) - Date.parse(b.startTime))[0];
+    if (existing) {
+      return new Response(
+        JSON.stringify({ error: "already_booked", start_time: existing.startTime }),
+        { status: 409, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // GHL does not infer endTime; derive it from the calendar's slot length.
+    const calRes = await fetch(`${GHL_API_BASE}/calendars/${calendarId}`, { method: "GET", headers });
+    if (!calRes.ok) return bookingFailed();
+    const cal = ((await calRes.json()) || {}).calendar || {};
+    const duration = Number(cal.slotDuration) > 0 ? Number(cal.slotDuration) : 30;
+    const unit = String(cal.slotDurationUnit || "mins").toLowerCase();
+    const durationMs = (unit.startsWith("hour") ? 3600000 : 60000) * duration;
+    endTime = formatLikeStart(startRaw, startMs + durationMs);
+
+    const res = await fetch(`${GHL_API_BASE}/calendars/events/appointments`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        calendarId,
+        locationId: env.GHL_LOCATION_ID,
+        contactId: claims.cid,
+        startTime: startRaw,
+        endTime,
+        title: "Walkthrough",
+        appointmentStatus: "confirmed",
+        toNotify: true,
+        address: siteAddress,
+      }),
+    });
+    if (!res.ok) {
+      let text = "";
+      try {
+        text = await res.text();
+      } catch {}
+      if ([400, 409, 422].includes(res.status) && /slot|available|booked/i.test(text)) {
+        return new Response(JSON.stringify({ error: "slot_unavailable" }), {
+          status: 409,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return bookingFailed();
+    }
+  } catch {
+    return bookingFailed();
+  }
+
+  // Best effort: the booking already exists, so a failure here must not fail it.
+  let contactAddressSaved = false;
+  try {
+    const putRes = await fetch(`${GHL_API_BASE}/contacts/${encodeURIComponent(claims.cid)}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${env.GHL_API_KEY}`,
+        "Content-Type": "application/json",
+        Version: GHL_API_VERSION,
+      },
+      body: JSON.stringify({ address1: siteAddress }),
+    });
+    contactAddressSaved = putRes.ok;
+  } catch {}
+
+  const out = { booked: true, start_time: startRaw, end_time: endTime };
+  if (!contactAddressSaved) out.contact_address_saved = false;
+  return jsonResponse(out);
+}
+
+// Renders endMs with the same UTC offset as the start string, so the
+// returned/sent times stay in the calendar's local time.
+function formatLikeStart(startRaw, endMs) {
+  const m = /([+-])(\d{2}):(\d{2})$/.exec(startRaw);
+  if (!m) return new Date(endMs).toISOString();
+  const offMin = (m[1] === "-" ? -1 : 1) * (Number(m[2]) * 60 + Number(m[3]));
+  const local = new Date(endMs + offMin * 60000).toISOString().slice(0, 19);
+  return `${local}${m[1]}${m[2]}:${m[3]}`;
+}
+
+function bookingFailed() {
+  return new Response(JSON.stringify({ error: "booking_failed" }), {
+    status: 502,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 // ---- /gate — SHORT QUALIFYING FORM -------------------------------------
@@ -352,6 +682,10 @@ async function handleGate(contactId, payload, env) {
     env
   );
 
+  const bookingToken = BOOKING_TIERS.includes(tier)
+    ? await signBookingToken({ cid: contactId, tier }, env)
+    : null;
+
   return jsonResponse({
     contactId,
     stage: "gate",
@@ -361,6 +695,7 @@ async function handleGate(contactId, payload, env) {
     lead_flags: flags,
     sla_flag: slaFlag,
     ghl_update: result,
+    ...(bookingToken ? { booking_token: bookingToken } : {}),
   });
 }
 
@@ -390,7 +725,7 @@ function extractGateFields(payload) {
   };
 }
 
-// Budget is the only disqualifier: under $2,000/month -> nurture, no
+// Budget is the only disqualifier: under $2,500/month -> nurture, no
 // calendar. Everything else a lead can fall short on is recorded by
 // leadFlags() for the team to review, but never blocks a booking.
 function checkDisqualifiers(f) {
@@ -417,7 +752,7 @@ function leadFlags(f) {
 }
 
 // Budget decides the tier on its own: $5,000+ scores 70 (always Priority,
-// since tierFromScore's cut-off is 70), $2,000–$4,999 scores 30 and can reach
+// since tierFromScore's cut-off is 70), $2,500–$4,999 scores 30 and can reach
 // at most 60 with the other factors (always Standard). Frequency and facility
 // fit only rank leads within their tier.
 function calculateGateScore(f) {
@@ -922,6 +1257,15 @@ async function upsertContactInGHL(f, env) {
     .filter(([, value]) => value)
     .map(([key, value]) => ({ key, field_value: String(value) }));
 
+  // Only when ticked. Unticked/missing sends neither field, so a repeat
+  // enquiry never clears earlier consent (withdrawal = GHL unsubscribe/DND).
+  if (f.marketingConsent === true) {
+    customFields.push(
+      { key: "marketing_consent", field_value: "Yes" },
+      { key: "marketing_consent_at", field_value: new Date().toISOString() }
+    );
+  }
+
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -1000,6 +1344,9 @@ async function writeBackToGHL(contactId, values, env) {
 // Exported for unit testing (test/scoring.test.js) — pure, no network
 // dependency, so these can be tested without the workerd runtime.
 export {
+  signBookingToken,
+  verifyBookingToken,
+  calendarIdForTier,
   checkDisqualifiers,
   leadFlags,
   calculateGateScore,

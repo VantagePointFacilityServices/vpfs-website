@@ -327,6 +327,7 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 .hero-ctas{ display:flex; flex-wrap:wrap; gap:var(--space-4); margin:var(--space-6) 0 var(--space-7); }
 .hero-inner .hero-ctas{ margin:0; }
 @media (max-width:560px){ .hero-ctas .btn{ white-space:normal; } }
+@media (max-width:560px){ .assessment-form .btn-block{ white-space:normal; } }
 .hero-checks{ list-style:none; margin:0; padding:0; display:grid; gap:var(--space-3); }
 .hero-checks li{ display:flex; align-items:center; gap:var(--space-3); font-weight:600; font-size:var(--fs-p2); color:rgba(255,255,255,.92); }
 .hero-checks svg{ width:14px; height:14px; flex:none; box-sizing:content-box; padding:6px; border-radius:50%; color:var(--vp-white); background:rgba(255,255,255,.15); }
@@ -427,6 +428,8 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 .info-card p{ font-size:.95rem; margin:0 0 var(--space-4); color:var(--text-muted); }
 .info-card .image-slot{ aspect-ratio:1/1.05; align-items:flex-start; padding-top:18px; margin-top:auto; }
 .info-card .image-slot .slot-mark{ width:22%; }
+.info-card .image-slot:has(img){ padding:0; align-items:stretch; }
+.info-card .image-slot img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center; }
 .info-card .image-slot .slot-caption{ left:14px; right:14px; bottom:12px; font-size:11px; line-height:1.35; }
 /* Pending real photography: keep the markup in place but collapse it out of
    the layout entirely until a real image replaces the placeholder. Remove
@@ -435,6 +438,7 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 
 /* ===== Process steps ===== */
 .process-wrap{ display:grid; grid-template-columns:1.1fr .9fr; gap:var(--space-8); align-items:center; }
+.process-wrap .image-slot-square{ aspect-ratio:1/1; }
 .process-wrap .eyebrow{ color:var(--text-muted); }
 .process-wrap .eyebrow::before{ background:var(--vp-navy); }
 .process-lead{ color:var(--text-muted); margin-bottom:var(--space-6); }
@@ -488,6 +492,8 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
   font-size:var(--fs-p3);
   color:var(--text-body);
 }
+a.suburb-tag{ text-decoration:none; }
+a.suburb-tag:hover,a.suburb-tag:focus-visible{ border-color:currentColor; color:var(--text-strong,var(--text-body)); }
 
 /* ===== Services carousel ===== */
 .carousel{ position:relative; }
@@ -527,6 +533,25 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 @media (max-width:900px){ .carousel-bottom h1{ max-width:none; } }
 .carousel-caption h2{ font-weight:400; font-size:var(--fs-p1); line-height:var(--lh-body); letter-spacing:normal; color:var(--text-on-inverse-muted); margin:0; max-width:50%; }
 @media (max-width:900px){ .carousel-caption h2{ max-width:none; } }
+/* Contact / Areas text heroes match the homepage hero height (desktop) */
+@media (min-width:1001px){ .hero-form-height{ min-height:610px; display:flex; align-items:center; padding-top:56px; padding-bottom:48px; } .hero-form-height > .wrap{ width:100%; } .hero-form-height .hero-single > :last-child{ margin-bottom:0; } }
+/* Services: centre the carousel copy against the form, as the homepage hero does */
+@media (min-width:1001px){
+  .carousel-bottom{ top:56px; bottom:48px; display:flex; flex-direction:column; justify-content:center; }
+}
+/* Booking form over the carousel — same right-hand column as the homepage hero */
+.carousel-form-wrap{ position:absolute; left:0; right:0; top:0; z-index:3; padding-top:56px; pointer-events:none; }
+.carousel-form-grid{ display:grid; grid-template-columns:1.15fr .85fr; gap:var(--space-8); }
+.carousel-form-grid .assessment-form{ grid-column:2; pointer-events:auto; }
+.carousel-form-grid .contact-form h3{ font-size:1.5rem; white-space:nowrap; text-align:center; }
+.carousel .carousel-slide.active{ min-height:610px; }
+@media (max-width:1000px){
+  .carousel-form-wrap{ position:relative; padding-top:0; padding-bottom:var(--space-7); pointer-events:auto; }
+  .carousel-form-grid{ grid-template-columns:1fr; }
+  .carousel-form-grid .assessment-form{ grid-column:1; }
+  .carousel .carousel-slide.active{ min-height:560px; }
+  .carousel-dots-wrap{ bottom:auto; top:512px; }
+}
 .carousel-dots-wrap{ position:absolute; left:0; right:0; bottom:32px; z-index:2; }
 .carousel-dots{ display:flex; gap:var(--space-2); margin-top:0; justify-content:flex-start; }
 .carousel-dots button{
@@ -703,7 +728,11 @@ input:focus,select:focus,textarea:focus{ outline:none; border-color:var(--vp-nav
 .check-row{ display:flex; align-items:center; gap:var(--space-3); margin-bottom:var(--space-3); }
 .check-row input[type="checkbox"]{ width:18px; height:18px; margin:0; flex:none; accent-color:var(--vp-navy); }
 .check-row label{ margin:0; font-weight:600; color:var(--text-body); }
+.marketing-consent{ align-items:flex-start; margin:var(--space-3) 0 0; }
+.marketing-consent label{ font-weight:400; font-size:.78rem; line-height:1.35; color:var(--text-muted); }
 .form-note{ font-size:.78rem; color:var(--text-muted); margin-top:var(--space-3); text-align:center; }
+.form-privacy-notice{ font-size:.78rem; line-height:1.35; color:var(--text-muted); margin:var(--space-3) 0; text-align:left; }
+.form-privacy-notice a{ color:inherit; text-decoration:underline; }
 .form-success{ display:none; text-align:center; padding:var(--space-6) var(--space-3); }
 .form-success.show{ display:block; }
 .form-success svg{ width:44px; height:44px; color:var(--vp-navy); margin:0 auto 12px; }
@@ -720,10 +749,23 @@ input:focus,select:focus,textarea:focus{ outline:none; border-color:var(--vp-nav
 .booking-result.show{ display:block; }
 .booking-result > div{ display:none; }
 .booking-result > div.show{ display:block; }
-.booking-calendar-embed{ min-height:420px; }
-.booking-calendar-embed > br{ display:none; } /* GHL's embed snippet adds one; it only adds height */
-/* The GHL widget brings its own card padding, so the dialog's would just push it into scrolling */
-.booking-dialog .booking-step-2.contact-form:has(.booking-calendar-embed.show){ padding:0; }
+.picker-week-nav{ display:flex; align-items:center; justify-content:space-between; gap:var(--space-3); margin:var(--space-4) 0; }
+.picker-week-label{ font-weight:600; color:var(--text-strong); text-align:center; }
+.picker-week-nav .btn{ min-width:44px; padding-left:var(--space-3); padding-right:var(--space-3); }
+.picker-days{ display:grid; grid-template-columns:repeat(auto-fit, minmax(64px, 1fr)); gap:var(--space-2); margin-bottom:var(--space-4); }
+.picker-times{ display:grid; grid-template-columns:repeat(auto-fill, minmax(88px, 1fr)); gap:var(--space-2); margin-bottom:var(--space-4); }
+.picker-day, .picker-time{
+  font:inherit; padding:var(--space-3) var(--space-2); cursor:pointer; text-align:center;
+  border:1px solid var(--border-hairline); border-radius:var(--radius-sm);
+  background:var(--surface-card); color:var(--text-body);
+}
+.picker-day:hover:not(:disabled), .picker-time:hover{ background:var(--surface-wash); }
+.picker-day:disabled{ opacity:.45; cursor:not-allowed; }
+.picker-day[aria-checked="true"], .picker-time[aria-checked="true"]{ background:var(--vp-navy); color:var(--vp-white); border-color:var(--vp-navy); }
+.picker-day:focus-visible, .picker-time:focus-visible, .walkthrough-picker button:focus-visible{ outline:3px solid var(--focus-ring); outline-offset:2px; }
+.walkthrough-picker:focus, #booking-confirmed:focus{ outline:none; }
+.picker-book:disabled{ opacity:.5; cursor:not-allowed; }
+@media (max-width:480px){ .picker-days{ grid-template-columns:repeat(3, 1fr); } }
 
 /* Step 2 + its result open in a modal <dialog> over the page (booking-gate.js) */
 .booking-dialog{
@@ -759,9 +801,11 @@ html:has(.booking-dialog[open]){ overflow:hidden; } /* stop the page scrolling b
 .booking-resume p{ margin-bottom:var(--space-4); }
 @media (max-width:480px){
   .booking-dialog .booking-step-2.contact-form{ padding:var(--space-5) var(--space-4); }
-  .booking-dialog-close{ top:var(--space-1); right:var(--space-1); width:32px; height:32px; } /* clear the calendar title */
+  .booking-dialog-close{ top:var(--space-1); right:var(--space-1); width:32px; height:32px; } /* clear the step titles on phones */
 }
 .hp-field{ position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden; }
+/* Cloudflare Turnstile: centre the challenge when it is shown (interaction-only keeps it hidden otherwise) */
+.turnstile-widget{ display:flex; justify-content:center; }
 .field-help{ margin-top:-10px; margin-bottom:var(--space-4); font-size:.8rem; color:var(--text-faint); }
 .input-icon-wrap{ position:relative; }
 .input-icon-wrap svg{ position:absolute; left:14px; top:50%; transform:translateY(-50%); width:18px; height:18px; color:var(--text-faint); pointer-events:none; }
@@ -821,3 +865,45 @@ html:has(.booking-dialog[open]){ overflow:hidden; } /* stop the page scrolling b
 @media (max-width:560px){ .footer-grid{ grid-template-columns:1fr; } }
 
 .mt-0{ margin-top:0; }
+
+/* ===== Landing pages (vertical / precinct) — shell shared by every *-cleaning-gold-coast page ===== */
+.lp-breadcrumb{ background:var(--surface-wash); font-size:var(--fs-p3); color:var(--text-muted); padding:var(--space-3) 0; }
+.lp-breadcrumb ol{ list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:var(--space-2); }
+.lp-breadcrumb li + li::before{ content:"\203A"; margin-right:var(--space-2); }
+.lp-breadcrumb a{ color:var(--vp-navy); font-weight:700; }
+.lp-hero .hero-inner{ grid-column:1; grid-row:1; }
+.lp-hero .assessment-form{ grid-column:2; grid-row:1; }
+.lp-hero .contact-form h3{ white-space:normal; }
+@media (min-width:1001px){
+  .lp-hero .assessment-form{ container-type:inline-size; }
+  .lp-hero .contact-form h3{ white-space:nowrap; font-size:clamp(.85rem, 5.2cqw, 1.5rem); line-height:30px; }
+}
+@media (max-width:1000px){
+  .lp-hero .hero-inner, .lp-hero .assessment-form{ grid-column:1; grid-row:auto; }
+  .lp-hero .hero-grid{ grid-template-columns:minmax(0,1fr); }
+  .lp-hero .hero-inner, .lp-hero .assessment-form{ min-width:0; }
+}
+.lp-section h2{ margin-bottom:var(--space-4); }
+.lp-two-col{ display:grid; grid-template-columns:1fr 1fr; gap:var(--space-8); align-items:center; }
+.lp-lists{ align-items:start; margin-top:var(--space-6); }
+.lp-side-img{ width:100%; height:auto; aspect-ratio:4/3; object-fit:cover; border-radius:var(--radius-lg); }
+.lp-cards{ display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-6); }
+.lp-sources{ font-size:var(--fs-p3); color:var(--text-muted); padding-left:var(--space-5); }
+.lp-link-grid{ list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(2,1fr); gap:var(--space-3) var(--space-6); }
+.lp-link-grid a{ color:var(--vp-navy); font-weight:700; text-decoration:underline; }
+@media (max-width:860px){
+  .lp-two-col, .lp-cards, .lp-link-grid{ grid-template-columns:1fr; }
+}
+
+/* Legal pages (privacy, terms): a single readable text column */
+.legal-section{ padding:64px 0 80px; }
+.legal-wrap{ max-width:760px; }
+.legal-wrap h1{ margin-bottom:var(--space-6); }
+.legal-wrap h2{ margin-top:var(--space-7, 40px); margin-bottom:var(--space-3); font-size:1.35rem; scroll-margin-top:96px; }
+.legal-wrap p, .legal-wrap li{ line-height:1.7; }
+.legal-wrap ul{ padding-left:1.25rem; }
+.legal-wrap a{ text-decoration:underline; overflow-wrap:anywhere; }
+.legal-table-wrap{ overflow-x:auto; margin:var(--space-4) 0; }
+.legal-wrap table{ width:100%; border-collapse:collapse; font-size:.92rem; }
+.legal-wrap th, .legal-wrap td{ text-align:left; vertical-align:top; padding:10px 12px; border-bottom:1px solid var(--border, #d9dee5); }
+@media (max-width:720px){ .legal-section{ padding:40px 0 56px; } }

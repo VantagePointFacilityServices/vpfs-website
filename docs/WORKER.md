@@ -78,28 +78,32 @@ flowchart LR
     V -->|fills in form| BG
     BG -->|"Step 1 — /lead"| W
     BG -->|"Step 2 — /gate"| W
+    BG -->|"booking_token — /slots"| W
     AI -->|"live DQ check — /gate"| W
     W -->|"create / update contact,<br/>add tag, write score"| C
     C -->|"tag added, stage changed,<br/>survey submitted"| WF
     WF -->|"webhooks — /enrich /confirm<br/>/outcome /apply /apply-screen"| W
-    BG -->|"shows the right calendar<br/>for the tier"| CAL
+    W -->|"free-slots for the tier's calendar"| CAL
+    W -->|"open days and times"| BG
 ```
 
 There are **two ways in**:
 
 - **Directly from the browser** — the website's booking form calls `/lead`
-  (Step 1) and `/gate` (Step 2). The AI Receptionist also calls `/gate`
+  (Step 1), `/gate` (Step 2), `/slots` (open walkthrough times) and `/book` (confirm a time). The AI Receptionist also calls `/gate`
   mid-call.
 - **From GHL workflows** — when something happens in GHL (a survey comes
   back, a walkthrough is a no-show, a proposal is lost), a workflow sends
   a webhook to one of the other five endpoints.
 
-### The seven endpoints at a glance
+### The eight endpoints at a glance
 
 | Endpoint | Called by | When | What it does |
 |---|---|---|---|
 | `/lead` | Website (Step 1) | Visitor submits name/email/phone/postcode | Creates or matches the GHL contact, tags it `website-lead`, returns its ID |
-| `/gate` | Website (Step 2), AI Receptionist | Visitor answers facility type / budget / frequency | Checks disqualifiers, scores, sets the tier, picks which calendar to show |
+| `/gate` | Website (Step 2), AI Receptionist | Visitor answers facility type / budget / frequency | Checks disqualifiers, scores, sets the tier, returns a signed `booking_token` for Priority / Standard leads |
+| `/slots` | Website (after Step 2) | Qualified visitor's Step 2 dialog opens the picker | Verifies the `booking_token`, reads GHL free slots (next 30 days, Brisbane time) from the calendar matching the token's tier, returns `{ timezone, window_days, days: [{ date, slots }] }`. 403 bad/expired token, 503 if `BOOKING_TOKEN_SECRET` unset, 502 `slots_unavailable` on a GHL error |
+| `/book` | Website (picker) | Visitor clicks Book on a chosen time | Body `{ booking_token, start_time, site_address }`. Verifies the token, then checks `start_time` is within now → now + 30 days (the same window `/slots` offers). If the contact already has an upcoming, non-cancelled appointment it creates nothing. Otherwise reads the calendar's slot length (GHL does not work out `endTime`) and creates a confirmed "Walkthrough" appointment on the tier's calendar for the token's contact with `toNotify: true` and `address` set to the trimmed `site_address`, then saves it to the contact with `PUT /contacts/{cid}` `{ address1 }` (best effort: if that call fails the booking still returns 200, with `contact_address_saved: false` added). Responses: `200 { booked: true, start_time, end_time }`; `400` missing/invalid/past/beyond-30-day `start_time`, or a missing, blank or over-200-character `site_address` (checked before any GHL call); `403` bad/expired token; `409 { error: "already_booked", start_time }`; `409 { error: "slot_unavailable" }` (GHL refused the slot); `502 { error: "booking_failed" }` (other GHL failure); `503` if `BOOKING_TOKEN_SECRET` unset |
 | `/enrich` | GHL workflow | Booked lead returns the optional facility-detail survey | Saves facility detail; can bump Standard → Priority |
 | `/confirm` | GHL workflow | Disqualified lead answers "is your budget/frequency flexible?" | Re-qualifies them if their flexed answer clears the minimum |
 | `/outcome` | GHL workflow | Walkthrough no-show, or proposal marked Lost | Moves them to the right nurture segment |
@@ -125,7 +129,11 @@ There are **two ways in**:
 
 | Name | Kind | What it is | How to set it |
 |---|---|---|---|
-| `GHL_API_KEY` | **Secret** | GHL Private Integration Token for the sub-account. Needs scopes `contacts.write` and `contacts.readonly`. | `cd worker && npx wrangler secret put GHL_API_KEY` — write-only; Cloudflare never shows it again |
+| `GHL_API_KEY` | **Secret** | GHL Private Integration Token for the sub-account. Needs scopes `contacts.write`, `contacts.readonly`, `calendars.readonly`, `calendars/events.readonly` and `calendars/events.write` (the three calendar scopes are used by `/slots` and `/book`). | `cd worker && npx wrangler secret put GHL_API_KEY` — write-only; Cloudflare never shows it again |
+| `BOOKING_TOKEN_SECRET` | **Secret** | Key used to sign the `booking_token` returned by `/gate`. If unset, `/gate` simply omits the token. | `cd worker && npx wrangler secret put BOOKING_TOKEN_SECRET` |
+| `CALENDAR_PRIORITY_ID` | Plain setting | GHL calendar id for Priority leads (`Ugunj3x67DQlmRm2aL2h`). | `[vars]` in `worker/wrangler.toml` |
+| `CALENDAR_STANDARD_ID` | Plain setting | GHL calendar id for Standard / standard-flagged leads (`FMEE7r6jwySahTZ90S0C`). | `[vars]` in `worker/wrangler.toml` |
+| `BOOKING_TIMEZONE` | Plain setting | Time zone for booking slots (`Australia/Brisbane`). | `[vars]` in `worker/wrangler.toml` |
 | `GHL_LOCATION_ID` | Plain setting | The GHL sub-account ID (`i1xCcUSRa8PDofaJ1Oyz`). Required when creating contacts. Not secret — it appears in GHL's public webhook URLs. | `[vars]` in `worker/wrangler.toml`, deployed with the code |
 | `CLOUDFLARE_WORKER_API_TOKEN` | GitHub repo secret | Lets GitHub Actions deploy the Worker. Scoped to `Account: Workers Scripts: Edit` only. | GitHub → Settings → Secrets and variables → Actions |
 
@@ -138,7 +146,7 @@ with exactly these keys:
 
 | Group | Custom field keys |
 |---|---|
-| Captured at Step 1 | `postcode`, `channel`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content` |
+| Captured at Step 1 | `postcode`, `channel`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, plus `marketing_consent` (Yes) and `marketing_consent_at` (Date/time) when the visitor ticked the opt-in |
 | Written by `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `lead_flags`, `sla_flag`, `lead_captured_at`, plus the visitor's Step 2 answers `facility_type`, `monthly_budget`, `cleaning_frequency` |
 | Read/written by `/enrich` | `size_sqm`, `headcount`, `floor_count`, `lifts_present`, `bathroom_count`, `kitchen_count`, `breakroom_count`, `meeting_room_count`, `special_requests`, `supplies_provided`, `equipment_needed`, `contract_renewal_date`, `contract_renewal_months_out` |
 | Read/written by `/confirm` | `budget_flexible`, `flexible_budget_amount`, `frequency_flexible`, `flexible_frequency`, `monthly_budget`, `cleaning_frequency`, `facility_type` |
@@ -244,7 +252,7 @@ sequenceDiagram
     participant G as GHL API
 
     V->>B: submits Step 1
-    B->>W: POST /lead<br/>name, email, phone, postcode,<br/>channel, UTMs, honeypot
+    B->>W: POST /lead<br/>name, email, phone, postcode,<br/>channel, UTMs, marketing_consent (bool), honeypot
     alt honeypot field filled (a bot)
         W-->>B: {contact_id: null} — GHL never called
     else email or phone missing
@@ -265,8 +273,11 @@ Things worth knowing:
   new contact; someone already in GHL gets their existing contact updated
   and their existing ID back — so a repeat enquiry works instead of
   erroring.
-- **`channel`** records which form was used: `website-homepage` or
-  `website-contact` (from the form's `data-channel` attribute).
+- **`channel`** records which page's form was used (from the form's
+  `data-channel` attribute). Every page has its own value: `website-homepage`,
+  `website-services`, `website-areas`, `website-why-us`, `website-contact`, and
+  `website-lp-<page>` for each landing page. `site/test/form-channels.test.js`
+  fails if a page is missing one or two pages share one.
 - **The tag is added separately**, through GHL's "add tags" endpoint, which
   appends. Sending tags inside the upsert could overwrite a returning
   contact's existing tags.
@@ -291,7 +302,7 @@ those plus the postcode from Step 1 and the `contact_id`.
 flowchart TD
     IN["POST /gate<br/>contact_id + facility_type,<br/>monthly_budget, cleaning_frequency, postcode"]
     IN --> FL["Record lead_flags for review:<br/>low-frequency, capability-gap,<br/>out-of-area (never block booking)"]
-    FL --> D1{"Budget under $2,000/month?"}
+    FL --> D1{"Budget under $2,500/month?"}
     D1 -- yes --> N1["dq_flag: nurture-budget"]
     D1 -- no --> SC["Calculate score 0–100"]
 
@@ -310,7 +321,7 @@ flowchart TD
     OUT --> C4["any other nurture →<br/>'we'll be in touch' message, no calendar"]
 ```
 
-**Budget is the only disqualifier.** Under $2,000/month is `nurture-budget`
+**Budget is the only disqualifier.** Under $2,500/month is `nurture-budget`
 and gets no calendar. A blank budget never disqualifies.
 
 **Everything else is a flag, not a disqualifier.** `/gate` writes
@@ -329,7 +340,7 @@ booking:
 | Factor | Points |
 |---|---|
 | Budget $5,000+/month | 70 |
-| Budget $2,000–$4,999 | 30 |
+| Budget $2,500–$4,999 | 30 |
 | Daily (7 days a week) | 20 |
 | 5 days a week | 15 |
 | 3 days a week | 10 |
@@ -337,15 +348,15 @@ booking:
 | Construction / industrial | 5 |
 
 **Budget alone decides the calendar.** Any $5,000+ budget scores at least
-70 + 10 + 5 = **85 → Priority**; a $2,000–$4,999 budget scores at most
+70 + 10 + 5 = **85 → Priority**; a $2,500–$4,999 budget scores at most
 30 + 20 + 10 = **60 → Standard**. Frequency and facility type only rank
 leads *within* a tier (e.g. in GHL views sorted by `lead_score`).
 
 | Monthly budget | Result |
 |---|---|
 | $5,000+ | Priority calendar |
-| $2,000–$4,999 | Standard calendar |
-| Under $2,000 | No calendar — budget message: *"Unfortunately, your monthly budget is below the minimum we need…we'll check in from time to time to see if anything has changed."* |
+| $2,500–$4,999 | Standard calendar |
+| Under $2,500 | No calendar — budget message: *"Unfortunately, your monthly budget is below the minimum we need…we'll check in from time to time to see if anything has changed."* |
 
 **Frequency options** on the form: Daily, 3 days a week, 5 days a week,
 Weekly, Fortnightly (values `daily`, `three_days_week`, `five_days_week`,
@@ -361,6 +372,14 @@ touch"* panel remains as a fallback for any other nurture reason.)
 
 **Service-area postcodes** are currently only **4211, 4212, 4226, 4227**.
 Any other postcode is flagged `out-of-area` (see [section 12](#12-changing-the-business-rules)).
+
+**`booking_token`.** For tiers `priority`, `standard` and `standard-flagged`
+(never `nurture`), the response includes `booking_token`: a signed,
+stateless token `base64url({cid,tier,exp}) + "." + base64url(HMAC-SHA256)`
+using `BOOKING_TOKEN_SECRET`, valid for 2 hours. It lets the website book a
+walkthrough later without re-entering details, and the browser can't forge
+it or change the tier. If `BOOKING_TOKEN_SECRET` is unset the field is
+omitted and everything else is unchanged.
 
 The **AI Receptionist** calls this same `/gate` endpoint live on the phone,
 so phone and web leads are judged by identical rules.
@@ -396,13 +415,13 @@ frequency path below only applies to older contacts still carrying
 flowchart TD
     IN["POST /confirm<br/>dq_flag + flexibility answers"] --> WHICH{"Which disqualifier?"}
 
-    WHICH -- "nurture-budget (default)" --> B1{"Budget flexible AND<br/>flexed amount $2,000+?"}
+    WHICH -- "nurture-budget (default)" --> B1{"Budget flexible AND<br/>flexed amount $2,500+?"}
     B1 -- no --> BN["dq_flag: nurture-budget-confirmed<br/>stays in nurture"]
     B1 -- yes --> BR["Re-score with flexed budget<br/>→ new tier, dq_flag: none"]
 
     WHICH -- nurture-frequency --> F1{"Frequency flexible AND<br/>flexed to 3+/week?"}
     F1 -- no --> FN["dq_flag: nurture-frequency-confirmed<br/>stays in nurture"]
-    F1 -- yes --> F2{"Budget still under $2,000?"}
+    F1 -- yes --> F2{"Budget still under $2,500?"}
     F2 -- yes --> FB["dq_flag: nurture-budget<br/>stays in nurture"]
     F2 -- no --> FR["Re-score with flexed frequency<br/>→ new tier, dq_flag: none"]
 ```
@@ -506,7 +525,19 @@ went wrong.
 | API key stays in the Worker | The browser never sees the GHL key | — |
 | Origin allowlist (CORS) | Stops *other websites'* pages calling the Worker from a visitor's browser | Doesn't stop scripts or tools like `curl` — they ignore CORS |
 | Honeypot field | A hidden field humans can't see; bots that fill it get a fake success and nothing reaches GHL | Doesn't stop smarter bots |
-| No login on any endpoint | — | Anyone who knows the URL can post to it. Adding Cloudflare Turnstile to the form (free) is the fix if spam appears. |
+| Cloudflare Turnstile on `/lead` | The booking form gets a token from an (almost always invisible) Turnstile widget; the Worker checks it with Cloudflare before creating any contact. A missing or bad token gets a `403` and nothing reaches GHL — this also stops bots posting to `/lead` directly, skipping the form | If Cloudflare itself can't be reached, the lead is still taken (a real enquiry is worth more than a spam risk) but tagged `turnstile-unverified`. Only enforced once `TURNSTILE_SECRET_KEY` is set |
+| No login on the other endpoints | — | `/gate`, `/enrich` etc. still accept any caller, but they only update a contact that already exists, so they need a `contact_id` from `/lead` first |
+
+#### Turnstile setup
+
+1. Cloudflare dashboard → **Turnstile** → **Add widget**. Hostnames:
+   `vantagepointfacilityservices.com.au`, `www.vantagepointfacilityservices.com.au`
+   (plus the VPC domains if one widget serves both sites). Mode: **Managed**.
+2. Paste the **site key** into `data-sitekey` on the `.turnstile-widget` div in
+   `site/index.html` and `site/contact.html`. Until then the widget doesn't render.
+3. `cd worker && npx wrangler secret put TURNSTILE_SECRET_KEY` with the **secret key**.
+   Until then the Worker skips the check. Do this *after* step 2 is live, or
+   every `/lead` without a token gets rejected.
 
 ---
 
@@ -514,7 +545,7 @@ went wrong.
 
 | Endpoint | Fields written |
 |---|---|
-| `/lead` | first/last name, email, phone, `postcode`, `channel`, `utm_*` (only those present), tag `website-lead` |
+| `/lead` | first/last name, email, phone, `postcode`, `channel`, `utm_*` (only those present), `marketing_consent` = `Yes` + `marketing_consent_at` (ISO timestamp) **only when the payload has `marketing_consent: true`** (strict boolean; unticked/missing/`"on"`/`1` send neither, so earlier consent is never cleared; withdrawal is GHL unsubscribe / DND), tag `website-lead` (plus `turnstile-unverified` if Cloudflare couldn't be reached) |
 | `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `lead_flags`, `sla_flag`, `lead_captured_at`, the Step 2 answers `facility_type` / `monthly_budget` / `cleaning_frequency` (only those given — blanks never overwrite), `utm_*` if sent |
 | `/enrich` | the facility detail fields, `contract_renewal_months_out`, and `lead_tier: priority` if bumped |
 | `/confirm` | `dq_flag` (confirmed nurture), or `lead_score`, `lead_tier`, `dq_flag: none` plus the flexed `monthly_budget` / `cleaning_frequency` |
@@ -553,7 +584,8 @@ flowchart LR
    must exist before you can pick it in the workflow trigger).
 2. **GHL token.** Switch into the **sub-account** (not agency view) →
    Settings → Private Integrations → Create new integration → scopes
-   `contacts.write` and `contacts.readonly` → copy the token (shown once;
+   `contacts.write`, `contacts.readonly`, `calendars.readonly`,
+   `calendars/events.readonly` and `calendars/events.write` → copy the token (shown once;
    keep it in your password manager).
 3. **Store the token in Cloudflare.** From the repo:
    `cd worker && npx wrangler secret put GHL_API_KEY`, then paste.

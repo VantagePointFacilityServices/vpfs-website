@@ -32,6 +32,7 @@ site/                                      the website (plain HTML/CSS/JS, no bu
   index.html, services.html, service-areas.html,
   why-us.html, about.html, contact.html,
   careers.html                           the seven pages (see Page & section map below)
+  privacy.html, terms.html               legal pages: privacy policy (with the collection notice) and website terms of use
   assets/css/style.css                   shared stylesheet (design tokens + components)
   assets/js/main.js                      nav toggle, carousel, tabs, FAQ, form handling
   assets/js/utm.js                       saves landing-page UTMs so the booking gate can send them to /lead
@@ -67,7 +68,7 @@ and how to dry-run/apply DNS changes) is in `docs/DEVELOPMENT.md`.
 
 ## Page & section map
 
-Five of the seven pages come from the original design handoff (see Design reference
+Five of the seven main pages come from the original design handoff (see Design reference
 below); `about.html` and `careers.html` were added after launch and follow the same
 design system rather than a design-handoff screen, so no screenshots exist for either.
 
@@ -80,6 +81,8 @@ design system rather than a design-handoff screen, so no screenshots exist for e
 | `about.html` | Trust-building page — who is actually behind the business. Company-level: why it exists and how it's staffed. Deliberately avoids repeating Why Us's service-level claims (see note below). | Hero (cross-links to Why Us) → Founder story → Core values (4 cards) → Our people / workforce model → Final CTA |
 | `contact.html` | Lead capture. | Contact form (service type, add-ons, message) → Phone/email/address details |
 | `careers.html` | Applicant capture — recruits commercial cleaners. | Hero (headline + application form with DQ questions) → Why cleaners choose us (4 cards) → How it works (4-step process) → Final CTA |
+| `privacy.html` | Legal — privacy policy (interim v1.0, pending Lawpath review). Every form's short collection notice links to its `#collection-notice` section. | Collection notice (standard notice + purpose/consequence per form) → Policy sections 1–11 |
+| `terms.html` | Legal — website terms of use (interim v1.0, pending Lawpath review). | Terms sections → Service terms (`#service-terms`, placeholder until the standard service terms are published) |
 
 **Why Us vs. About — keep these distinct:** Why Us answers "why pick you?" with service
 mechanics (scope, audit, consistency) aimed at a comparison shopper. About answers "who
@@ -122,6 +125,16 @@ are documented in the `vpos` repo:
 covers the five original screens (Home, Services, Areas, Why us, Contact), not
 `about.html`. See that folder's own `README.md` for the full handoff notes, including
 which copy and numbers are placeholders pending client confirmation.
+
+## Resource silos (`/resources/`)
+
+Nested SEO guides (hub → pillar → cluster → guide) are written as markdown in `content/resources/`
+(folder = URL = hierarchy) and built into `site/resources/` by `site/scripts/build-resources.mjs`.
+This is the one build step in an otherwise hand-written site: output is committed, never hand-edited,
+and CI runs `node site/scripts/build-resources.mjs --check` so a content change that was not rebuilt
+fails the deploy. Pages are `status: draft` until published; drafts emit nothing. Strategy, topic map
+and the authoring workflow are in the `vpos` repo (`commercial/res/seo-silo-research-and-topic-map.md`
+and the `seo-silo-pages` skill).
 
 ## SEO
 

@@ -44,7 +44,7 @@
     "@type": "OpeningHoursSpecification",
     "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
     "opens": "07:00",
-    "closes": "19:00"
+    "closes": "21:00"
   },
   "areaServed": [
     { "@type": "City", "name": "Brisbane" },
@@ -90,11 +90,135 @@
 </header>
 
 <!-- ============ WHY US HERO ============ -->
-<section class="hero-inverse page-hero hero-match-home hero-photo">
+<section class="hero-inverse hero-photo mt-0" style="padding-top:0;padding-bottom:0;">
   <div class="wrap">
-    <div class="hero-single">
-      <h1>Why Gold Coast Businesses Choose Vantage Point for Commercial Cleaning</h1>
-      <p class="lead">Plenty of companies will clean your building once. The difference shows in month seven &mdash; same team, same checklist, same result.</p>
+    <div class="hero-grid" style="align-items:center;">
+      <div class="hero-inner">
+        <h1>Why Gold Coast Businesses Choose Vantage Point for Commercial Cleaning</h1>
+        <p class="lead">Plenty of companies will clean your building once. The difference shows in month seven &mdash; same team, same checklist, same result.</p>
+      </div>
+      <form class="assessment-form" data-channel="website-why-us">
+        <div class="form-fields contact-form">
+          <h3 class="mt-0">Book a Walkthrough</h3>
+          <div class="booking-error" role="alert"></div>
+          <div class="form-row">
+            <div><label for="hero-fname">First name</label><input id="hero-fname" name="first_name" type="text" autocomplete="given-name" required></div>
+            <div><label for="hero-lname">Last name</label><input id="hero-lname" name="last_name" type="text" autocomplete="family-name"></div>
+          </div>
+          <div class="form-row single">
+            <div>
+              <label for="hero-email">Email</label>
+              <div class="input-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 6-10 7L2 6"/></svg>
+                <input id="hero-email" name="email" type="email" autocomplete="email" required>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div>
+              <label for="hero-phone">Phone</label>
+              <div class="input-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.2 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                <input id="hero-phone" name="phone" type="tel" autocomplete="tel" required>
+              </div>
+            </div>
+            <div>
+              <label for="hero-postcode">Postcode</label>
+              <div class="input-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                <input id="hero-postcode" name="postcode" type="text" inputmode="numeric" required>
+              </div>
+            </div>
+          </div>
+          <input type="hidden" name="enquiry_type" value="Walkthrough Request">
+          <div class="hp-field" aria-hidden="true">
+            <label for="hero-website-url">Website</label>
+            <input id="hero-website-url" name="url" type="text" tabindex="-1" autocomplete="off">
+          </div>
+          <!-- Cloudflare Turnstile bot check; site key from the Turnstile dashboard (see docs/WORKER.md) -->
+          <div class="turnstile-widget" data-sitekey="0x4AAAAAAFKpftSypIZ3KEQk"></div>
+          <div class="check-row marketing-consent">
+            <input type="checkbox" id="marketing-consent-17" name="marketing_consent" value="yes">
+            <label for="marketing-consent-17">Send me occasional offers and updates from Vantage Point Facility Services by email and SMS. I can unsubscribe at any time.</label>
+          </div>
+          <p class="form-privacy-notice">We collect these details to assess your site and offer a walkthrough. How we handle them: <a href="/privacy.html#collection-notice">collection notice</a> · <a href="/privacy.html">Privacy Policy</a>.</p>
+          <button type="submit" class="btn btn-primary btn-block">Start Booking</button>
+          <p class="form-note">The booking is instant and confirmed via sms.</p>
+        </div>
+        <dialog class="booking-dialog" aria-label="Book your walkthrough">
+          <button type="button" class="booking-dialog-close" aria-label="Close"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        <div class="booking-step-2 contact-form">
+          <div class="booking-step-2-questions">
+            <h3 class="mt-0">Just a couple more details</h3>
+            <div class="booking-error" role="alert"></div>
+            <div class="form-row single">
+              <div>
+                <label for="hero-facility-type">Facility type</label>
+                <select id="hero-facility-type" name="facility_type" aria-required="true" autofocus>
+                  <option value="">Select a facility type</option>
+                  <option value="office">Office</option>
+                  <option value="strata">Strata &amp; body corporate</option>
+                  <option value="education">Education</option>
+                  <option value="medical">Medical</option>
+                  <option value="construction">Warehouse / industrial</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row single">
+              <div><label for="hero-monthly-budget">Approx. monthly cleaning budget</label><input id="hero-monthly-budget" name="monthly_budget" type="number" min="0" aria-required="true"></div>
+            </div>
+            <label>Cleaning frequency required</label>
+            <div class="radio-row">
+              <label class="radio-option"><input type="radio" name="cleaning_frequency" value="daily">Daily</label>
+              <label class="radio-option"><input type="radio" name="cleaning_frequency" value="three_days_week">3 days a week</label>
+              <label class="radio-option"><input type="radio" name="cleaning_frequency" value="five_days_week">5 days a week</label>
+              <label class="radio-option"><input type="radio" name="cleaning_frequency" value="weekly">Weekly</label>
+              <label class="radio-option"><input type="radio" name="cleaning_frequency" value="fortnightly">Fortnightly</label>
+            </div>
+            <button type="button" class="btn btn-primary btn-block step2-submit">See availability</button>
+          </div>
+          <div class="booking-result">
+            <div id="walkthrough-picker" class="walkthrough-picker" tabindex="-1" aria-labelledby="picker-heading">
+              <h3 id="picker-heading">Pick a time for your walkthrough</h3>
+              <p class="small picker-tz">Times are shown in Brisbane time.</p>
+              <div class="picker-week-nav">
+                <button type="button" class="picker-prev-week btn btn-secondary" aria-label="Previous week">&lsaquo;</button>
+                <span class="picker-week-label" aria-live="polite"></span>
+                <button type="button" class="picker-next-week btn btn-secondary" aria-label="Next week">&rsaquo;</button>
+              </div>
+              <div class="picker-days" role="radiogroup" aria-label="Choose a day"></div>
+              <div class="picker-times" role="radiogroup" aria-label="Choose a time"></div>
+              <div class="picker-address">
+                <label for="hero-site-address">Site address</label>
+                <input type="text" id="hero-site-address" name="site_address" autocomplete="street-address" maxlength="200" aria-required="true">
+              </div>
+              <div class="booking-error" role="alert"></div>
+              <button type="button" class="btn btn-primary btn-block picker-book" disabled>Book walkthrough</button>
+            </div>
+            <div id="booking-confirmed" tabindex="-1" aria-live="polite"></div>
+            <div id="no-calendar-message" class="form-success" style="padding:var(--space-3) 0;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+              <h3>Thanks &mdash; we&rsquo;ll be in touch</h3>
+              <p class="small" style="color:var(--text-muted);">Every site&rsquo;s different, so instead of an instant slot, one of the team will call to walk through your scope and put together a proper quote &mdash; free, no obligation.</p>
+            </div>
+            <div id="budget-nurture-message" class="form-success" style="padding:var(--space-3) 0;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <h3>Thanks for thinking of us</h3>
+              <p class="small" style="color:var(--text-muted);">Unfortunately, your monthly budget is below the minimum we need to deliver the standard of cleaning we&rsquo;re known for, so we can&rsquo;t take on your site just yet. We&rsquo;d love to work with you down the track, so we&rsquo;ll check in from time to time to see if anything has changed. If it does sooner, give us a call on <a href="tel:0756512257">07 5651 2257</a>.</p>
+            </div>
+          </div>
+        </div>
+        </dialog>
+        <div class="booking-resume contact-form">
+          <p>Your details are saved &mdash; pick up where you left off.</p>
+          <button type="button" class="btn btn-primary booking-resume-btn">Continue booking</button>
+        </div>
+        <div class="form-success contact-form">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+          <h3>Request received</h3>
+          <p class="small" style="color:var(--text-muted);">Thanks &mdash; we'll be in touch shortly to arrange your walkthrough.</p>
+        </div>
+      </form>
     </div>
   </div>
 </section>
@@ -131,7 +255,7 @@
           <div class="commitment-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></div>
           <h4>Products that suit the building</h4>
         </div>
-        <p>Eco-conscious chemistry as standard, clinical-grade where the site requires it. Documented either way.</p>
+        <p>Chemicals chosen for the site and used to the label. Documented either way.</p>
       </div>
     </div>
   </div>
@@ -190,6 +314,7 @@
           <li><a href="services.html">Education</a></li>
           <li><a href="services.html">Medical</a></li>
           <li><a href="services.html">Industrial</a></li>
+          <li><a href="cleaning-by-site-type.html">Cleaning by site type</a></li>
         </ul>
       </div>
       <div>
@@ -197,6 +322,7 @@
         <ul>
           <li><a href="why-us.html">Why us</a></li>
           <li><a href="about.html">About Us</a></li>
+          <li><a href="/resources/">Resources</a></li>
           <li><a href="index.html#how-it-works">Our process</a></li>
           <li><a href="careers.html">Careers</a></li>
           <li><a href="contact.html">Contact</a></li>
@@ -208,21 +334,22 @@
           <li><a href="tel:0756512257">07 5651 2257</a></li>
           <li><a href="mailto:blake@vantagepointfacilityservices.com">blake@vantagepointfacilityservices.com</a></li>
           <li>73/54 Gemvale Road, Reedy Creek QLD 4227</li>
-          <li>Mon&ndash;Sun 7am&ndash;7pm</li>
+          <li>Mon&ndash;Sun 7am&ndash;9pm</li>
         </ul>
       </div>
     </div>
     <div class="footer-bottom">
       <span>&copy; 2026 Vantage Point Facility Services Pty Ltd. All rights reserved.</span>
       <div class="legal-links">
-        <a href="#">Privacy</a>
-        <a href="#">Terms</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
       </div>
     </div>
   </div>
 </footer>
 
-<script type="module" src="assets/js/utm.js"></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
+<script type="module" src="assets/js/booking-gate.js"></script>
 <script src="assets/js/main.js"></script>
 </body>
 </html>

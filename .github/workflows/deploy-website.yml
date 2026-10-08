@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "site/**"
+      - "content/**"
       - ".github/workflows/deploy-website.yml"
   workflow_dispatch:
 
@@ -35,6 +36,9 @@ jobs:
 
       - run: npm ci
       - run: npm test
+
+      # Fails if content/resources/ changed without rebuilding site/resources/.
+      - run: node scripts/build-resources.mjs --check
 
   deploy:
     needs: test

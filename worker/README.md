@@ -20,7 +20,11 @@ restricted to an explicit origin allowlist (see `ALLOWED_ORIGINS` in
 the GHL contact (matched by email/phone, so a repeat enquiry reuses the
 existing contact rather than erroring), tags it `website-lead`, and returns
 its `contact_id`, which the browser then carries into Step 2's `/gate`
-call; no DQ fields exist yet at Step 1, so this endpoint never scores
+call. If the payload has `marketing_consent: true` (strict boolean; the
+website's optional, unticked opt-in checkbox), the upsert also sets the custom
+fields `marketing_consent` = `Yes` and `marketing_consent_at` = an ISO
+timestamp; `false`/missing/anything else sends neither, so earlier consent is
+never cleared. No DQ fields exist yet at Step 1, so this endpoint never scores
 anything. GHL follow-up workflows for website leads trigger on
 **Contact Tag → Tag Added: `website-lead`**, not an Inbound Webhook.
 

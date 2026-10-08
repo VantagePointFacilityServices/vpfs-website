@@ -44,7 +44,7 @@
     "@type": "OpeningHoursSpecification",
     "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
     "opens": "07:00",
-    "closes": "19:00"
+    "closes": "21:00"
   },
   "areaServed": [
     { "@type": "City", "name": "Brisbane" },
@@ -144,6 +144,13 @@
             <label for="hero-website-url">Website</label>
             <input id="hero-website-url" name="url" type="text" tabindex="-1" autocomplete="off">
           </div>
+          <!-- Cloudflare Turnstile bot check; site key from the Turnstile dashboard (see docs/WORKER.md) -->
+          <div class="turnstile-widget" data-sitekey="0x4AAAAAAFKpftSypIZ3KEQk"></div>
+          <div class="check-row marketing-consent">
+            <input type="checkbox" id="marketing-consent-9" name="marketing_consent" value="yes">
+            <label for="marketing-consent-9">Send me occasional offers and updates from Vantage Point Facility Services by email and SMS. I can unsubscribe at any time.</label>
+          </div>
+          <p class="form-privacy-notice">We collect these details to assess your site and offer a walkthrough. How we handle them: <a href="/privacy.html#collection-notice">collection notice</a> · <a href="/privacy.html">Privacy Policy</a>.</p>
           <button type="submit" class="btn btn-primary btn-block">Start Booking</button>
           <p class="form-note">The booking is instant and confirmed via sms.</p>
         </div>
@@ -162,7 +169,7 @@
                   <option value="strata">Strata &amp; body corporate</option>
                   <option value="education">Education</option>
                   <option value="medical">Medical</option>
-                  <option value="construction">Construction / industrial</option>
+                  <option value="construction">Warehouse / industrial</option>
                 </select>
               </div>
             </div>
@@ -180,12 +187,24 @@
             <button type="button" class="btn btn-primary btn-block step2-submit">See availability</button>
           </div>
           <div class="booking-result">
-            <div id="calendar-priority" class="booking-calendar-embed">
-              <iframe src="https://api.leadconnectorhq.com/widget/booking/Ugunj3x67DQlmRm2aL2h" style="width: 100%;border:none;overflow: hidden;" scrolling="no" id="Ugunj3x67DQlmRm2aL2h_1790203011073"></iframe><br><script src="https://link.msgsndr.com/js/form_embed.js" type="text/javascript"></script>
+            <div id="walkthrough-picker" class="walkthrough-picker" tabindex="-1" aria-labelledby="picker-heading">
+              <h3 id="picker-heading">Pick a time for your walkthrough</h3>
+              <p class="small picker-tz">Times are shown in Brisbane time.</p>
+              <div class="picker-week-nav">
+                <button type="button" class="picker-prev-week btn btn-secondary" aria-label="Previous week">&lsaquo;</button>
+                <span class="picker-week-label" aria-live="polite"></span>
+                <button type="button" class="picker-next-week btn btn-secondary" aria-label="Next week">&rsaquo;</button>
+              </div>
+              <div class="picker-days" role="radiogroup" aria-label="Choose a day"></div>
+              <div class="picker-times" role="radiogroup" aria-label="Choose a time"></div>
+              <div class="picker-address">
+                <label for="hero-site-address">Site address</label>
+                <input type="text" id="hero-site-address" name="site_address" autocomplete="street-address" maxlength="200" aria-required="true">
+              </div>
+              <div class="booking-error" role="alert"></div>
+              <button type="button" class="btn btn-primary btn-block picker-book" disabled>Book walkthrough</button>
             </div>
-            <div id="calendar-standard" class="booking-calendar-embed">
-              <iframe src="https://api.leadconnectorhq.com/widget/booking/FMEE7r6jwySahTZ90S0C" style="width: 100%;border:none;overflow: hidden;" scrolling="no" id="FMEE7r6jwySahTZ90S0C_1790204390223"></iframe><br><script src="https://link.msgsndr.com/js/form_embed.js" type="text/javascript"></script>
-            </div>
+            <div id="booking-confirmed" tabindex="-1" aria-live="polite"></div>
             <div id="no-calendar-message" class="form-success" style="padding:var(--space-3) 0;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
               <h3>Thanks &mdash; we&rsquo;ll be in touch</h3>
@@ -229,8 +248,7 @@
           <h4>Commercial offices</h4>
           <p>After-hours cleaning so your team walks into a finished building, not a work in progress.</p>
           <div class="image-slot light">
-            <svg class="slot-mark" viewBox="465 396 84 84" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M505.08,398.1c-20.94,0-37.98,17.04-37.98,37.98v38.21h19.41v-21.57l4.97-2.61,8.02-4.21,8.69-4.57v28.19h-8.69v-17.73l-4.76,2.65v19.84h18.22v-40.84l-13.45,7.07v-21.14l19.46,10.59v40.24l7.38-4.37c9.1-5.38,14.75-15.29,14.75-25.86v-41.89h-36.01ZM536.32,439.99c0,8.89-4.76,17.23-12.41,21.76l-.2.12v-34.72l-28.98-15.77v31.65l-12.99,6.82v19.68h-9.88v-33.44c0-18.32,14.9-33.22,33.22-33.22h31.24v37.13Z"/></svg>
-            <div class="slot-caption">Photo of an office floor being cleaned after hours to be added</div>
+            <img src="assets/img/facility-types/office-800.webp" srcset="assets/img/facility-types/office-480.webp 480w, assets/img/facility-types/office-800.webp 800w" sizes="(min-width:1140px) 220px, (min-width:641px) 45vw, 92vw" width="800" height="840" alt="Modern open-plan office with desks and a glass meeting room" loading="lazy" decoding="async">
           </div>
         </div>
       </div>
@@ -240,8 +258,7 @@
           <h4>Strata &amp; body corporate</h4>
           <p>Common areas, lifts, carparks and bin rooms on a written scope your committee can read.</p>
           <div class="image-slot light">
-            <svg class="slot-mark" viewBox="465 396 84 84" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M505.08,398.1c-20.94,0-37.98,17.04-37.98,37.98v38.21h19.41v-21.57l4.97-2.61,8.02-4.21,8.69-4.57v28.19h-8.69v-17.73l-4.76,2.65v19.84h18.22v-40.84l-13.45,7.07v-21.14l19.46,10.59v40.24l7.38-4.37c9.1-5.38,14.75-15.29,14.75-25.86v-41.89h-36.01ZM536.32,439.99c0,8.89-4.76,17.23-12.41,21.76l-.2.12v-34.72l-28.98-15.77v31.65l-12.99,6.82v19.68h-9.88v-33.44c0-18.32,14.9-33.22,33.22-33.22h31.24v37.13Z"/></svg>
-            <div class="slot-caption">Photo of an apartment lobby or lift landing to be added</div>
+            <img src="assets/img/facility-types/strata-800.webp" srcset="assets/img/facility-types/strata-480.webp 480w, assets/img/facility-types/strata-800.webp 800w" sizes="(min-width:1140px) 220px, (min-width:641px) 45vw, 92vw" width="800" height="840" alt="Apartment building lobby with lifts and polished floor" loading="lazy" decoding="async">
           </div>
         </div>
       </div>
@@ -249,10 +266,9 @@
         <div class="card-body">
           <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg></div>
           <h4>Education</h4>
-          <p>Daycares, schools and universities &mdash; classrooms, canteens and term-break deep cleans.</p>
+          <p>Schools, childcare centres and universities &mdash; classrooms, canteens and term-break deep cleans.</p>
           <div class="image-slot light">
-            <svg class="slot-mark" viewBox="465 396 84 84" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M505.08,398.1c-20.94,0-37.98,17.04-37.98,37.98v38.21h19.41v-21.57l4.97-2.61,8.02-4.21,8.69-4.57v28.19h-8.69v-17.73l-4.76,2.65v19.84h18.22v-40.84l-13.45,7.07v-21.14l19.46,10.59v40.24l7.38-4.37c9.1-5.38,14.75-15.29,14.75-25.86v-41.89h-36.01ZM536.32,439.99c0,8.89-4.76,17.23-12.41,21.76l-.2.12v-34.72l-28.98-15.77v31.65l-12.99,6.82v19.68h-9.88v-33.44c0-18.32,14.9-33.22,33.22-33.22h31.24v37.13Z"/></svg>
-            <div class="slot-caption">Photo of a classroom or school corridor to be added</div>
+            <img src="assets/img/facility-types/education-800.webp" srcset="assets/img/facility-types/education-480.webp 480w, assets/img/facility-types/education-800.webp 800w" sizes="(min-width:1140px) 220px, (min-width:641px) 45vw, 92vw" width="800" height="840" alt="School classroom with desks and a green board" loading="lazy" decoding="async">
           </div>
         </div>
       </div>
@@ -262,8 +278,7 @@
           <h4>Medical</h4>
           <p>Infection-control routines, colour-coded equipment and documented sign-off.</p>
           <div class="image-slot light">
-            <svg class="slot-mark" viewBox="465 396 84 84" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M505.08,398.1c-20.94,0-37.98,17.04-37.98,37.98v38.21h19.41v-21.57l4.97-2.61,8.02-4.21,8.69-4.57v28.19h-8.69v-17.73l-4.76,2.65v19.84h18.22v-40.84l-13.45,7.07v-21.14l19.46,10.59v40.24l7.38-4.37c9.1-5.38,14.75-15.29,14.75-25.86v-41.89h-36.01ZM536.32,439.99c0,8.89-4.76,17.23-12.41,21.76l-.2.12v-34.72l-28.98-15.77v31.65l-12.99,6.82v19.68h-9.88v-33.44c0-18.32,14.9-33.22,33.22-33.22h31.24v37.13Z"/></svg>
-            <div class="slot-caption">Photo of a clinic waiting room or treatment room to be added</div>
+            <img src="assets/img/facility-types/medical-800.webp" srcset="assets/img/facility-types/medical-480.webp 480w, assets/img/facility-types/medical-800.webp 800w" sizes="(min-width:1140px) 220px, (min-width:641px) 45vw, 92vw" width="800" height="840" alt="Clean medical facility corridor" loading="lazy" decoding="async">
           </div>
         </div>
       </div>
@@ -271,10 +286,9 @@
         <div class="card-body">
           <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M17 18h1M12 18h1M7 18h1"/></svg></div>
           <h4>Industrial</h4>
-          <p>High-traffic floors, amenities and safety-critical areas, scheduled around production.</p>
+          <p>Warehouse floors, amenities and construction sites, cleaned around production and site schedules.</p>
           <div class="image-slot light">
-            <svg class="slot-mark" viewBox="465 396 84 84" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M505.08,398.1c-20.94,0-37.98,17.04-37.98,37.98v38.21h19.41v-21.57l4.97-2.61,8.02-4.21,8.69-4.57v28.19h-8.69v-17.73l-4.76,2.65v19.84h18.22v-40.84l-13.45,7.07v-21.14l19.46,10.59v40.24l7.38-4.37c9.1-5.38,14.75-15.29,14.75-25.86v-41.89h-36.01ZM536.32,439.99c0,8.89-4.76,17.23-12.41,21.76l-.2.12v-34.72l-28.98-15.77v31.65l-12.99,6.82v19.68h-9.88v-33.44c0-18.32,14.9-33.22,33.22-33.22h31.24v37.13Z"/></svg>
-            <div class="slot-caption">Photo of a warehouse floor scrubber in use to be added</div>
+            <img src="assets/img/facility-types/industrial-800.webp" srcset="assets/img/facility-types/industrial-480.webp 480w, assets/img/facility-types/industrial-800.webp 800w" sizes="(min-width:1140px) 220px, (min-width:641px) 45vw, 92vw" width="800" height="840" alt="Worker vacuuming dust from a concrete floor on a building site" loading="lazy" decoding="async">
           </div>
         </div>
       </div>
@@ -306,9 +320,9 @@
         </div>
       </div>
     </div>
-    <div class="image-slot light">
-      <svg class="slot-mark" viewBox="465 396 84 84" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M505.08,398.1c-20.94,0-37.98,17.04-37.98,37.98v38.21h19.41v-21.57l4.97-2.61,8.02-4.21,8.69-4.57v28.19h-8.69v-17.73l-4.76,2.65v19.84h18.22v-40.84l-13.45,7.07v-21.14l19.46,10.59v40.24l7.38-4.37c9.1-5.38,14.75-15.29,14.75-25.86v-41.89h-36.01ZM536.32,439.99c0,8.89-4.76,17.23-12.41,21.76l-.2.12v-34.72l-28.98-15.77v31.65l-12.99,6.82v19.68h-9.88v-33.44c0-18.32,14.9-33.22,33.22-33.22h31.24v37.13Z"/></svg>
-      <div class="slot-caption">Photo of two people on a site walkthrough, smiling and professional, to be added</div>    </div>
+    <div class="image-slot light image-slot-square">
+      <img src="assets/img/site-walkthrough-930.webp" srcset="assets/img/site-walkthrough-480.webp 480w, assets/img/site-walkthrough-930.webp 930w" sizes="(min-width:901px) 45vw, 92vw" alt="Two Vantage Point team members in hi-vis vests walking through a commercial fit-out during a site walkthrough" loading="lazy" decoding="async">
+    </div>
   </div>
 </section>
 
@@ -345,6 +359,7 @@
           <li><a href="services.html">Education</a></li>
           <li><a href="services.html">Medical</a></li>
           <li><a href="services.html">Industrial</a></li>
+          <li><a href="cleaning-by-site-type.html">Cleaning by site type</a></li>
         </ul>
       </div>
       <div>
@@ -352,6 +367,7 @@
         <ul>
           <li><a href="why-us.html">Why us</a></li>
           <li><a href="about.html">About Us</a></li>
+          <li><a href="/resources/">Resources</a></li>
           <li><a href="index.html#how-it-works">Our process</a></li>
           <li><a href="careers.html">Careers</a></li>
           <li><a href="contact.html">Contact</a></li>
@@ -363,20 +379,21 @@
           <li><a href="tel:0756512257">07 5651 2257</a></li>
           <li><a href="mailto:blake@vantagepointfacilityservices.com">blake@vantagepointfacilityservices.com</a></li>
           <li>73/54 Gemvale Road, Reedy Creek QLD 4227</li>
-          <li>Mon&ndash;Sun 7am&ndash;7pm</li>
+          <li>Mon&ndash;Sun 7am&ndash;9pm</li>
         </ul>
       </div>
     </div>
     <div class="footer-bottom">
       <span>&copy; 2026 Vantage Point Facility Services Pty Ltd. All rights reserved.</span>
       <div class="legal-links">
-        <a href="#">Privacy</a>
-        <a href="#">Terms</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
       </div>
     </div>
   </div>
 </footer>
 
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
 <script type="module" src="assets/js/booking-gate.js"></script>
 <script src="assets/js/main.js"></script>
 </body>

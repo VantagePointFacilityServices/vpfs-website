@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "fs";
+import { readFileSync, readdirSync } from "fs";
 import { resolve } from "path";
 
 // Step 1 and Step 2 share one <form>, so the browser's native validation on
@@ -7,7 +7,20 @@ import { resolve } from "path";
 // point. A `required` Step 2 field makes the browser block the submit with
 // "An invalid form control ... is not focusable". Step 2 validates itself in
 // JS (isGatePayloadComplete in booking-gate.js) instead.
-const PAGES = ["index.html", "contact.html"];
+// Landing pages are discovered by <body data-page-type="landing">, so a new
+// landing page is covered here without editing this file.
+const SITE_DIR = resolve(__dirname, "..");
+const LANDING_PAGES = readdirSync(SITE_DIR)
+  .filter((f) => f.endsWith(".html"))
+  .filter((f) => /data-page-type="landing"/.test(readFileSync(resolve(SITE_DIR, f), "utf8")));
+const PAGES = ["index.html", "contact.html", ...LANDING_PAGES];
+
+// D14: facility_type each vertical page pre-selects ("" = precinct, nothing).
+const FACILITY_DEFAULT = {
+  office: "office", strata: "strata", school: "education", childcare: "education",
+  medical: "medical", warehouse: "construction",
+};
+const CTA = (key) => (key === "strata" ? "Request a Committee Proposal" : "Request a Facility Consultation");
 
 function mountPage(page) {
   const html = readFileSync(resolve(__dirname, "..", page), "utf8");
@@ -62,8 +75,8 @@ describe.each(PAGES)("%s booking form", (page) => {
     expect(dialog.getAttribute("aria-label") || dialog.getAttribute("aria-labelledby")).toBeTruthy();
     for (const sel of [
       ".booking-step-2-questions",
-      "#calendar-priority",
-      "#calendar-standard",
+      "#walkthrough-picker",
+      "#booking-confirmed",
       "#no-calendar-message",
       "#budget-nurture-message",
     ]) {
@@ -92,5 +105,73 @@ describe.each(PAGES)("%s booking form", (page) => {
     for (const name of ["facility_type", "monthly_budget"]) {
       expect(form.querySelector(`.booking-step-2 [name="${name}"]`).getAttribute("aria-required")).toBe("true");
     }
+  });
+
+  it("has a Turnstile widget in Step 1, loaded before the booking-gate module", () => {
+    const html = readFileSync(resolve(__dirname, "..", page), "utf8");
+    const form = mountPage(page);
+    const widget = form.querySelector(".form-fields .turnstile-widget");
+    expect(widget).not.toBeNull();
+    expect(widget.hasAttribute("data-sitekey")).toBe(true);
+
+    const api = html.indexOf("challenges.cloudflare.com/turnstile/v0/api.js?render=explicit");
+    expect(api).toBeGreaterThan(-1);
+    expect(api).toBeLessThan(html.indexOf("assets/js/booking-gate.js"));
+  });
+
+  it("has the built-in picker and no GHL calendar embed", () => {
+    const html = readFileSync(resolve(__dirname, "..", page), "utf8");
+    expect(html).not.toMatch(/<iframe[^>]*leadconnectorhq/i);
+    expect(html).not.toContain("form_embed.js");
+    const form = mountPage(page);
+    const picker = form.querySelector(".booking-result #walkthrough-picker");
+    for (const sel of [".picker-week-label", ".picker-prev-week", ".picker-next-week", ".picker-days[role=radiogroup]", ".picker-times", ".picker-book[disabled]", ".booking-error"]) {
+      expect(picker.querySelector(sel), sel).not.toBeNull();
+    }
+    const addr = picker.querySelector('input[name="site_address"]');
+    expect(addr.getAttribute("autocomplete")).toBe("street-address");
+    expect(addr.getAttribute("aria-required")).toBe("true"); // JS sets `required` once the picker is live
+    expect(addr.getAttribute("maxlength")).toBe("200");
+    expect(picker.querySelector(`label[for="${addr.id}"]`)).not.toBeNull();
+    expect(addr.compareDocumentPosition(picker.querySelector(".picker-book")) & 4).toBeTruthy();
+    expect(form.querySelector(".booking-result #booking-confirmed").textContent.trim()).toBe("");
+  });
+});
+
+describe("landing page forms", () => {
+  const keyOf = (page) => {
+    mountPage(page);
+    return document.body.dataset.pageKey;
+  };
+
+  it("uses a unique website-lp-<key> channel matching the page key", () => {
+    const channels = LANDING_PAGES.map((page) => {
+      const key = keyOf(page);
+      const channel = mountPage(page).dataset.channel;
+      expect(channel, page).toBe(`website-lp-${key}`);
+      return channel;
+    });
+    expect(new Set(channels).size).toBe(channels.length);
+  });
+
+  it.each(LANDING_PAGES)("%s pre-selects the D14 facility_type", (page) => {
+    const key = keyOf(page);
+    const form = mountPage(page);
+    const selected = Array.from(form.querySelectorAll('select[name="facility_type"] option[selected]'), (o) => o.value);
+    const expected = key in FACILITY_DEFAULT ? [FACILITY_DEFAULT[key]] : [];
+    expect(selected).toEqual(expected);
+  });
+
+  it.each(LANDING_PAGES)("%s uses the consultation CTA wording on heading and submit", (page) => {
+    const key = keyOf(page);
+    const form = mountPage(page);
+    expect(form.querySelector(".form-fields h3").textContent.trim()).toBe(CTA(key));
+    expect(form.querySelector('.form-fields button[type="submit"]').textContent.trim()).toBe(CTA(key));
+  });
+
+  it.each(LANDING_PAGES)("%s keeps the construction value and labels it Warehouse / industrial", (page) => {
+    const form = mountPage(page);
+    const opt = form.querySelector('select[name="facility_type"] option[value="construction"]');
+    expect(opt.textContent.trim()).toBe("Warehouse / industrial");
   });
 });

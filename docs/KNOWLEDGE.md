@@ -31,13 +31,13 @@ reads. Setup runbooks live elsewhere — this file points to them.
 | Website-lead tag | `website-lead` (ID `AxqSvCibXVSHZd0ycUI4`) — the new-lead workflow triggers on Tag Added |
 | Calendars | Priority `Ugunj3x67DQlmRm2aL2h`, Standard `FMEE7r6jwySahTZ90S0C` (manual-only: `AD4RlvMCfaaaq4QpLPFu`) |
 | Phone | `07 5651 2257` published (voice); `0485 033 115` SMS-only, never published |
-| Business hours | Mon–Sun 7am–7pm (Australia/Brisbane) |
+| Business hours | Mon–Sun 7am–9pm (Australia/Brisbane) |
 | Secrets | `GHL_API_KEY` (Worker secret), `CLOUDFLARE_WORKER_API_TOKEN` and `CLOUDFLARE_API_TOKEN` (GitHub repo secrets) |
 
 ## 2. Business rules the code encodes (as of 2026-09-29)
 
 - **Budget alone decides booking:** $5,000+/month → Priority calendar,
-  $2,000–$4,999 → Standard, under $2,000 → nurture (budget message, no
+  $2,500–$4,999 → Standard, under $2,500 → nurture (budget message, no
   calendar). Frequency, facility type and postcode are `lead_flags`
   (`low-frequency`, `capability-gap`, `out-of-area`), never blockers.
 - **SLA flags:** Priority `call-within-5min`, Standard/standard-flagged
@@ -56,6 +56,16 @@ reads. Setup runbooks live elsewhere — this file points to them.
   at the contact. Every value the Worker writes must exist as an exact
   field key (`contact.<key>`) and exact option text (e.g.
   `three_days_week`, not "3 days a week").
+  - **Marketing-consent keys (`marketing_consent`, `marketing_consent_at`)
+    on the upsert:** GHL's Upsert Contact API reference documents
+    `customFields` entries (`id`, `key`, `field_value`) but says nothing about
+    unknown keys (checked 2026-10-08,
+    https://marketplace.gohighlevel.com/docs/ghl/contacts/upsert-contact).
+    So we rely on the observed behaviour above: unknown keys are most likely
+    dropped silently, meaning consent would be lost, not errored. Create both
+    fields (vpos dashboard card 2) **before deploying the Worker**, then
+    verify with one ticked test submission. If GHL does reject unknown keys,
+    the deploy must wait for the fields.
 - **Create contacts with `POST /contacts/upsert` + `locationId`, never
   `POST /contacts/`** — the latter errors when the email/phone already
   exists, which blocked repeat enquirers.
