@@ -43,7 +43,6 @@ describe("privacy.html collection notice section", () => {
   const sec = () => doc.getElementById("collection-notice");
 
   it("has the standard notice, three-row table, screening line, countries and email", () => {
-    const text = sec() ? sec().parentElement.textContent : "";
     expect(sec()).not.toBeNull();
     const rows = [];
     for (let el = sec().nextElementSibling; el && el.tagName !== "H2"; el = el.nextElementSibling) rows.push(el);
@@ -52,6 +51,13 @@ describe("privacy.html collection notice section", () => {
     expect(body).toContain("Some client sites, such as schools, childcare and NDIS services, require police, Blue Card or NDIS worker screening. We'll ask for your consent before any check.");
     expect(body).toContain("the USA, the United Kingdom, Germany and the Netherlands");
     expect(body).toContain("blake@vantagepointfacilityservices.com");
-    expect(text).toBeTruthy();
+    expect(body).toContain("Vantage Point Facility Services Pty Ltd collects these details to {purpose}. If you don't provide them, {consequence}.");
+    expect(body).toContain("We share them only with the service providers that run our booking, phone, payment and scheduling systems");
+    expect(body).toContain("Privacy Policy explains how to access or correct your information, how to complain, and how we handle it.");
+    for (const cell of [
+      "assess your site and offer a walkthrough or quote", "we can't assess your site or book a walkthrough",
+      "assess your application, check your right to work and, where a client site requires it, run screening checks", "we can't consider your application",
+      "tell you when we can service your area", "we can't let you know when we cover your area",
+    ]) expect(body).toContain(cell);
   });
 });
