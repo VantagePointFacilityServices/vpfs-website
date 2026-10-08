@@ -7,7 +7,8 @@ import { resolve } from "path";
 // search engines read — a mismatch is exactly the bug this replaced (footer
 // Mon–Fri 7–5 vs. the contact card's "24/7").
 const SITE = resolve(__dirname, "..");
-const pages = readdirSync(SITE).filter((f) => f.endsWith(".html"));
+const pages = readdirSync(SITE, { recursive: true })
+  .filter((f) => f.endsWith(".html") && !f.startsWith("node_modules"));
 const read = (page) => readFileSync(resolve(SITE, page), "utf8");
 
 describe.each(pages)("%s business hours", (page) => {
