@@ -884,3 +884,16 @@ html:has(.booking-dialog[open]){ overflow:hidden; } /* stop the page scrolling b
 @media (max-width:860px){
   .lp-two-col, .lp-cards, .lp-link-grid{ grid-template-columns:1fr; }
 }
+
+/* Legal pages (privacy, terms): a single readable text column */
+.legal-section{ padding:64px 0 80px; }
+.legal-wrap{ max-width:760px; }
+.legal-wrap h1{ margin-bottom:var(--space-6); }
+.legal-wrap h2{ margin-top:var(--space-7, 40px); margin-bottom:var(--space-3); font-size:1.35rem; scroll-margin-top:96px; }
+.legal-wrap p, .legal-wrap li{ line-height:1.7; }
+.legal-wrap ul{ padding-left:1.25rem; }
+.legal-wrap a{ text-decoration:underline; overflow-wrap:anywhere; }
+.legal-table-wrap{ overflow-x:auto; margin:var(--space-4) 0; }
+.legal-wrap table{ width:100%; border-collapse:collapse; font-size:.92rem; }
+.legal-wrap th, .legal-wrap td{ text-align:left; vertical-align:top; padding:10px 12px; border-bottom:1px solid var(--border, #d9dee5); }
+@media (max-width:720px){ .legal-section{ padding:40px 0 56px; } }

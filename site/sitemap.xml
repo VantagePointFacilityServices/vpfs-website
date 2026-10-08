@@ -84,4 +84,12 @@
     <loc>https://www.vantagepointfacilityservices.com.au/commercial-cleaning-nerang-carrara.html</loc>
     <priority>0.7</priority>
   </url>
+  <url>
+    <loc>https://www.vantagepointfacilityservices.com.au/privacy.html</loc>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://www.vantagepointfacilityservices.com.au/terms.html</loc>
+    <priority>0.3</priority>
+  </url>
 </urlset>
