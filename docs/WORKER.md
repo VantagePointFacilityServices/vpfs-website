@@ -146,7 +146,7 @@ with exactly these keys:
 
 | Group | Custom field keys |
 |---|---|
-| Captured at Step 1 | `postcode`, `channel`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content` |
+| Captured at Step 1 | `postcode`, `channel`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, plus `marketing_consent` (Yes) and `marketing_consent_at` (Date/time) when the visitor ticked the opt-in |
 | Written by `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `lead_flags`, `sla_flag`, `lead_captured_at`, plus the visitor's Step 2 answers `facility_type`, `monthly_budget`, `cleaning_frequency` |
 | Read/written by `/enrich` | `size_sqm`, `headcount`, `floor_count`, `lifts_present`, `bathroom_count`, `kitchen_count`, `breakroom_count`, `meeting_room_count`, `special_requests`, `supplies_provided`, `equipment_needed`, `contract_renewal_date`, `contract_renewal_months_out` |
 | Read/written by `/confirm` | `budget_flexible`, `flexible_budget_amount`, `frequency_flexible`, `flexible_frequency`, `monthly_budget`, `cleaning_frequency`, `facility_type` |
@@ -252,7 +252,7 @@ sequenceDiagram
     participant G as GHL API
 
     V->>B: submits Step 1
-    B->>W: POST /lead<br/>name, email, phone, postcode,<br/>channel, UTMs, honeypot
+    B->>W: POST /lead<br/>name, email, phone, postcode,<br/>channel, UTMs, marketing_consent (bool), honeypot
     alt honeypot field filled (a bot)
         W-->>B: {contact_id: null} — GHL never called
     else email or phone missing
@@ -545,7 +545,7 @@ went wrong.
 
 | Endpoint | Fields written |
 |---|---|
-| `/lead` | first/last name, email, phone, `postcode`, `channel`, `utm_*` (only those present), tag `website-lead` (plus `turnstile-unverified` if Cloudflare couldn't be reached) |
+| `/lead` | first/last name, email, phone, `postcode`, `channel`, `utm_*` (only those present), `marketing_consent` = `Yes` + `marketing_consent_at` (ISO timestamp) **only when the payload has `marketing_consent: true`** (strict boolean; unticked/missing/`"on"`/`1` send neither, so earlier consent is never cleared; withdrawal is GHL unsubscribe / DND), tag `website-lead` (plus `turnstile-unverified` if Cloudflare couldn't be reached) |
 | `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `lead_flags`, `sla_flag`, `lead_captured_at`, the Step 2 answers `facility_type` / `monthly_budget` / `cleaning_frequency` (only those given — blanks never overwrite), `utm_*` if sent |
 | `/enrich` | the facility detail fields, `contract_renewal_months_out`, and `lead_tier: priority` if bumped |
 | `/confirm` | `dq_flag` (confirmed nurture), or `lead_score`, `lead_tier`, `dq_flag: none` plus the flexed `monthly_budget` / `cleaning_frequency` |

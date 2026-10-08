@@ -728,7 +728,11 @@ input:focus,select:focus,textarea:focus{ outline:none; border-color:var(--vp-nav
 .check-row{ display:flex; align-items:center; gap:var(--space-3); margin-bottom:var(--space-3); }
 .check-row input[type="checkbox"]{ width:18px; height:18px; margin:0; flex:none; accent-color:var(--vp-navy); }
 .check-row label{ margin:0; font-weight:600; color:var(--text-body); }
+.marketing-consent{ align-items:flex-start; margin:var(--space-3) 0 0; }
+.marketing-consent label{ font-weight:400; font-size:.78rem; line-height:1.35; color:var(--text-muted); }
 .form-note{ font-size:.78rem; color:var(--text-muted); margin-top:var(--space-3); text-align:center; }
+.form-privacy-notice{ font-size:.78rem; line-height:1.35; color:var(--text-muted); margin:var(--space-3) 0; text-align:left; }
+.form-privacy-notice a{ color:inherit; text-decoration:underline; }
 .form-success{ display:none; text-align:center; padding:var(--space-6) var(--space-3); }
 .form-success.show{ display:block; }
 .form-success svg{ width:44px; height:44px; color:var(--vp-navy); margin:0 auto 12px; }
@@ -884,3 +888,16 @@ html:has(.booking-dialog[open]){ overflow:hidden; } /* stop the page scrolling b
 @media (max-width:860px){
   .lp-two-col, .lp-cards, .lp-link-grid{ grid-template-columns:1fr; }
 }
+
+/* Legal pages (privacy, terms): a single readable text column */
+.legal-section{ padding:64px 0 80px; }
+.legal-wrap{ max-width:760px; }
+.legal-wrap h1{ margin-bottom:var(--space-6); }
+.legal-wrap h2{ margin-top:var(--space-7, 40px); margin-bottom:var(--space-3); font-size:1.35rem; scroll-margin-top:96px; }
+.legal-wrap p, .legal-wrap li{ line-height:1.7; }
+.legal-wrap ul{ padding-left:1.25rem; }
+.legal-wrap a{ text-decoration:underline; overflow-wrap:anywhere; }
+.legal-table-wrap{ overflow-x:auto; margin:var(--space-4) 0; }
+.legal-wrap table{ width:100%; border-collapse:collapse; font-size:.92rem; }
+.legal-wrap th, .legal-wrap td{ text-align:left; vertical-align:top; padding:10px 12px; border-bottom:1px solid var(--border, #d9dee5); }
+@media (max-width:720px){ .legal-section{ padding:40px 0 56px; } }

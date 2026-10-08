@@ -108,6 +108,11 @@ function handleStep1Submit(form, submitBtn) {
     });
 }
 
+function marketingConsent(form) {
+  var box = form.querySelector('input[name="marketing_consent"]');
+  return !!(box && box.checked);
+}
+
 function buildLeadPayload(form) {
   var get = fieldGetter(form);
 
@@ -119,6 +124,7 @@ function buildLeadPayload(form) {
     postcode: get("postcode"),
     channel: form.getAttribute("data-channel") || "",
     url: get("url"),
+    marketing_consent: marketingConsent(form),
     turnstile_token: turnstileToken(form),
   }, readUtms(window.location.search, sessionStore()));
 }

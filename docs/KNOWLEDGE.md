@@ -56,6 +56,16 @@ reads. Setup runbooks live elsewhere — this file points to them.
   at the contact. Every value the Worker writes must exist as an exact
   field key (`contact.<key>`) and exact option text (e.g.
   `three_days_week`, not "3 days a week").
+  - **Marketing-consent keys (`marketing_consent`, `marketing_consent_at`)
+    on the upsert:** GHL's Upsert Contact API reference documents
+    `customFields` entries (`id`, `key`, `field_value`) but says nothing about
+    unknown keys (checked 2026-10-08,
+    https://marketplace.gohighlevel.com/docs/ghl/contacts/upsert-contact).
+    So we rely on the observed behaviour above: unknown keys are most likely
+    dropped silently, meaning consent would be lost, not errored. Create both
+    fields (vpos dashboard card 2) **before deploying the Worker**, then
+    verify with one ticked test submission. If GHL does reject unknown keys,
+    the deploy must wait for the fields.
 - **Create contacts with `POST /contacts/upsert` + `locationId`, never
   `POST /contacts/`** — the latter errors when the email/phone already
   exists, which blocked repeat enquirers.
