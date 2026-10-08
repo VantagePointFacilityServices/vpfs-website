@@ -198,6 +198,34 @@ describe("POST /lead", () => {
     expect(postcodeField.field_value).toBe("4211");
   });
 
+  it("sends marketing_consent Yes plus an ISO timestamp when consent is true", async () => {
+    global.fetch = mockLeadGhl("c-consent");
+    await worker.fetch(
+      makeRequest("/lead", { email: "a@example.com", phone: "0400000000", marketing_consent: true }),
+      env
+    );
+    const fields = Object.fromEntries(
+      upsertBody(global.fetch).customFields.map((f) => [f.key, f.field_value])
+    );
+    expect(fields.marketing_consent).toBe("Yes");
+    expect(new Date(fields.marketing_consent_at).toISOString()).toBe(fields.marketing_consent_at);
+  });
+
+  it.each([[false], [undefined], ["true"], ["on"], [1]])(
+    "sends neither consent field when marketing_consent is %j",
+    async (value) => {
+      global.fetch = mockLeadGhl("c-noconsent");
+      const body = { email: "a@example.com", phone: "0400000000" };
+      if (value !== undefined) body.marketing_consent = value;
+      const res = await worker.fetch(makeRequest("/lead", body), env);
+      expect((await res.json()).contact_id).toBe("c-noconsent");
+      const keys = upsertBody(global.fetch).customFields.map((f) => f.key);
+      expect(keys).not.toContain("marketing_consent");
+      expect(keys).not.toContain("marketing_consent_at");
+      expect(global.fetch).toHaveBeenCalledTimes(2);
+    }
+  );
+
   it("writes utm params as custom fields and omits ones that weren't sent", async () => {
     global.fetch = mockLeadGhl("new-contact-7");
 

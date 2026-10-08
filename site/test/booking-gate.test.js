@@ -135,6 +135,24 @@ describe("Step 1 submit", () => {
     expect(form.querySelector(".form-fields").classList.contains("hide-after-step1")).toBe(true);
   });
 
+  it.each([[true], [false]])("sends marketing_consent: %s matching the checkbox", async (ticked) => {
+    const form = mountHomepageForm();
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.name = "marketing_consent";
+    box.checked = ticked;
+    form.querySelector(".form-fields").appendChild(box);
+    global.fetch = mockLeadOk("contact-consent");
+    initBookingGate(form);
+
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    const body = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(body.marketing_consent).toBe(ticked);
+  });
+
   it("includes utm params from the page URL in the /lead payload", async () => {
     window.history.replaceState(null, "", "/?utm_source=google&utm_campaign=office-gc");
     const form = mountHomepageForm();

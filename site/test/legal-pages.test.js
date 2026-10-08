@@ -56,7 +56,7 @@ describe("privacy page", () => {
     expect(html).toMatch(/<title>Privacy Policy \|/);
     expect(html).toMatch(/<meta name="description" content="[^"]+"/);
     expect(html).toContain('<link rel="canonical" href="https://www.vantagepointfacilityservices.com.au/privacy.html">');
-    expect(html.match(/<h2 id="[a-z0-9-]+">/g)).toHaveLength(11);
+    expect(html.match(/<h2 id="[a-z0-9-]+">/g)).toHaveLength(12);
   });
 
   it("is listed in the sitemap", () => {

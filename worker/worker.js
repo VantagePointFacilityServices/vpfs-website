@@ -353,6 +353,8 @@ function extractLeadFields(payload) {
     // checkDisqualifiers()/calculateGateScore() never read it.
     channel: payload.channel || "",
     honeypot: payload.url || "",
+    // Strict boolean only: consent is never inferred from "true", "on" or 1.
+    marketingConsent: payload.marketing_consent === true,
     utm_source: payload.utm_source,
     utm_medium: payload.utm_medium,
     utm_campaign: payload.utm_campaign,
@@ -1254,6 +1256,15 @@ async function upsertContactInGHL(f, env) {
   })
     .filter(([, value]) => value)
     .map(([key, value]) => ({ key, field_value: String(value) }));
+
+  // Only when ticked. Unticked/missing sends neither field, so a repeat
+  // enquiry never clears earlier consent (withdrawal = GHL unsubscribe/DND).
+  if (f.marketingConsent === true) {
+    customFields.push(
+      { key: "marketing_consent", field_value: "Yes" },
+      { key: "marketing_consent_at", field_value: new Date().toISOString() }
+    );
+  }
 
   const res = await fetch(url, {
     method: "POST",
