@@ -13,7 +13,7 @@ const read = (page) => readFileSync(resolve(SITE, page), "utf8");
 const parse = (page) => new DOMParser().parseFromString(read(page), "text/html");
 
 const LANDING_PAGES = ALL_PAGES.filter((p) => parse(p).body.dataset.pageType === "landing");
-// cleaning-by-site-type.html is the hub for the landing pages (linked from the footer):
+// cleaning-by-site-type.html is the hub for the landing pages (linked from services.html):
 // held to the same SEO checks, but it carries no landing marker or Service schema.
 // services.html is the original tabbed scope page and is not part of this set.
 const SEO_PAGES = [...LANDING_PAGES, "cleaning-by-site-type.html"];
@@ -237,11 +237,12 @@ describe("site-wide navigation", () => {
     it("header nav does not link Resources", () => {
       expect(hrefs(doc.querySelectorAll("header a"))).not.toContain("/resources/");
     });
-    it("footer links Resources and the site-type hub", () => {
-      const f = hrefs(doc.querySelectorAll("footer a"));
-      expect(f).toContain("/resources/");
-      expect(f).toContain("cleaning-by-site-type.html");
+    it("footer links Resources", () => {
+      expect(hrefs(doc.querySelectorAll("footer a"))).toContain("/resources/");
     });
+  });
+  it("services.html links the site-type hub from its body", () => {
+    expect(hrefs(parse("services.html").querySelectorAll("main a, body > section a"))).toContain("cleaning-by-site-type.html");
   });
   it("cleaning-by-site-type.html links every vertical page from its body", () => {
     expect(hrefs(parse("cleaning-by-site-type.html").querySelectorAll("main a, body > section a"))).toEqual(expect.arrayContaining(VERTICALS));

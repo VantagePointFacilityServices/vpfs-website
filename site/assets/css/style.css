@@ -224,7 +224,7 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 }
 .header-inner{ display:flex; align-items:center; justify-content:space-between; padding:9px 1.6px; gap:var(--space-6); }
 .logo img{ height:48px; width:auto; }
-.main-nav{ display:flex; align-items:center; gap:30px; }
+.main-nav{ display:flex; align-items:center; gap:40px; }
 .main-nav a{
   font-weight:600; font-size:.98rem; color:var(--text-muted);
   padding:6px 0; border-bottom:2px solid transparent;
@@ -607,6 +607,7 @@ a.suburb-tag:hover,a.suburb-tag:focus-visible{ border-color:currentColor; color:
 .book-card h4{ margin-bottom:var(--space-2); }
 .book-card p{ font-size:.95rem; margin-bottom:var(--space-5); color:var(--text-muted); }
 .book-card .btn{ border-radius:var(--radius-sm); }
+.book-card-link{ display:block; margin-top:var(--space-3); text-align:center; font-size:.92rem; font-weight:600; color:var(--vp-navy); text-decoration:underline; }
 @media (max-width:860px){ .scope-detail-grid{ grid-template-columns:1fr; } }
 
 /* ===== FAQ ===== */
