@@ -19,7 +19,8 @@ export function discoverPages(dir = SITE_DIR) {
   return pages.sort();
 }
 
-const PAGES = discoverPages();
+const isRedirect = (html) => /<meta http-equiv="refresh"/.test(html); // moved-page stubs carry no header/footer
+const PAGES = discoverPages().filter((p) => !isRedirect(readFileSync(resolve(SITE_DIR, p), "utf8")));
 
 function footerLink(html, label) {
   const footer = html.match(/<footer class="site-footer">[\s\S]*?<\/footer>/);

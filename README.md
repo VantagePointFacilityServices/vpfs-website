@@ -29,7 +29,7 @@ README.md                                 this file
 docs/                                      cross-cutting docs — architecture, development, deployment (see table above)
 
 site/                                      the website (plain HTML/CSS/JS, no build step)
-  index.html, services.html, service-areas.html,
+  index.html, services.html, locations.html,
   why-us.html, about.html, contact.html,
   careers.html                           the seven pages (see Page & section map below)
   privacy.html, terms.html               legal pages: privacy policy (with the collection notice) and website terms of use
@@ -76,7 +76,7 @@ design system rather than a design-handoff screen, so no screenshots exist for e
 |---|---|---|
 | `index.html` | Home / conversion entry point. First stop for most visitors and paid traffic. | Hero (headline + walkthrough booking form) → What we clean (5 scope cards) → How it works (4-step process) → Final CTA |
 | `services.html` | Scope detail for buyers who already know they need commercial cleaning and want specifics. | Hero carousel (one slide per scope) → Tabbed scope detail (line items per scope) → FAQ accordion |
-| `service-areas.html` | Local-SEO / coverage-confirmation page — "do you service my suburb?" | Intro → Region/suburb grid (Brisbane, Coomera–Labrador, Southport–Nerang, Robina–Coolangatta, Mudgeeraba–Worongary) |
+| `locations.html` | Local-SEO / coverage-confirmation page — "do you service my suburb?" (`service-areas.html` is a redirect stub to it) | Intro → region groups (Sunshine Coast, Brisbane, Gold Coast, Northern Rivers of NSW), each a grid of suburb cards; the header Locations dropdown links each group by id |
 | `why-us.html` | Comparison-shopping page — makes the case to pick Vantage Point over another cleaner. Service-level: what you get in the engagement. | Hero → Differentiators (written scope, same faces, monthly audit, right-fit products) → Client testimonials |
 | `about.html` | Trust-building page — who is actually behind the business. Company-level: why it exists and how it's staffed. Deliberately avoids repeating Why Us's service-level claims (see note below). | Hero (cross-links to Why Us) → Founder story → Core values (4 cards) → Our people / workforce model → Final CTA |
 | `contact.html` | Lead capture. | Contact form (service type, add-ons, message) → Phone/email/address details |
@@ -164,7 +164,7 @@ repo).
 
 **`site/sitemap.xml`:** one `<url>` entry per page, each with a `<loc>` and
 a `<priority>` reflecting its role in the funnel — `index.html` at `1.0`
-(entry point), `services.html`/`service-areas.html`/`contact.html` at
+(entry point), `services.html`/`locations.html`/`contact.html` at
 `0.8` (high-intent conversion pages), `why-us.html`/`about.html` at `0.6`
 (consideration-stage). **When adding a page:** add its `<url>` block here
 using the same priority convention, matching its position in the funnel

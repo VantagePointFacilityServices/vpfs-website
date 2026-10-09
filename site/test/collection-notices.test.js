@@ -41,7 +41,8 @@ describe.each(PAGES)("%s collection notices", (page) => {
   });
 });
 
-const ALL_PAGES = discoverPages();
+const isRedirect = (html) => /<meta http-equiv="refresh"/.test(html); // moved-page stubs carry no header/footer
+const ALL_PAGES = discoverPages().filter((p) => !isRedirect(readFileSync(resolve(SITE_DIR, p), "utf8")));
 
 describe.each(ALL_PAGES)("%s footer lead notice", (page) => {
   it("carries the lead short notice in the site footer", () => {

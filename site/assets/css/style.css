@@ -225,6 +225,7 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 .header-inner{ display:flex; align-items:center; justify-content:space-between; padding:9px 1.6px; gap:var(--space-6); }
 .logo img{ height:48px; width:auto; }
 .main-nav{ display:flex; align-items:center; gap:40px; }
+@media (min-width:1021px) and (max-width:1240px){ .main-nav{ gap:28px; } } /* keep the header on one line beside the phone and CTA */
 .main-nav a{
   font-weight:600; font-size:.98rem; color:var(--text-muted);
   padding:6px 0; border-bottom:2px solid transparent;
@@ -637,7 +638,7 @@ a.suburb-tag:hover,a.suburb-tag:focus-visible{ border-color:currentColor; color:
 .faq-a p{ padding-bottom:22px; margin:0; font-size:.98rem; color:var(--text-muted); }
 .faq-item.open .faq-a{ max-height:400px; }
 
-/* ===== Areas — regions grid ===== */
+/* ===== Locations — region groups and cards ===== */
 .regions-section{ background:var(--surface-page); padding-top:calc(var(--section-y-lg) / 4); padding-bottom:calc(var(--section-y-lg) / 4); }
 .regions-section .section-head{ margin-bottom:calc(var(--space-8) / 2); }
 @media (max-width:720px){ .regions-section{ padding-top:calc(var(--section-y) / 4); padding-bottom:calc(var(--section-y) / 4); } }
@@ -645,6 +646,10 @@ a.suburb-tag:hover,a.suburb-tag:focus-visible{ border-color:currentColor; color:
 .regions-section .eyebrow::before{ background:var(--vp-navy); }
 .regions-section .section-head p{ color:var(--text-muted); }
 .region-grid{ display:grid; grid-template-columns:1fr 1fr; gap:var(--space-6); }
+.region-group{ scroll-margin-top:96px; }
+.region-group + .region-group{ margin-top:var(--space-8); }
+.region-group-title{ font-size:1.6rem; margin:0 0 var(--space-5); }
+.region-grid > .region-card:last-child:nth-child(odd){ grid-column:1 / -1; } /* a lone or odd last card spans the row */
 .region-card{
   background:var(--surface-card);
   border:1px solid var(--border-hairline);
