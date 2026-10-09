@@ -12,8 +12,9 @@
  *                    fields yet). Upserts the GHL contact (matched by
  *                    email/phone), tags it website-lead, and returns its
  *                    contact_id, which the browser carries into /gate.
- *                    Never scores anything; channel is a pass-through
- *                    tag only.
+ *                    Never scores anything; conversion_page is a
+ *                    pass-through tag and lead_channel is derived from
+ *                    the visitor's utms/click ids/referrer.
  *
  *   POST /slots    — takes the signed booking_token from /gate and
  *                    returns the open walkthrough days/times from the
@@ -348,10 +349,10 @@ function extractLeadFields(payload) {
     // DQ input here — /gate still runs the actual service-area check
     // once the browser sends this same value back under customFields.
     postcode: payload.postcode || "",
-    // Pass-through tag only — identifies which form/page the lead came
-    // from (website-homepage, website-contact, ...). Never a DQ input;
-    // checkDisqualifiers()/calculateGateScore() never read it.
-    channel: payload.channel || "",
+    // Pass-through tag only — identifies which page's form the lead
+    // converted on (website-homepage, website-contact, ...). Never a DQ
+    // input; checkDisqualifiers()/calculateGateScore() never read it.
+    conversionPage: payload.conversion_page || "",
     honeypot: payload.url || "",
     // Strict boolean only: consent is never inferred from "true", "on" or 1.
     marketingConsent: payload.marketing_consent === true,
@@ -360,7 +361,56 @@ function extractLeadFields(payload) {
     utm_campaign: payload.utm_campaign,
     utm_term: payload.utm_term,
     utm_content: payload.utm_content,
+    // Only read by deriveLeadChannel() — never written to the contact.
+    gclid: payload.gclid,
+    gbraid: payload.gbraid,
+    wbraid: payload.wbraid,
+    msclkid: payload.msclkid,
+    fbclid: payload.fbclid,
+    referrerHost: payload.referrer_host,
   };
+}
+
+// ---- Lead channel ---------------------------------------------------------
+// How the visitor found us, named after GA4's default channel groups so the
+// two line up in reports. Separate from conversion_page, which is where
+// they filled in the form. Precedence: an ad click id (Google Ads
+// auto-tagging sends gclid with no utms) > utm tags > the external
+// referrer > direct. Tags it can't place are "unassigned" rather than
+// guessed. Last-touch, like the utms: a repeat enquiry overwrites it.
+
+const CLICK_IDS_PAID_SEARCH = ["gclid", "gbraid", "wbraid", "msclkid"];
+const PAID_SEARCH_MEDIUM = /^(cpc|ppc|paid|paid[_-]?search|sem)$/;
+const PAID_SOCIAL_MEDIUM = /^paid[_-]?social$/;
+const SOCIAL_SOURCE = /^(facebook|fb|instagram|ig|meta|linkedin|twitter|x|tiktok|youtube|pinterest|reddit|threads)$/;
+const SOCIAL_MEDIUM = /^(social|social[_-]?media|organic[_-]?social|sm)$/;
+const EMAIL_MEDIUM = /^(email|e-mail|newsletter)$/;
+const SEARCH_HOST = /(^|\.)(google|bing|yahoo|duckduckgo|ecosia|baidu|yandex)(\.[a-z]{2,3}){1,2}$|^search\.brave\.com$/;
+const SOCIAL_HOST = /(^|\.)(facebook|instagram|linkedin|twitter|tiktok|youtube|pinterest|reddit|threads)\.(com|net)$|^(t\.co|x\.com|lnkd\.in)$/;
+
+function deriveLeadChannel(f) {
+  if (CLICK_IDS_PAID_SEARCH.some((id) => f[id])) return "paid_search";
+
+  const medium = String(f.utm_medium || "").trim().toLowerCase();
+  const source = String(f.utm_source || "").trim().toLowerCase();
+  const paidMedium = PAID_SEARCH_MEDIUM.test(medium);
+
+  if (PAID_SOCIAL_MEDIUM.test(medium)) return "paid_social";
+  if (paidMedium) return SOCIAL_SOURCE.test(source) || f.fbclid ? "paid_social" : "paid_search";
+  if (EMAIL_MEDIUM.test(medium)) return "email";
+  if (SOCIAL_MEDIUM.test(medium)) return "organic_social";
+  if (medium === "organic") return "organic_search";
+  if (medium === "referral") return "referral";
+  if (SOCIAL_SOURCE.test(source)) return "organic_social";
+  if (medium || source || f.utm_campaign || f.utm_term || f.utm_content) return "unassigned";
+
+  if (f.fbclid) return "organic_social";
+
+  const host = String(f.referrerHost || "").trim().toLowerCase();
+  if (!host) return "direct";
+  if (SEARCH_HOST.test(host)) return "organic_search";
+  if (SOCIAL_HOST.test(host)) return "organic_social";
+  return "referral";
 }
 
 // ---- Booking token (signed, stateless) ----------------------------------
@@ -1247,7 +1297,8 @@ async function upsertContactInGHL(f, env) {
 
   const customFields = Object.entries({
     postcode: f.postcode,
-    channel: f.channel,
+    conversion_page: f.conversionPage,
+    lead_channel: deriveLeadChannel(f),
     utm_source: f.utm_source,
     utm_medium: f.utm_medium,
     utm_campaign: f.utm_campaign,
@@ -1347,6 +1398,7 @@ export {
   signBookingToken,
   verifyBookingToken,
   calendarIdForTier,
+  deriveLeadChannel,
   checkDisqualifiers,
   leadFlags,
   calculateGateScore,

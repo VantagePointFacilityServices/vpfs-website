@@ -1,35 +1,59 @@
-// Vantage Point Facility Services — UTM capture
+// Vantage Point Facility Services — UTM and arrival capture
 //
 // Ad/campaign links land on any page (services.html?utm_source=google...),
 // but the visitor usually clicks through to the homepage or contact.html
-// before submitting the booking gate — losing the URL's utm params on the
-// way. So every page loads this module, which stashes the landing page's
-// utms in sessionStorage; booking-gate.js then calls readUtms() at Step 1
-// submit and sends them to the Worker's /lead, which writes them onto the
-// GHL contact as custom fields.
+// before submitting the booking gate — losing the URL's params on the
+// way. So every page loads this module, which stashes how the visitor
+// arrived in sessionStorage: utm_* tags, ad click ids (Google Ads
+// auto-tagging sends gclid instead of utms) and the external referrer's
+// hostname. booking-gate.js then calls readAttribution() at Step 1 submit
+// and sends it to the Worker's /lead, which writes the utms onto the GHL
+// contact and derives lead_channel from all of it.
 //
-// Last-touch within the session: a new campaign link replaces the stored
-// utms, a page without any leaves them alone. Storage can be blocked
-// (private windows, disabled site data) — the current URL still works then.
+// Last-touch within the session: arriving from another site or a campaign
+// link replaces the whole stored arrival; clicking between our own pages
+// leaves it alone. Storage can be blocked (private windows, disabled site
+// data) — the current page's URL and referrer still work then.
 
-export var UTM_STORAGE_KEY = "vpfs_utm";
+export var ATTRIBUTION_STORAGE_KEY = "vpfs_attribution";
 
-var UTM_PARAMS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"];
+var URL_PARAMS = [
+  "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content",
+  "gclid", "gbraid", "wbraid", "msclkid", "fbclid",
+];
 var MAX_VALUE_LENGTH = 200;
 
-function utmsFromSearch(search) {
-  var params = new URLSearchParams(search || "");
-  var utms = {};
-  UTM_PARAMS.forEach(function (name) {
-    var value = (params.get(name) || "").trim();
-    if (value) utms[name] = value.slice(0, MAX_VALUE_LENGTH);
-  });
-  return utms;
+function withoutWww(host) {
+  return host.toLowerCase().replace(/^www\./, "");
 }
 
-function storedUtms(storage) {
+// Hostname only: the path and query of the page they came from can carry
+// search terms or personal details we have no reason to keep.
+function externalReferrerHost(referrer, ownHost) {
+  var host;
   try {
-    var raw = storage && storage.getItem(UTM_STORAGE_KEY);
+    host = new URL(referrer).hostname.toLowerCase();
+  } catch (err) {
+    return "";
+  }
+  return host && withoutWww(host) !== withoutWww(ownHost || "") ? host.slice(0, MAX_VALUE_LENGTH) : "";
+}
+
+function arrivalFrom(location, referrer) {
+  var params = new URLSearchParams(location.search || "");
+  var arrival = {};
+  URL_PARAMS.forEach(function (name) {
+    var value = (params.get(name) || "").trim();
+    if (value) arrival[name] = value.slice(0, MAX_VALUE_LENGTH);
+  });
+  var referrerHost = externalReferrerHost(referrer, location.hostname);
+  if (referrerHost) arrival.referrer_host = referrerHost;
+  return arrival;
+}
+
+function storedArrival(storage) {
+  try {
+    var raw = storage && storage.getItem(ATTRIBUTION_STORAGE_KEY);
     var parsed = raw ? JSON.parse(raw) : {};
     return parsed && typeof parsed === "object" ? parsed : {};
   } catch (err) {
@@ -37,19 +61,19 @@ function storedUtms(storage) {
   }
 }
 
-export function captureUtms(search, storage) {
-  var utms = utmsFromSearch(search);
-  if (Object.keys(utms).length === 0) return;
+export function captureAttribution(location, referrer, storage) {
+  var arrival = arrivalFrom(location, referrer);
+  if (Object.keys(arrival).length === 0) return;
   try {
-    storage.setItem(UTM_STORAGE_KEY, JSON.stringify(utms));
+    storage.setItem(ATTRIBUTION_STORAGE_KEY, JSON.stringify(arrival));
   } catch (err) {
-    // Storage blocked — readUtms() still reads the current URL.
+    // Storage blocked — readAttribution() still reads the current page.
   }
 }
 
-export function readUtms(search, storage) {
-  var fromUrl = utmsFromSearch(search);
-  return Object.keys(fromUrl).length > 0 ? fromUrl : storedUtms(storage);
+export function readAttribution(location, referrer, storage) {
+  var current = arrivalFrom(location, referrer);
+  return Object.keys(current).length > 0 ? current : storedArrival(storage);
 }
 
 // Accessing window.sessionStorage itself can throw when site data is
@@ -62,4 +86,4 @@ export function sessionStore() {
   }
 }
 
-captureUtms(window.location.search, sessionStore());
+captureAttribution(window.location, document.referrer, sessionStore());

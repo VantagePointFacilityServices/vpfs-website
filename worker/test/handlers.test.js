@@ -74,7 +74,7 @@ describe("POST /lead", () => {
       last_name: "Rowe",
       email: "alex@example.com",
       phone: "0400000000",
-      channel: "website-homepage",
+      conversion_page: "website-homepage",
     });
 
     const res = await worker.fetch(req, env);
@@ -163,7 +163,7 @@ describe("POST /lead", () => {
     expect(json.contact_id).toBe("new-contact-6");
   });
 
-  it("writes channel as a custom field on the contact", async () => {
+  it("writes conversion_page as a custom field on the contact", async () => {
     global.fetch = mockLeadGhl("new-contact-2");
 
     const req = makeRequest("/lead", {
@@ -171,13 +171,55 @@ describe("POST /lead", () => {
       last_name: "Lee",
       email: "jamie@example.com",
       phone: "0411111111",
-      channel: "website-contact",
+      conversion_page: "website-contact",
     });
 
     await worker.fetch(req, env);
 
-    const channelField = upsertBody(global.fetch).customFields.find((f) => f.key === "channel");
-    expect(channelField.field_value).toBe("website-contact");
+    const field = upsertBody(global.fetch).customFields.find((f) => f.key === "conversion_page");
+    expect(field.field_value).toBe("website-contact");
+  });
+
+  it("writes lead_channel derived from the click id, and never stores the click id or referrer", async () => {
+    global.fetch = mockLeadGhl("new-contact-lc");
+
+    await worker.fetch(
+      makeRequest("/lead", {
+        email: "alex@example.com",
+        phone: "0400000000",
+        gclid: "abc",
+        referrer_host: "www.google.com",
+      }),
+      env
+    );
+
+    const fields = Object.fromEntries(
+      upsertBody(global.fetch).customFields.map((f) => [f.key, f.field_value])
+    );
+    expect(fields.lead_channel).toBe("paid_search");
+    expect(fields).not.toHaveProperty("gclid");
+    expect(fields).not.toHaveProperty("referrer_host");
+  });
+
+  it("writes lead_channel: organic_search for a Google referrer with no tags", async () => {
+    global.fetch = mockLeadGhl("new-contact-lc2");
+
+    await worker.fetch(
+      makeRequest("/lead", { email: "a@example.com", phone: "0400000000", referrer_host: "www.google.com.au" }),
+      env
+    );
+
+    const field = upsertBody(global.fetch).customFields.find((f) => f.key === "lead_channel");
+    expect(field.field_value).toBe("organic_search");
+  });
+
+  it("writes lead_channel: direct when nothing says how they arrived", async () => {
+    global.fetch = mockLeadGhl("new-contact-lc3");
+
+    await worker.fetch(makeRequest("/lead", { email: "a@example.com", phone: "0400000000" }), env);
+
+    const field = upsertBody(global.fetch).customFields.find((f) => f.key === "lead_channel");
+    expect(field.field_value).toBe("direct");
   });
 
   it("sends postcode as a custom field", async () => {
@@ -189,7 +231,7 @@ describe("POST /lead", () => {
       email: "sam@example.com",
       phone: "0400000000",
       postcode: "4211",
-      channel: "website-homepage",
+      conversion_page: "website-homepage",
     });
 
     await worker.fetch(req, env);

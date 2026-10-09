@@ -144,14 +144,14 @@ describe("landing page forms", () => {
     return document.body.dataset.pageKey;
   };
 
-  it("uses a unique website-lp-<key> channel matching the page key", () => {
-    const channels = LANDING_PAGES.map((page) => {
+  it("uses a unique website-lp-<key> conversion page matching the page key", () => {
+    const values = LANDING_PAGES.map((page) => {
       const key = keyOf(page);
-      const channel = mountPage(page).dataset.channel;
-      expect(channel, page).toBe(`website-lp-${key}`);
-      return channel;
+      const value = mountPage(page).dataset.conversionPage;
+      expect(value, page).toBe(`website-lp-${key}`);
+      return value;
     });
-    expect(new Set(channels).size).toBe(channels.length);
+    expect(new Set(values).size).toBe(values.length);
   });
 
   it.each(LANDING_PAGES)("%s pre-selects the D14 facility_type", (page) => {

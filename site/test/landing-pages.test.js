@@ -50,9 +50,9 @@ describe("medical landing page", () => {
     expect(text).toMatch(/reception, waiting rooms, offices, staff rooms and bathrooms/);
     expect(text).toMatch(/treatment and procedure rooms are scoped once our clinical cleaning protocol is in place/i);
   });
-  it("uses the medical channel, default facility type and CTA", () => {
+  it("uses the medical conversion page, default facility type and CTA", () => {
     const doc = parse(page);
-    expect(doc.querySelector("form.assessment-form").dataset.channel).toBe("website-lp-medical");
+    expect(doc.querySelector("form.assessment-form").dataset.conversionPage).toBe("website-lp-medical");
     expect(doc.querySelector("select[name=facility_type] option[selected]").value).toBe("medical");
     expect(doc.querySelector("form.assessment-form button[type=submit]").textContent.trim()).toBe("Request a Facility Consultation");
   });
@@ -213,9 +213,9 @@ describe("facility_type construction option label (D14)", () => {
 
 describe("warehouse landing page", () => {
   const doc = parse("warehouse-industrial-cleaning-gold-coast.html");
-  it("has the warehouse channel, construction default and Industrial in title", () => {
+  it("has the warehouse conversion page, construction default and Industrial in title", () => {
     expect(doc.body.dataset.pageKey).toBe("warehouse");
-    expect(doc.querySelector("form.assessment-form").dataset.channel).toBe("website-lp-warehouse");
+    expect(doc.querySelector("form.assessment-form").dataset.conversionPage).toBe("website-lp-warehouse");
     expect(doc.querySelector('option[value="construction"]').selected).toBe(true);
     expect(doc.title).toMatch(/Industrial/);
     expect(doc.querySelector("h1").textContent.trim()).toBe("Warehouse Cleaning Gold Coast");
@@ -238,8 +238,21 @@ describe("site-wide navigation", () => {
     it("header nav does not link Resources", () => {
       expect(hrefs(doc.querySelectorAll("header a"))).not.toContain("/resources/");
     });
-    it("footer links Resources", () => {
-      expect(hrefs(doc.querySelectorAll("footer a"))).toContain("/resources/");
+    it("footer keeps Resources, disabled and hidden until the pages are refined", () => {
+      expect(hrefs(doc.querySelectorAll("footer a"))).not.toContain("/resources/");
+      const a = doc.querySelector('footer a[data-href="/resources/"]');
+      expect(a).not.toBeNull();
+      expect(a.closest("li").hasAttribute("hidden")).toBe(true);
+    });
+    it("footer Company lists Locations, About us, Contact, Careers, with Why us hidden first", () => {
+      const items = Array.from(doc.querySelectorAll("footer h4 + ul")).find((ul) => ul.previousElementSibling.textContent === "Company").querySelectorAll("li");
+      expect(Array.from(items, (li) => li.textContent.trim())).toEqual(["Why us", "Locations", "About us", "Contact", "Careers"]);
+      expect(items[0].hasAttribute("hidden")).toBe(true);
+      expect(items[0].querySelector("a").hasAttribute("href")).toBe(false);
+      expect(Array.from(items).slice(1).every((li) => !li.hasAttribute("hidden"))).toBe(true);
+    });
+    it("header Locations dropdown says Northern Rivers", () => {
+      expect(doc.querySelector('#nav-locations a[href="locations.html#northern-rivers"]').textContent).toBe("Northern Rivers");
     });
   });
   it("services.html links the site-type hub from its body", () => {
@@ -292,9 +305,9 @@ describe("precinct pages", () => {
 
   describe.each(PRECINCT_PAGES)("%s", (page) => {
     const doc = parse(page);
-    it("has a precinct H1, website-lp channel and no pre-selected facility type", () => {
+    it("has a precinct H1, website-lp conversion page and no pre-selected facility type", () => {
       expect(doc.querySelector("h1").textContent.trim()).toMatch(/^Commercial Cleaning /);
-      expect(doc.querySelector("form.assessment-form").dataset.channel).toBe(`website-lp-${doc.body.dataset.pageKey}`);
+      expect(doc.querySelector("form.assessment-form").dataset.conversionPage).toBe(`website-lp-${doc.body.dataset.pageKey}`);
       expect(doc.querySelector("select[name=facility_type] option[selected]")).toBeNull();
     });
     it("links all six vertical pages and locations.html from the page body", () => {

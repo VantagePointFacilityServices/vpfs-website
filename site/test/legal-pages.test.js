@@ -22,11 +22,15 @@ export function discoverPages(dir = SITE_DIR) {
 const isRedirect = (html) => /<meta http-equiv="refresh"/.test(html); // moved-page stubs carry no header/footer
 const PAGES = discoverPages().filter((p) => !isRedirect(readFileSync(resolve(SITE_DIR, p), "utf8")));
 
-function footerLink(html, label) {
-  const footer = html.match(/<footer class="site-footer">[\s\S]*?<\/footer>/);
-  if (!footer) return null;
-  const m = footer[0].match(new RegExp(`<a href="([^"]*)">${label}</a>`));
-  return m && m[1];
+// The footer's legal links stay in the markup but are hidden, with no href,
+// until the pages have had a legal review — restoring them is renaming
+// data-href back to href and dropping `hidden` on .legal-links.
+function footerLegalLink(html, label) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const links = doc.querySelector("footer.site-footer .legal-links");
+  if (!links) return null;
+  const a = Array.from(links.querySelectorAll("a")).find((el) => el.textContent.trim() === label);
+  return a ? { a, hidden: links.hasAttribute("hidden") } : null;
 }
 
 describe("privacy page", () => {
@@ -66,11 +70,12 @@ describe("privacy page", () => {
 });
 
 describe.each(PAGES)("%s footer", (page) => {
-  it("links Privacy to the privacy page, not #", () => {
-    const href = footerLink(read(page), "Privacy");
-    expect(href, "Privacy link").not.toBeNull();
-    expect(href).not.toBe("#");
-    expect(href).toMatch(/^\/?privacy\.html$/);
+  it("keeps Privacy pointing at the privacy page, disabled and hidden until legal review", () => {
+    const link = footerLegalLink(read(page), "Privacy");
+    expect(link, "Privacy link").not.toBeNull();
+    expect(link.hidden).toBe(true);
+    expect(link.a.hasAttribute("href")).toBe(false);
+    expect(link.a.getAttribute("data-href")).toMatch(/^\/?privacy\.html$/);
   });
 });
 
@@ -113,10 +118,11 @@ describe("terms page", () => {
 });
 
 describe.each(PAGES)("%s terms footer", (page) => {
-  it("links Terms to the terms page, not #", () => {
-    const href = footerLink(read(page), "Terms");
-    expect(href, "Terms link").not.toBeNull();
-    expect(href).not.toBe("#");
-    expect(href).toMatch(/^\/?terms\.html$/);
+  it("keeps Terms pointing at the terms page, disabled and hidden until legal review", () => {
+    const link = footerLegalLink(read(page), "Terms");
+    expect(link, "Terms link").not.toBeNull();
+    expect(link.hidden).toBe(true);
+    expect(link.a.hasAttribute("href")).toBe(false);
+    expect(link.a.getAttribute("data-href")).toMatch(/^\/?terms\.html$/);
   });
 });

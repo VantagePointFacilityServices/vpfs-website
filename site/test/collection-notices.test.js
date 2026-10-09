@@ -44,12 +44,11 @@ describe.each(PAGES)("%s collection notices", (page) => {
 const isRedirect = (html) => /<meta http-equiv="refresh"/.test(html); // moved-page stubs carry no header/footer
 const ALL_PAGES = discoverPages().filter((p) => !isRedirect(readFileSync(resolve(SITE_DIR, p), "utf8")));
 
-describe.each(ALL_PAGES)("%s footer lead notice", (page) => {
-  it("carries the lead short notice in the site footer", () => {
+describe.each(ALL_PAGES)("%s footer", (page) => {
+  it("carries no collection notice in the site footer", () => {
     const doc = new DOMParser().parseFromString(readFileSync(resolve(SITE_DIR, page), "utf8"), "text/html");
-    const notices = doc.querySelectorAll("footer.site-footer .footer-privacy-notice");
-    expect(notices.length).toBe(1);
-    expect(notices[0].innerHTML.trim()).toBe(NOTICES.lead);
+    expect(doc.querySelector("footer.site-footer .footer-privacy-notice")).toBeNull();
+    expect(doc.querySelector("footer.site-footer").textContent).not.toContain("We collect these details");
   });
 });
 
