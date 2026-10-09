@@ -8,7 +8,8 @@ import { resolve } from "path";
 // means editing a list here.
 const SITE = resolve(__dirname, "..");
 const ORIGIN = "https://www.vantagepointfacilityservices.com.au";
-const ALL_PAGES = readdirSync(SITE).filter((f) => f.endsWith(".html"));
+const isRedirect = (html) => /<meta http-equiv="refresh"/.test(html); // moved-page stubs carry no header/footer
+const ALL_PAGES = readdirSync(SITE).filter((f) => f.endsWith(".html") && !isRedirect(readFileSync(resolve(SITE, f), "utf8")));
 const read = (page) => readFileSync(resolve(SITE, page), "utf8");
 const parse = (page) => new DOMParser().parseFromString(read(page), "text/html");
 
@@ -296,9 +297,9 @@ describe("precinct pages", () => {
       expect(doc.querySelector("form.assessment-form").dataset.channel).toBe(`website-lp-${doc.body.dataset.pageKey}`);
       expect(doc.querySelector("select[name=facility_type] option[selected]")).toBeNull();
     });
-    it("links all six vertical pages and service-areas.html from the page body", () => {
+    it("links all six vertical pages and locations.html from the page body", () => {
       const body = Array.from(doc.querySelectorAll("body > section a, main a"), (a) => a.getAttribute("href"));
-      for (const v of [...VERTICAL_PAGES, "service-areas.html"]) expect(body, v).toContain(v);
+      for (const v of [...VERTICAL_PAGES, "locations.html"]) expect(body, v).toContain(v);
     });
     it("records at least four sourced facts as URLs in a foot comment", () => {
       const html = read(page);
@@ -309,11 +310,11 @@ describe("precinct pages", () => {
     it("makes no response-time promises", () => {
       expect(visibleText(page)).not.toMatch(/within \d+ ?(minutes?|hours?)|same[- ]day|24\/7|\bASAP\b|within the hour|next[- ]day/i);
     });
-    it("has Breadcrumb Home > Areas > precinct and Service areaServed", () => {
+    it("has Breadcrumb Home > Locations > precinct and Service areaServed", () => {
       const ld = jsonLd(page);
       const crumbs = ld.find((b) => b["@type"] === "BreadcrumbList").itemListElement.map((i) => i.name);
       expect(crumbs[0]).toBe("Home");
-      expect(crumbs[1]).toBe("Areas");
+      expect(crumbs[1]).toBe("Locations");
       const svc = ld.find((b) => b["@type"] === "Service");
       expect([].concat(svc.areaServed).length).toBeGreaterThan(0);
     });
@@ -334,5 +335,15 @@ describe("precinct pages", () => {
       const swapped = html.replace(/Southport|Bundall/g, "Elsewhere");
       expect(sharedRatio(precinctSentences(html), precinctSentences(swapped))).toBeGreaterThanOrEqual(SIMILARITY_LIMIT);
     });
+  });
+});
+
+describe("service-areas.html (moved to locations.html)", () => {
+  const html = readFileSync(resolve(SITE, "service-areas.html"), "utf8");
+  it("redirects to locations.html, keeping the hash, and is not indexed", () => {
+    expect(html).toContain('<meta http-equiv="refresh" content="0; url=locations.html">');
+    expect(html).toContain('location.replace("locations.html" + location.search + location.hash)');
+    expect(html).toContain('<link rel="canonical" href="https://www.vantagepointfacilityservices.com.au/locations.html">');
+    expect(html).toContain('<meta name="robots" content="noindex">');
   });
 });
