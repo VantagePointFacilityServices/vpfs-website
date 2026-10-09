@@ -317,7 +317,7 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 }
 .hero-inner h1, .hero-inner h2, .hero-inner .lead, .hero-checks li, .hero-trust,
 .hero-single .eyebrow, .hero-single h1, .hero-single .lead, .carousel-bottom h1, .carousel-caption h2{ text-shadow:0 1px 3px rgba(0,0,0,.65), 0 2px 16px rgba(0,0,0,.42); }
-.hero-grid{ position:relative; z-index:1; display:grid; grid-template-columns:1.15fr .85fr; gap:var(--space-8); align-items:start; padding:56px 0 48px; }
+.hero-grid{ position:relative; z-index:1; display:grid; grid-template-columns:1.15fr .85fr; gap:var(--space-8); align-items:start; padding:56px 0; }
 .hero-grid .contact-form h3{ font-size:1.5rem; white-space:nowrap; text-align:center; }
 .hero-inner{ max-width:640px; display:flex; flex-direction:column; gap:var(--space-5); }
 .hero-inner > *{ margin:0; }
@@ -534,17 +534,23 @@ a.suburb-tag:hover,a.suburb-tag:focus-visible{ border-color:currentColor; color:
 .carousel-caption h2{ font-weight:400; font-size:var(--fs-p1); line-height:var(--lh-body); letter-spacing:normal; color:var(--text-on-inverse-muted); margin:0; max-width:50%; }
 @media (max-width:900px){ .carousel-caption h2{ max-width:none; } }
 /* Contact / Areas text heroes match the homepage hero height (desktop) */
-@media (min-width:1001px){ .hero-form-height{ min-height:610px; display:flex; align-items:center; padding-top:56px; padding-bottom:48px; } .hero-form-height > .wrap{ width:100%; } .hero-form-height .hero-single > :last-child{ margin-bottom:0; } }
+@media (min-width:1001px){ .hero-form-height{ min-height:665px; display:flex; align-items:center; padding-top:56px; padding-bottom:56px; } .hero-form-height > .wrap{ width:100%; } .hero-form-height .hero-single > :last-child{ margin-bottom:0; } }
 /* Services: centre the carousel copy against the form, as the homepage hero does */
 @media (min-width:1001px){
-  .carousel-bottom{ top:56px; bottom:48px; display:flex; flex-direction:column; justify-content:center; }
+  .carousel-bottom{ top:56px; bottom:56px; display:flex; flex-direction:column; justify-content:center; }
 }
 /* Booking form over the carousel — same right-hand column as the homepage hero */
 .carousel-form-wrap{ position:absolute; left:0; right:0; top:0; z-index:3; padding-top:56px; pointer-events:none; }
 .carousel-form-grid{ display:grid; grid-template-columns:1.15fr .85fr; gap:var(--space-8); }
 .carousel-form-grid .assessment-form{ grid-column:2; pointer-events:auto; }
 .carousel-form-grid .contact-form h3{ font-size:1.5rem; white-space:nowrap; text-align:center; }
-.carousel .carousel-slide.active{ min-height:610px; }
+.carousel .carousel-slide.active{ min-height:665px; }
+/* Desktop: the form sets the carousel's height, so it always sits inside with equal space above and below */
+@media (min-width:1001px){
+  .carousel-form-wrap{ position:relative; padding-bottom:56px; }
+  .carousel .carousel-slide.active{ position:absolute; inset:0; min-height:0; }
+  .carousel{ min-height:665px; }
+}
 @media (max-width:1000px){
   .carousel-form-wrap{ position:relative; padding-top:0; padding-bottom:var(--space-7); pointer-events:auto; }
   .carousel-form-grid{ grid-template-columns:1fr; }
