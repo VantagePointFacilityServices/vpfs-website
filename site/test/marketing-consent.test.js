@@ -14,12 +14,12 @@ describe("marketing_consent checkbox", () => {
   }
 
   it("finds the 18 lead forms", () => {
-    expect(forms.filter(({ form }) => form.hasAttribute("data-channel")).length).toBe(18);
+    expect(forms.filter(({ form }) => form.hasAttribute("data-conversion-page")).length).toBe(18);
   });
 
   it.each(forms.map((f) => [f.page, f]))("%s form", (_p, { form }) => {
     const box = form.querySelector('input[type="checkbox"][name="marketing_consent"]');
-    if (!form.hasAttribute("data-channel")) {
+    if (!form.hasAttribute("data-conversion-page")) {
       expect(box).toBeNull();
       return;
     }

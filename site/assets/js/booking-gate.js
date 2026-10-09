@@ -14,11 +14,11 @@
 // asking again.
 //
 // Shared between the homepage hero form and contact.html's form — see
-// data-channel on each <form class="assessment-form"> for which page a
+// data-conversion-page on each <form class="assessment-form"> for which page a
 // submission came from. See docs/ARCHITECTURE.md for how this fits into
 // the rest of the site/Worker/GHL flow.
 
-import { readUtms, sessionStore } from "./utm.js";
+import { readAttribution, sessionStore } from "./utm.js";
 
 var WORKER_BASE = "https://worker.vantagepointfacilityservices.com.au";
 var FETCH_TIMEOUT_MS = 9000;
@@ -122,11 +122,11 @@ function buildLeadPayload(form) {
     email: get("email"),
     phone: get("phone"),
     postcode: get("postcode"),
-    channel: form.getAttribute("data-channel") || "",
+    conversion_page: form.getAttribute("data-conversion-page") || "",
     url: get("url"),
     marketing_consent: marketingConsent(form),
     turnstile_token: turnstileToken(form),
-  }, readUtms(window.location.search, sessionStore()));
+  }, readAttribution(window.location, document.referrer, sessionStore()));
 }
 
 function revealStep2(form, contactId) {

@@ -109,6 +109,7 @@
 }
 
 *{ box-sizing:border-box; }
+[hidden]{ display:none !important; } /* author display rules (e.g. .hero-social, .legal-links: flex) would otherwise beat the UA hidden style */
 html{ scroll-behavior:smooth; }
 body{
   margin:0;
@@ -874,8 +875,6 @@ html:has(.booking-dialog[open]){ overflow:hidden; } /* stop the page scrolling b
 .footer-grid .hero-social a{ width:32px; height:32px; }
 .footer-bottom{ position:relative; z-index:1; display:flex; justify-content:space-between; align-items:center; padding-top:24px; font-size:.82rem; color:var(--text-on-inverse-muted); flex-wrap:wrap; gap:12px; }
 .footer-bottom .legal-links{ display:flex; gap:20px; }
-.footer-privacy-notice{ position:relative; z-index:1; margin:16px 0 0; font-size:.78rem; line-height:1.4; color:var(--text-on-inverse-muted); }
-.footer-privacy-notice a{ color:inherit; text-decoration:underline; }
 @media (max-width:900px){ .footer-grid{ grid-template-columns:1fr 1fr; } }
 @media (max-width:560px){ .footer-grid{ grid-template-columns:1fr; } }
 

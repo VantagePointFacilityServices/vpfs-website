@@ -146,7 +146,7 @@ with exactly these keys:
 
 | Group | Custom field keys |
 |---|---|
-| Captured at Step 1 | `postcode`, `channel`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, plus `marketing_consent` (Yes) and `marketing_consent_at` (Date/time) when the visitor ticked the opt-in |
+| Captured at Step 1 | `postcode`, `conversion_page`, `lead_channel`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, plus `marketing_consent` (Yes) and `marketing_consent_at` (Date/time) when the visitor ticked the opt-in |
 | Written by `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `lead_flags`, `sla_flag`, `lead_captured_at`, plus the visitor's Step 2 answers `facility_type`, `monthly_budget`, `cleaning_frequency` |
 | Read/written by `/enrich` | `size_sqm`, `headcount`, `floor_count`, `lifts_present`, `bathroom_count`, `kitchen_count`, `breakroom_count`, `meeting_room_count`, `special_requests`, `supplies_provided`, `equipment_needed`, `contract_renewal_date`, `contract_renewal_months_out` |
 | Read/written by `/confirm` | `budget_flexible`, `flexible_budget_amount`, `frequency_flexible`, `flexible_frequency`, `monthly_budget`, `cleaning_frequency`, `facility_type` |
@@ -208,16 +208,19 @@ stateDiagram-v2
     Won --> [*]
 ```
 
-### Stage 0 — The visitor lands on the site (UTM capture)
+### Stage 0 — The visitor lands on the site (UTM and arrival capture)
 
 Ads and campaign links carry tracking tags in the URL, e.g.
 `services.html?utm_source=google&utm_campaign=office-gc`. Visitors rarely
 book on the page they land on — they browse first — so those tags would be
 lost by the time they submit the form.
 
-`site/assets/js/utm.js` runs on **every page** and saves any `utm_*` tags
-into the browser's session storage. When the visitor submits Step 1, the
-form sends them along.
+`site/assets/js/utm.js` runs on **every page** and saves how the visitor
+arrived into the browser's session storage: any `utm_*` tags, ad click ids
+(`gclid`, `gbraid`, `wbraid`, `msclkid`, `fbclid` — Google Ads auto-tagging
+sends `gclid` instead of utms) and the hostname (only) of the external site
+that referred them. When the visitor submits Step 1, the form sends them
+along.
 
 ```mermaid
 sequenceDiagram
@@ -234,10 +237,11 @@ sequenceDiagram
     Note over P2: tags go to /lead with the form fields
 ```
 
-Rules: tags on the current page win over saved ones; a new campaign link
-replaces saved tags; a page with no tags leaves them alone; each value is
-capped at 200 characters; if the browser blocks storage, tags on the
-current page still work.
+Rules: the current page's arrival wins over the saved one; arriving from
+another site or a new campaign link replaces everything saved; clicking
+between our own pages (with or without `www.`) leaves it alone; each value
+is capped at 200 characters; if the browser blocks storage, the current
+page's URL and referrer still work.
 
 ### Stage 1 — `/lead`: capture the contact
 
@@ -252,7 +256,7 @@ sequenceDiagram
     participant G as GHL API
 
     V->>B: submits Step 1
-    B->>W: POST /lead<br/>name, email, phone, postcode,<br/>channel, UTMs, marketing_consent (bool), honeypot
+    B->>W: POST /lead<br/>name, email, phone, postcode,<br/>conversion_page, UTMs, click ids, referrer_host,<br/>marketing_consent (bool), honeypot
     alt honeypot field filled (a bot)
         W-->>B: {contact_id: null} — GHL never called
     else email or phone missing
@@ -273,11 +277,20 @@ Things worth knowing:
   new contact; someone already in GHL gets their existing contact updated
   and their existing ID back — so a repeat enquiry works instead of
   erroring.
-- **`channel`** records which page's form was used (from the form's
-  `data-channel` attribute). Every page has its own value: `website-homepage`,
-  `website-services`, `website-areas`, `website-why-us`, `website-contact`, and
-  `website-lp-<page>` for each landing page. `site/test/form-channels.test.js`
-  fails if a page is missing one or two pages share one.
+- **`conversion_page`** records which page's form was used (from the form's
+  `data-conversion-page` attribute). Every page has its own value:
+  `website-homepage`, `website-services`, `website-locations`, `website-why-us`,
+  `website-contact`, and `website-lp-<page>` for each landing page.
+  `site/test/form-conversion-pages.test.js` fails if a page is missing one or
+  two pages share one.
+- **`lead_channel`** records how the visitor found us, using GA4's default
+  channel group names: `paid_search`, `paid_social`, `organic_search`,
+  `organic_social`, `email`, `referral`, `direct`, or `unassigned` (campaign
+  tags it can't place). `deriveLeadChannel()` in `worker.js` works it out:
+  an ad click id beats utm tags, which beat the referrer; nothing at all is
+  `direct`. The click ids and referrer are only used for this — they're
+  never written to the contact. Like the utms it's last-touch: a repeat
+  enquiry overwrites it.
 - **The tag is added separately**, through GHL's "add tags" endpoint, which
   appends. Sending tags inside the upsert could overwrite a returning
   contact's existing tags.
@@ -545,7 +558,7 @@ went wrong.
 
 | Endpoint | Fields written |
 |---|---|
-| `/lead` | first/last name, email, phone, `postcode`, `channel`, `utm_*` (only those present), `marketing_consent` = `Yes` + `marketing_consent_at` (ISO timestamp) **only when the payload has `marketing_consent: true`** (strict boolean; unticked/missing/`"on"`/`1` send neither, so earlier consent is never cleared; withdrawal is GHL unsubscribe / DND), tag `website-lead` (plus `turnstile-unverified` if Cloudflare couldn't be reached) |
+| `/lead` | first/last name, email, phone, `postcode`, `conversion_page`, `lead_channel` (always), `utm_*` (only those present), `marketing_consent` = `Yes` + `marketing_consent_at` (ISO timestamp) **only when the payload has `marketing_consent: true`** (strict boolean; unticked/missing/`"on"`/`1` send neither, so earlier consent is never cleared; withdrawal is GHL unsubscribe / DND), tag `website-lead` (plus `turnstile-unverified` if Cloudflare couldn't be reached) |
 | `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `lead_flags`, `sla_flag`, `lead_captured_at`, the Step 2 answers `facility_type` / `monthly_budget` / `cleaning_frequency` (only those given — blanks never overwrite), `utm_*` if sent |
 | `/enrich` | the facility detail fields, `contract_renewal_months_out`, and `lead_tier: priority` if bumped |
 | `/confirm` | `dq_flag` (confirmed nurture), or `lead_score`, `lead_tier`, `dq_flag: none` plus the flexed `monthly_budget` / `cleaning_frequency` |
@@ -652,12 +665,13 @@ curl -s -X POST https://worker.vantagepointfacilityservices.com.au/lead \
   -H "Content-Type: application/json" \
   -H "Origin: https://www.vantagepointfacilityservices.com.au" \
   -d '{"first_name":"Test","last_name":"Lead","email":"you+leadtest1@example.com",
-       "phone":"+61400000001","postcode":"4211","channel":"website-contact",
+       "phone":"+61400000001","postcode":"4211","conversion_page":"website-contact",
        "utm_source":"test","utm_campaign":"verify"}'
 ```
 
 Expect `{"contact_id":"..."}`. In GHL, the contact should exist with tag
-`website-lead`, Channel `website-contact`, Postcode `4211`, UTM Source
+`website-lead`, Conversion Page `website-contact`, Lead Channel
+`unassigned` (a utm with no recognised medium), Postcode `4211`, UTM Source
 `test`, and the new-lead workflow should show a run in its Execution Logs.
 Send the same request again: same `contact_id`, no second workflow run.
 

@@ -3,7 +3,7 @@ import { initBookingGate } from "../assets/js/booking-gate.js";
 
 function mountHomepageForm() {
   document.body.innerHTML = `
-    <form class="assessment-form" data-channel="website-homepage">
+    <form class="assessment-form" data-conversion-page="website-homepage">
       <div class="form-fields">
         <div class="booking-error" role="alert"></div>
         <input name="first_name" value="Alex">
@@ -63,7 +63,7 @@ function mountHomepageForm() {
 
 function mountContactPageForm() {
   document.body.innerHTML = `
-    <form class="assessment-form" data-channel="website-contact">
+    <form class="assessment-form" data-conversion-page="website-contact">
       <div class="form-fields">
         <div class="booking-error" role="alert"></div>
         <input name="first_name" value="Jamie">
@@ -124,7 +124,7 @@ describe("Step 1 submit", () => {
     expect(body.email).toBe("alex@example.com");
     expect(body.phone).toBe("0400000000");
     expect(body.postcode).toBe("4211");
-    expect(body.channel).toBe("website-homepage");
+    expect(body.conversion_page).toBe("website-homepage");
 
     const step2 = form.querySelector(".booking-step-2");
     expect(step2.classList.contains("show")).toBe(true);
@@ -153,8 +153,8 @@ describe("Step 1 submit", () => {
     expect(body.marketing_consent).toBe(ticked);
   });
 
-  it("includes utm params from the page URL in the /lead payload", async () => {
-    window.history.replaceState(null, "", "/?utm_source=google&utm_campaign=office-gc");
+  it("includes utm params and click ids from the page URL in the /lead payload", async () => {
+    window.history.replaceState(null, "", "/?utm_source=google&utm_campaign=office-gc&gclid=abc");
     const form = mountHomepageForm();
     global.fetch = mockLeadOk("contact-789");
     initBookingGate(form);
@@ -166,13 +166,14 @@ describe("Step 1 submit", () => {
     const body = JSON.parse(global.fetch.mock.calls[0][1].body);
     expect(body.utm_source).toBe("google");
     expect(body.utm_campaign).toBe("office-gc");
+    expect(body.gclid).toBe("abc");
     expect(body).not.toHaveProperty("utm_medium");
 
     window.history.replaceState(null, "", "/");
     window.sessionStorage.clear();
   });
 
-  it("posts contact.html's fields to /lead tagged with its own channel", async () => {
+  it("posts contact.html's fields to /lead tagged with its own conversion page", async () => {
     const form = mountContactPageForm();
     global.fetch = mockLeadOk("contact-456");
     initBookingGate(form);
@@ -186,7 +187,7 @@ describe("Step 1 submit", () => {
     expect(body.first_name).toBe("Jamie");
     expect(body.last_name).toBe("Lee");
     expect(body.postcode).toBe("4215");
-    expect(body.channel).toBe("website-contact");
+    expect(body.conversion_page).toBe("website-contact");
   });
 
   it("shows a retry-capable error and preserves entered values on a failed request", async () => {
