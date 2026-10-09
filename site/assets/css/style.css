@@ -535,8 +535,8 @@ a.suburb-tag:hover,a.suburb-tag:focus-visible{ border-color:currentColor; color:
 @media (max-width:1000px){ .carousel-bottom h1{ max-width:640px; } }
 .carousel-caption h2{ font-weight:400; font-size:var(--fs-p1); line-height:var(--lh-body); letter-spacing:normal; color:var(--text-on-inverse-muted); margin:0; max-width:min(560px, calc((100% - var(--space-8)) * .575)); }
 @media (max-width:1000px){ .carousel-caption h2{ max-width:560px; } }
-/* Contact / Areas text heroes match the homepage hero height (desktop) */
-@media (min-width:1001px){ .hero-form-height{ min-height:665px; display:flex; align-items:center; padding-top:56px; padding-bottom:56px; } .hero-form-height > .wrap{ width:100%; } .hero-form-height .hero-single > :last-child{ margin-bottom:0; } }
+/* About / Contact text heroes match the homepage hero height (desktop, 602px since the consent row was hidden) */
+@media (min-width:1001px){ .hero-form-height{ min-height:602px; display:flex; align-items:center; padding-top:56px; padding-bottom:56px; } .hero-form-height > .wrap{ width:100%; } .hero-form-height .hero-single > :last-child{ margin-bottom:0; } }
 /* Services: centre the carousel copy against the form, as the homepage hero does */
 @media (min-width:1001px){
   .carousel-bottom{ top:56px; bottom:56px; display:flex; flex-direction:column; justify-content:center; }
