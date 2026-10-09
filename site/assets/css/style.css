@@ -751,7 +751,7 @@ input:focus,select:focus,textarea:focus{ outline:none; border-color:var(--vp-nav
 .check-row input[type="checkbox"]{ width:18px; height:18px; margin:0; flex:none; accent-color:var(--vp-navy); }
 .check-row label{ margin:0; font-weight:600; color:var(--text-body); }
 .marketing-consent{ align-items:flex-start; margin:var(--space-3) 0; }
-.cta-inverse .assessment-form .marketing-consent + .btn-block{ margin-top:0; }
+.cta-inverse .assessment-form .marketing-consent:not([hidden]) + .btn-block{ margin-top:0; }
 .marketing-consent label{ font-weight:400; font-size:.78rem; line-height:1.35; color:var(--text-muted); }
 .form-note{ font-size:.78rem; color:var(--text-muted); margin-top:var(--space-3); text-align:center; }
 .form-privacy-notice{ font-size:.78rem; line-height:1.35; color:var(--text-muted); margin:var(--space-3) 0; text-align:left; }
