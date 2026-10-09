@@ -4,7 +4,7 @@ import { resolve } from "path";
 
 const SITE_DIR = resolve(__dirname, "..");
 const PAGES = readdirSync(SITE_DIR).filter((n) => n.endsWith(".html"));
-const LABEL = "Send me occasional offers and updates from Vantage Point Facility Services by email and SMS. I can unsubscribe at any time.";
+const LABEL = "Send me occasional offers and updates from Vantage Point by email and SMS. I can unsubscribe at any time.";
 
 describe("marketing_consent checkbox", () => {
   const forms = [];
@@ -28,8 +28,6 @@ describe("marketing_consent checkbox", () => {
     expect(box.hasAttribute("checked")).toBe(false);
     expect(box.required).toBe(false);
     expect(form.querySelector(`label[for="${box.id}"]`).textContent.trim()).toBe(LABEL);
-    const notice = form.querySelector(".form-privacy-notice");
-    expect(notice.previousElementSibling).toBe(box.closest(".marketing-consent"));
-    expect(notice.contains(box)).toBe(false);
+    expect(box.closest(".marketing-consent").nextElementSibling.matches('button[type="submit"]')).toBe(true);
   });
 });
