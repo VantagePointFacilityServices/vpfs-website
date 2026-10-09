@@ -530,11 +530,11 @@ a.suburb-tag:hover,a.suburb-tag:focus-visible{ border-color:currentColor; color:
 
 /* Per-slide caption, text swapped by JS to match the active slide */
 .carousel-bottom{ position:absolute; left:0; right:0; top:56px; z-index:2; text-align:left; }
-@media (max-width:720px){ .carousel-bottom{ top:28px; } }
-.carousel-bottom h1{ max-width:50%; margin-bottom:var(--space-3); }
-@media (max-width:900px){ .carousel-bottom h1{ max-width:none; } }
-.carousel-caption h2{ font-weight:400; font-size:var(--fs-p1); line-height:var(--lh-body); letter-spacing:normal; color:var(--text-on-inverse-muted); margin:0; max-width:50%; }
-@media (max-width:900px){ .carousel-caption h2{ max-width:none; } }
+/* Text column matches the homepage hero: the grid's 1.15fr column, capped like .hero-inner */
+.carousel-bottom h1{ max-width:min(640px, calc((100% - var(--space-8)) * .575)); margin-bottom:var(--space-5); }
+@media (max-width:1000px){ .carousel-bottom h1{ max-width:640px; } }
+.carousel-caption h2{ font-weight:400; font-size:var(--fs-p1); line-height:var(--lh-body); letter-spacing:normal; color:var(--text-on-inverse-muted); margin:0; max-width:min(560px, calc((100% - var(--space-8)) * .575)); }
+@media (max-width:1000px){ .carousel-caption h2{ max-width:560px; } }
 /* Contact / Areas text heroes match the homepage hero height (desktop) */
 @media (min-width:1001px){ .hero-form-height{ min-height:665px; display:flex; align-items:center; padding-top:56px; padding-bottom:56px; } .hero-form-height > .wrap{ width:100%; } .hero-form-height .hero-single > :last-child{ margin-bottom:0; } }
 /* Services: centre the carousel copy against the form, as the homepage hero does */
@@ -551,7 +551,6 @@ a.suburb-tag:hover,a.suburb-tag:focus-visible{ border-color:currentColor; color:
 @media (min-width:1001px){
   .carousel-form-wrap{ position:relative; padding-bottom:56px; }
   .carousel .carousel-slide.active{ position:absolute; inset:0; min-height:0; }
-  .carousel{ min-height:665px; }
 }
 @media (max-width:1000px){
   .carousel-form-wrap{ position:relative; padding-top:0; padding-bottom:var(--space-7); pointer-events:auto; }
