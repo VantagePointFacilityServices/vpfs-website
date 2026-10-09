@@ -561,6 +561,7 @@ a.suburb-tag:hover,a.suburb-tag:focus-visible{ border-color:currentColor; color:
   .carousel-dots-wrap{ bottom:auto; top:512px; }
 }
 .carousel-dots-wrap{ position:absolute; left:0; right:0; bottom:32px; z-index:2; }
+.carousel[data-carousel-paused] .carousel-dots-wrap{ display:none; }
 .carousel-dots{ display:flex; gap:var(--space-2); margin-top:0; justify-content:flex-start; }
 .carousel-dots button{
   width:10px; height:10px; border-radius:50%;
@@ -572,6 +573,9 @@ a.suburb-tag:hover,a.suburb-tag:focus-visible{ border-color:currentColor; color:
 /* ===== Tabs (Services scope detail) ===== */
 .scope-detail-section{ padding-top:calc(var(--section-y-lg) / 4); padding-bottom:calc(var(--section-y-lg) / 4); scroll-margin-top:80px; }
 @media (max-width:720px){ .scope-detail-section{ padding-top:calc(var(--section-y) / 4); padding-bottom:calc(var(--section-y) / 4); } }
+.scope-detail-section .section-head{ margin-bottom:calc(var(--space-8) / 2); }
+.scope-detail-section .eyebrow{ color:var(--text-muted); }
+.scope-detail-section .eyebrow::before{ background:var(--vp-navy); }
 .tabs-nav{ display:flex; flex-wrap:wrap; gap:var(--space-7); margin-bottom:var(--space-7); border-bottom:1px solid var(--border-hairline); }
 .tabs-nav button{
   background:none; border:none; cursor:pointer;
@@ -609,7 +613,8 @@ a.suburb-tag:hover,a.suburb-tag:focus-visible{ border-color:currentColor; color:
 .book-card h4{ margin-bottom:var(--space-2); }
 .book-card p{ font-size:.95rem; margin-bottom:var(--space-5); color:var(--text-muted); }
 .book-card .btn{ border-radius:var(--radius-sm); }
-.book-card-link{ display:block; margin-top:var(--space-3); text-align:center; font-size:.92rem; font-weight:600; color:var(--vp-navy); text-decoration:underline; }
+.scope-image img{ display:block; width:100%; height:auto; aspect-ratio:4 / 3; object-fit:cover; border-radius:var(--radius-leaf); }
+.scope-image img[hidden]{ display:none; }
 @media (max-width:860px){ .scope-detail-grid{ grid-template-columns:1fr; } }
 
 /* ===== FAQ ===== */
@@ -684,9 +689,13 @@ a.suburb-tag:hover,a.suburb-tag:focus-visible{ border-color:currentColor; color:
 .commitment-head{ display:flex; align-items:center; gap:var(--space-4); margin-bottom:var(--space-4); }
 .commitment-icon{ width:30px; height:30px; background:transparent; color:var(--vp-navy); flex:none; }
 .commitment-icon svg{ width:100%; height:100%; }
-.commitment-card h4{ margin:0; font-size:1.3rem; }
+.commitment-card h4, .commitment-card h3{ margin:0; font-size:1.3rem; }
 .commitment-card p{ margin:0; color:var(--text-muted); }
 @media (max-width:760px){ .commitment-grid{ grid-template-columns:1fr; } }
+.how-we-clean-section{ padding-bottom:calc(var(--section-y-lg) / 4); }
+@media (max-width:720px){ .how-we-clean-section{ padding-bottom:calc(var(--section-y) / 4); } }
+.how-we-clean-section .section-head p{ color:var(--text-muted); margin:var(--space-3) 0 0; }
+.how-we-clean-link{ margin:var(--space-6) 0 0; }
 
 /* Testimonials */
 .testimonials-section{ padding-top:calc(var(--section-y-lg) / 2); padding-bottom:calc(var(--section-y-lg) / 2); }
@@ -742,7 +751,7 @@ input:focus,select:focus,textarea:focus{ outline:none; border-color:var(--vp-nav
 .check-row input[type="checkbox"]{ width:18px; height:18px; margin:0; flex:none; accent-color:var(--vp-navy); }
 .check-row label{ margin:0; font-weight:600; color:var(--text-body); }
 .marketing-consent{ align-items:flex-start; margin:var(--space-3) 0; }
-.cta-inverse .assessment-form .marketing-consent + .btn-block{ margin-top:0; }
+.cta-inverse .assessment-form .marketing-consent:not([hidden]) + .btn-block{ margin-top:0; }
 .marketing-consent label{ font-weight:400; font-size:.78rem; line-height:1.35; color:var(--text-muted); }
 .form-note{ font-size:.78rem; color:var(--text-muted); margin-top:var(--space-3); text-align:center; }
 .form-privacy-notice{ font-size:.78rem; line-height:1.35; color:var(--text-muted); margin:var(--space-3) 0; text-align:left; }

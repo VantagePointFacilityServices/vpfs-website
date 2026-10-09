@@ -29,5 +29,8 @@ describe("marketing_consent checkbox", () => {
     expect(box.required).toBe(false);
     expect(form.querySelector(`label[for="${box.id}"]`).textContent.trim()).toBe(LABEL);
     expect(box.closest(".marketing-consent").nextElementSibling.matches('button[type="submit"]')).toBe(true);
+    // Parked until marketing starts: row hidden (collapsed) and the box disabled, so it is never submitted.
+    expect(box.closest(".marketing-consent").hasAttribute("hidden")).toBe(true);
+    expect(box.disabled).toBe(true);
   });
 });
