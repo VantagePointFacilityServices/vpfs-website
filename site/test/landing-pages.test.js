@@ -258,6 +258,32 @@ describe("site-wide navigation", () => {
   it("services.html links the site-type hub from its body", () => {
     expect(hrefs(parse("services.html").querySelectorAll("main a, body > section a"))).toContain("cleaning-by-site-type.html");
   });
+  it("services.html heads the scope tabs with the Services eyebrow", () => {
+    const head = parse("services.html").querySelector(".scope-detail-section .section-head");
+    expect(head.querySelector(".eyebrow").textContent).toBe("Services");
+    expect(head.nextElementSibling.matches(".tabs-nav")).toBe(true);
+  });
+  it("services.html has one sector image per scope tab, office shown by default", () => {
+    const doc = parse("services.html");
+    const tabs = Array.from(doc.querySelectorAll(".tabs-nav button"), (b) => b.dataset.tab);
+    const imgs = Array.from(doc.querySelectorAll(".scope-image img[data-tab-image]"));
+    expect(imgs.map((i) => i.dataset.tabImage)).toEqual(tabs);
+    expect(imgs.filter((i) => !i.hasAttribute("hidden")).map((i) => i.dataset.tabImage)).toEqual(["offices"]);
+    expect(imgs.every((i) => i.getAttribute("alt"))).toBe(true);
+  });
+  it("locations.html h1 defaults to Gold Coast and its default names a region group", () => {
+    const doc = parse("locations.html");
+    const h1 = doc.querySelector("h1[data-location-h1]");
+    expect(h1.textContent).toBe("Commercial Cleaning for Gold Coast Business");
+    const group = doc.getElementById(h1.dataset.locationH1);
+    expect(group.classList.contains("region-group")).toBe(true);
+    expect(group.querySelector(".region-group-title").textContent).toBe("Gold Coast");
+  });
+  it("services.html places How we clean directly above the FAQ", () => {
+    const section = parse("services.html").querySelector(".how-we-clean-section");
+    expect(section.querySelectorAll(".commitment-card").length).toBe(4);
+    expect(section.nextElementSibling.matches(".faq-section")).toBe(true);
+  });
   it("cleaning-by-site-type.html links every vertical page from its body", () => {
     expect(hrefs(parse("cleaning-by-site-type.html").querySelectorAll("main a, body > section a"))).toEqual(expect.arrayContaining(VERTICALS));
   });

@@ -101,12 +101,12 @@
 </header>
 
 <!-- ============ SERVICES HERO CAROUSEL ============ -->
-<section class="carousel hero-inverse" style="padding:0;">
-  <div class="carousel-slide active" style="background-image:url('assets/img/offices-slide-show-1.jpg');" data-h1="Commercial Cleaning Gold Coast Offices &amp; Workspaces" data-lead="You get a written scope up front and a monthly audit report after, scored against that scope by someone who didn't clean it."></div>
-  <div class="carousel-slide" style="background-image:url('assets/img/offices-slide-show-2.jpg');" data-h1="Commercial Cleaning Gold Coast Strata &amp; Body Corporate" data-lead="Common areas scored against a written scope every month, so committees see the numbers before anyone has to ask."></div>
-  <div class="carousel-slide" style="background-image:url('assets/img/offices-slide-show-3.jpg');" data-h1="Commercial Cleaning Gold Coast Schools, Childcare &amp; Universities" data-lead="Classrooms, play areas and canteens cleaned around the school day or your session times, by a team vetted the same way the school vets its own staff."></div>
-  <div class="carousel-slide" style="background-image:url('assets/img/offices-slide-show-1.jpg');" data-h1="Commercial Cleaning Gold Coast Hospitals &amp; Medical Facilities" data-lead="Colour coded equipment, documented sign off, and a standard your infection control officer would actually sign off on."></div>
-  <div class="carousel-slide" style="background-image:url('assets/img/offices-slide-show-2.jpg');" data-h1="Commercial Cleaning Gold Coast Industrial, Warehouse &amp; Construction Sites" data-lead="High traffic floors and safety critical areas get cleaned on your schedule, because a shutdown for cleaning is a shutdown nobody budgeted for."></div>
+<section class="carousel hero-inverse" style="padding:0;" data-carousel-paused>
+  <div class="carousel-slide active" style="background-image:url('assets/img/homepage-hero-offices-background.jpg');" data-h1="Commercial Cleaning Gold Coast Offices &amp; Workspaces" data-lead="We build a cleaning plan around your office, so you never have to chase a cleaner again. You get before-and-after photos from every visit and a monthly report card, so you can relax knowing it&rsquo;s done to the same standard every time."></div>
+  <div class="carousel-slide" style="background-image:url('assets/img/homepage-hero-offices-background.jpg');" data-h1="Commercial Cleaning Gold Coast Strata &amp; Body Corporate" data-lead="We build a cleaning plan around your building&rsquo;s common areas. Before-and-after photos from every visit and a monthly report card mean your committee sees the same standard every week, without anyone having to ask."></div>
+  <div class="carousel-slide" style="background-image:url('assets/img/homepage-hero-offices-background.jpg');" data-h1="Commercial Cleaning Gold Coast Schools, Childcare &amp; Universities" data-lead="We plan the clean around your school day or session times, with a police-checked crew. Before-and-after photos from every visit and a monthly report card show every room is ready, the same way, every morning."></div>
+  <div class="carousel-slide" style="background-image:url('assets/img/homepage-hero-offices-background.jpg');" data-h1="Commercial Cleaning Gold Coast Hospitals &amp; Medical Facilities" data-lead="We plan the clean around your patients and opening hours. Before-and-after photos from every visit and a monthly report card show your waiting room, reception and amenities kept to the same standard, day after day."></div>
+  <div class="carousel-slide" style="background-image:url('assets/img/homepage-hero-offices-background.jpg');" data-h1="Commercial Cleaning Gold Coast Industrial, Warehouse &amp; Construction Sites" data-lead="We plan the clean around your shifts and site rules, so cleaning never slows the operation. Before-and-after photos from every visit and a monthly report card show floors and amenities kept to the same standard, shift after shift."></div>
 
   <div class="wrap carousel-overlay">
     <div class="hero-single">
@@ -260,6 +260,9 @@
 <!-- ============ TABBED SCOPE DETAIL ============ -->
 <section class="scope-detail-section">
   <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Services</span>
+    </div>
     <div class="tabs-nav" data-tabs-target="scopes">
       <button class="active" data-tab="offices">Offices</button>
       <button data-tab="strata">Strata</button>
@@ -355,19 +358,60 @@
           </div>
       </div>
       </div>
-      <div class="book-card">
-        <div class="book-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg></div>
-        <h4>Not sure which fits?</h4>
-        <p>Most buildings are a mix. We walk the site, split it into zones and price each one on its own frequency.</p>
-        <a href="contact.html" class="btn btn-primary btn-block">Book a walkthrough<span class="btn-chip"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span></a>
-        <a class="book-card-link" href="cleaning-by-site-type.html">Or compare cleaning by site type</a>
+      <div class="scope-image">
+        <img data-tab-image="offices" src="assets/img/facility-types/office-800.webp" srcset="assets/img/facility-types/office-480.webp 480w, assets/img/facility-types/office-800.webp 800w" sizes="(min-width:861px) 40vw, 92vw" width="800" height="840" alt="Modern open-plan office with desks and a glass meeting room" loading="lazy" decoding="async">
+        <img data-tab-image="strata" src="assets/img/facility-types/strata-800.webp" srcset="assets/img/facility-types/strata-480.webp 480w, assets/img/facility-types/strata-800.webp 800w" sizes="(min-width:861px) 40vw, 92vw" width="800" height="840" alt="Apartment building lobby with lifts and polished floor" loading="lazy" decoding="async" hidden>
+        <img data-tab-image="education" src="assets/img/facility-types/education-800.webp" srcset="assets/img/facility-types/education-480.webp 480w, assets/img/facility-types/education-800.webp 800w" sizes="(min-width:861px) 40vw, 92vw" width="800" height="840" alt="School classroom with desks and a green board" loading="lazy" decoding="async" hidden>
+        <img data-tab-image="medical" src="assets/img/facility-types/medical-800.webp" srcset="assets/img/facility-types/medical-480.webp 480w, assets/img/facility-types/medical-800.webp 800w" sizes="(min-width:861px) 40vw, 92vw" width="800" height="840" alt="Clean medical facility corridor" loading="lazy" decoding="async" hidden>
+        <img data-tab-image="industrial" src="assets/img/facility-types/industrial-800.webp" srcset="assets/img/facility-types/industrial-480.webp 480w, assets/img/facility-types/industrial-800.webp 800w" sizes="(min-width:861px) 40vw, 92vw" width="800" height="840" alt="Worker vacuuming dust from a concrete floor on a building site" loading="lazy" decoding="async" hidden>
       </div>
     </div>
   </div>
 </section>
 
+<!-- ============ HOW WE CLEAN ============ -->
+<section class="commitments-section how-we-clean-section" style="background:var(--surface-wash);">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Our approach</span>
+      <p>Here&rsquo;s what you can count on from us, every single visit.</p>
+    </div>
+    <div class="commitment-grid">
+      <div class="commitment-card">
+        <div class="commitment-head">
+          <div class="commitment-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></div>
+          <h3>Checked by someone who didn&rsquo;t clean it</h3>
+        </div>
+        <p>Your crew follows the same checklist every visit and takes before-and-after photos as they go. Each month a supervisor who didn&rsquo;t do the clean walks your site against the written scope, and that score goes straight into your report card.</p>
+      </div>
+      <div class="commitment-card">
+        <div class="commitment-head">
+          <div class="commitment-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg></div>
+          <h3>The right cloth for every job</h3>
+        </div>
+        <p>Colour-coded microfibre cloths mean the cloth that cleans your toilets never touches your kitchen bench. Every product is measured to the right strength, not splashed on. If anyone on your team is sensitive to smells, tell us and we&rsquo;ll talk through what we use. Safety data sheets are yours on request.</p>
+      </div>
+      <div class="commitment-card">
+        <div class="commitment-head">
+          <div class="commitment-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.35 8.75a1 1 0 0 1-.65.01C8.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></div>
+          <h3>A healthier place to work</h3>
+        </div>
+        <p>Microfibre lifts far more dirt and germs than a cotton cloth or mop. We pay extra attention to the spots everyone touches, like door handles, taps, light switches and lift buttons, which helps cut down germs, dust and allergens for everyone in your building.</p>
+      </div>
+      <div class="commitment-card">
+        <div class="commitment-head">
+          <div class="commitment-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="m9 12 2 2 4-4"/></svg></div>
+          <h3>No chasing</h3>
+        </div>
+        <p>You get one point of contact who knows your site. If something&rsquo;s missed, tell us once: anything urgent is fixed straight away, and anything minor is sorted by the next visit.</p>
+      </div>
+    </div>
+    <p class="how-we-clean-link"><a class="link-arrow" href="cleaning-by-site-type.html">Compare cleaning by site type</a></p>
+  </div>
+</section>
+
 <!-- ============ FAQ ============ -->
-<section class="faq-section" style="background:var(--surface-wash);">
+<section class="faq-section">
   <div class="wrap">
     <div class="section-head">
       <span class="eyebrow">Common questions</span>

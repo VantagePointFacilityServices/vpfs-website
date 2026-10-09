@@ -36,6 +36,11 @@ document.addEventListener('DOMContentLoaded', function () {
       panelGroup.querySelectorAll('.tab-panel').forEach(function (panel) {
         panel.classList.toggle('active', panel.getAttribute('data-tab-panel') === name);
       });
+      // Matching sector image beside the panels (placeholder photos until final images arrive)
+      var section = nav.closest('section') || document;
+      section.querySelectorAll('[data-tab-image]').forEach(function (img) {
+        img.hidden = img.getAttribute('data-tab-image') !== name;
+      });
     }
 
     nav.querySelectorAll('button').forEach(function (btn) {
@@ -62,6 +67,24 @@ document.addEventListener('DOMContentLoaded', function () {
     applyHash();
     window.addEventListener('hashchange', applyHash);
   });
+
+  // Locations hero: the h1 names the region picked from the Locations dropdown
+  // (locations.html#brisbane etc.); no hash or an unknown one falls back to the
+  // data-location-h1 default (Gold Coast). The region names come from each
+  // group's heading, so adding a region needs no change here.
+  var locationH1 = document.querySelector('[data-location-h1]');
+  if (locationH1) {
+    var applyLocation = function () {
+      var group = document.getElementById(window.location.hash.slice(1));
+      if (!group || !group.classList.contains('region-group')) {
+        group = document.getElementById(locationH1.getAttribute('data-location-h1'));
+      }
+      var title = group && group.querySelector('.region-group-title');
+      if (title) locationH1.textContent = 'Commercial Cleaning for ' + title.textContent + ' Business';
+    };
+    applyLocation();
+    window.addEventListener('hashchange', applyLocation);
+  }
 
   // Nav dropdown — "Services" is a real link to services.html; on desktop the
   // submenu also opens on hover (CSS). The chevron button is a separate
@@ -130,6 +153,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     show(0);
-    restart();
+    // data-carousel-paused holds the first slide (dots hidden in CSS); remove it to re-enable
+    if (!carousel.hasAttribute('data-carousel-paused')) restart();
   }
 });
