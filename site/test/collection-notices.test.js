@@ -20,9 +20,13 @@ describe.each(PAGES)("%s collection notices", (page) => {
   const doc = new DOMParser().parseFromString(readFileSync(resolve(SITE_DIR, page), "utf8"), "text/html");
   const forms = Array.from(doc.querySelectorAll("form.assessment-form"));
 
-  it("gives every form exactly one notice, matching its type, before the Step 1 submit", () => {
+  it("gives every non-lead form exactly one notice, matching its type, before the Step 1 submit", () => {
     for (const form of forms) {
       const notices = form.querySelectorAll(".form-privacy-notice");
+      if (noticeTypeFor(form) === "lead") {
+        expect(notices.length).toBe(0);
+        continue;
+      }
       expect(notices.length).toBe(1);
       const n = notices[0];
       expect(n.tagName).toBe("P");
@@ -34,6 +38,17 @@ describe.each(PAGES)("%s collection notices", (page) => {
       expect(n.closest(".booking-step-2")).toBeNull();
       expect(n.querySelector("input")).toBeNull();
     }
+  });
+});
+
+const ALL_PAGES = discoverPages();
+
+describe.each(ALL_PAGES)("%s footer lead notice", (page) => {
+  it("carries the lead short notice in the site footer", () => {
+    const doc = new DOMParser().parseFromString(readFileSync(resolve(SITE_DIR, page), "utf8"), "text/html");
+    const notices = doc.querySelectorAll("footer.site-footer .footer-privacy-notice");
+    expect(notices.length).toBe(1);
+    expect(notices[0].innerHTML.trim()).toBe(NOTICES.lead);
   });
 });
 

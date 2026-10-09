@@ -472,7 +472,7 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 .cta-inverse .final-cta-inner .btn{ flex:none; border-radius:var(--radius-sm); }
 .cta-inverse .hero-ctas{ justify-content:center; margin-top:var(--space-6); margin-bottom:0; }
 .cta-inverse .assessment-form{ flex:none; width:100%; max-width:420px; }
-.cta-inverse .assessment-form .contact-form{ padding:var(--space-6); text-align:left; }
+.cta-inverse .assessment-form .contact-form{ padding:var(--space-5) var(--space-6); text-align:left; }
 .cta-inverse .assessment-form h3{ margin-bottom:var(--space-2); }
 
 /* Areas page CTA — grey background variant */
@@ -714,7 +714,7 @@ a.suburb-tag:hover,a.suburb-tag:focus-visible{ border-color:currentColor; color:
 .hours-list li:last-child{ border-bottom:none; }
 .hours-list span:last-child{ font-weight:700; color:var(--vp-navy); }
 
-.contact-form{ background:var(--surface-wash); border-radius:var(--radius-leaf); padding:var(--space-7); }
+.contact-form{ background:var(--surface-wash); border-radius:var(--radius-leaf); padding:var(--space-6) var(--space-7); }
 .form-row{ display:grid; grid-template-columns:1fr 1fr; gap:var(--space-3); }
 .form-row.single{ grid-template-columns:1fr; }
 label{ font-size:.82rem; font-weight:700; color:var(--text-body); display:block; margin-bottom:6px; }
@@ -728,7 +728,8 @@ input:focus,select:focus,textarea:focus{ outline:none; border-color:var(--vp-nav
 .check-row{ display:flex; align-items:center; gap:var(--space-3); margin-bottom:var(--space-3); }
 .check-row input[type="checkbox"]{ width:18px; height:18px; margin:0; flex:none; accent-color:var(--vp-navy); }
 .check-row label{ margin:0; font-weight:600; color:var(--text-body); }
-.marketing-consent{ align-items:flex-start; margin:var(--space-3) 0 0; }
+.marketing-consent{ align-items:flex-start; margin:var(--space-3) 0; }
+.cta-inverse .assessment-form .marketing-consent + .btn-block{ margin-top:0; }
 .marketing-consent label{ font-weight:400; font-size:.78rem; line-height:1.35; color:var(--text-muted); }
 .form-note{ font-size:.78rem; color:var(--text-muted); margin-top:var(--space-3); text-align:center; }
 .form-privacy-notice{ font-size:.78rem; line-height:1.35; color:var(--text-muted); margin:var(--space-3) 0; text-align:left; }
@@ -861,6 +862,8 @@ html:has(.booking-dialog[open]){ overflow:hidden; } /* stop the page scrolling b
 .footer-grid .hero-social a{ width:32px; height:32px; }
 .footer-bottom{ position:relative; z-index:1; display:flex; justify-content:space-between; align-items:center; padding-top:24px; font-size:.82rem; color:var(--text-on-inverse-muted); flex-wrap:wrap; gap:12px; }
 .footer-bottom .legal-links{ display:flex; gap:20px; }
+.footer-privacy-notice{ position:relative; z-index:1; margin:16px 0 0; font-size:.78rem; line-height:1.4; color:var(--text-on-inverse-muted); }
+.footer-privacy-notice a{ color:inherit; text-decoration:underline; }
 @media (max-width:900px){ .footer-grid{ grid-template-columns:1fr 1fr; } }
 @media (max-width:560px){ .footer-grid{ grid-template-columns:1fr; } }
 
