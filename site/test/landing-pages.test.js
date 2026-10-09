@@ -14,7 +14,7 @@ const read = (page) => readFileSync(resolve(SITE, page), "utf8");
 const parse = (page) => new DOMParser().parseFromString(read(page), "text/html");
 
 const LANDING_PAGES = ALL_PAGES.filter((p) => parse(p).body.dataset.pageType === "landing");
-// cleaning-by-site-type.html is the hub for the landing pages (linked from services.html):
+// cleaning-by-site-type.html is the hub for the landing pages (in the sitemap; no longer linked from services.html):
 // held to the same SEO checks, but it carries no landing marker or Service schema.
 // services.html is the original tabbed scope page and is not part of this set.
 const SEO_PAGES = [...LANDING_PAGES, "cleaning-by-site-type.html"];
@@ -255,8 +255,8 @@ describe("site-wide navigation", () => {
       expect(doc.querySelector('#nav-locations a[href="locations.html#northern-rivers"]').textContent).toBe("Northern Rivers");
     });
   });
-  it("services.html links the site-type hub from its body", () => {
-    expect(hrefs(parse("services.html").querySelectorAll("main a, body > section a"))).toContain("cleaning-by-site-type.html");
+  it("cleaning-by-site-type.html stays in the sitemap (no page body links it since the Services link was removed)", () => {
+    expect(readFileSync(resolve(SITE, "sitemap.xml"), "utf8")).toContain(ORIGIN + "/cleaning-by-site-type.html");
   });
   it("services.html heads the scope tabs with the Services eyebrow", () => {
     const head = parse("services.html").querySelector(".scope-detail-section .section-head");
