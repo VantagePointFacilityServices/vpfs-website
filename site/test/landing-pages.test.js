@@ -244,12 +244,18 @@ describe("site-wide navigation", () => {
       expect(a).not.toBeNull();
       expect(a.closest("li").hasAttribute("hidden")).toBe(true);
     });
-    it("footer Company lists Locations, About us, Contact, Careers, with Why us hidden first", () => {
+    it("footer Company shows Locations, Contact, Careers, with Why us and About us hidden and unlinked", () => {
       const items = Array.from(doc.querySelectorAll("footer h4 + ul")).find((ul) => ul.previousElementSibling.textContent === "Company").querySelectorAll("li");
       expect(Array.from(items, (li) => li.textContent.trim())).toEqual(["Why us", "Locations", "About us", "Contact", "Careers"]);
-      expect(items[0].hasAttribute("hidden")).toBe(true);
-      expect(items[0].querySelector("a").hasAttribute("href")).toBe(false);
-      expect(Array.from(items).slice(1).every((li) => !li.hasAttribute("hidden"))).toBe(true);
+      const hidden = Array.from(items).filter((li) => li.hasAttribute("hidden"));
+      expect(hidden.map((li) => li.textContent.trim())).toEqual(["Why us", "About us"]);
+      expect(hidden.every((li) => !li.querySelector("a").hasAttribute("href"))).toBe(true);
+    });
+    it("header nav hides the About link and does not link about.html", () => {
+      const about = Array.from(doc.querySelectorAll("header a")).find((a) => a.textContent.trim() === "About");
+      expect(about.hasAttribute("hidden")).toBe(true);
+      expect(about.hasAttribute("href")).toBe(false);
+      expect(hrefs(doc.querySelectorAll("header a, footer a"))).not.toContain("about.html");
     });
     it("header Locations dropdown says Northern Rivers", () => {
       expect(doc.querySelector('#nav-locations a[href="locations.html#northern-rivers"]').textContent).toBe("Northern Rivers");
