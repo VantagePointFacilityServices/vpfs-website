@@ -453,6 +453,11 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 @media (max-width:900px){ .process-wrap{ grid-template-columns:1fr; } .process-wrap .image-slot{ order:-1; max-width:480px; margin-inline:auto; } }
 .founder-section, .people-section{ padding-top:calc(var(--section-y-lg) / 4); padding-bottom:calc(var(--section-y-lg) / 4); }
 @media (max-width:720px){ .founder-section, .people-section{ padding-top:calc(var(--section-y) / 4); padding-bottom:calc(var(--section-y) / 4); } }
+.founder-section .eyebrow{ color:var(--text-muted); }
+.founder-section .eyebrow::before{ background:var(--vp-navy); }
+.founder-section blockquote{ margin:var(--space-5) 0 0; padding-left:var(--space-5); border-left:3px solid var(--vp-navy); font-size:1.05rem; color:var(--vp-navy); line-height:var(--lh-body); }
+.founder-section blockquote p{ margin:0 0 var(--space-2); }
+.founder-section blockquote footer{ font-size:.9rem; color:var(--text-muted); }
 
 /* ===== Final CTA band ===== */
 .final-cta{ border-top:1px solid var(--border-hairline); padding-top:calc(var(--section-y-lg) / 2); padding-bottom:calc(var(--section-y-lg) / 2); }

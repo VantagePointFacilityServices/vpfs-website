@@ -45,12 +45,24 @@ describe("about.html founder story", () => {
 });
 
 describe("about.html lower half", () => {
-  const order = ["Founder", "In Blake's words", "What we stand for", "Local families", "Partner with us"];
-  it("keeps section order", () => {
-    const idx = order.map((e) => html.indexOf(e));
-    idx.forEach((i) => expect(i).toBeGreaterThan(-1));
-    expect([...idx].sort((a, b) => a - b)).toEqual(idx);
-    expect(html.indexOf("Talk to the Founder")).toBeGreaterThan(idx[4]);
+  it("keeps section order (D5): hero, story sections in order, founder CTA last", () => {
+    const sections = Array.from(doc.querySelectorAll("body > section"));
+    expect(sections[0].classList.contains("page-hero")).toBe(true);
+    expect(sections.at(-1).classList.contains("final-cta")).toBe(true);
+    expect(sections.at(-1).textContent).toContain("Talk to the Founder");
+    const eyebrows = Array.from(doc.querySelectorAll("body > section:not(.page-hero) .eyebrow"), (e) => e.textContent.trim());
+    expect(eyebrows).toEqual(["Founder", "In Blake's words", "What we stand for", "Local families", "Partner with us"]);
+  });
+
+  it("keeps the Local families text out of the photo placeholder", () => {
+    const slot = doc.querySelector(".people-section .image-slot");
+    expect(slot.querySelector("h2, a[href='careers.html']")).toBeNull();
+  });
+
+  it("styles the founder pull quotes and eyebrow (not browser defaults)", () => {
+    const css = readFileSync(resolve(__dirname, "..", "assets/css/style.css"), "utf8");
+    expect(css).toMatch(/\.founder-section blockquote\s*\{/);
+    expect(css).toMatch(/\.founder-section \.eyebrow\s*\{/);
   });
 
   const section = (eyebrow) =>

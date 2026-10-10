@@ -24,12 +24,16 @@ describe("why-us.html only makes true claims", () => {
       for (const q of FABRICATED) expect(c, `${f}: ${q}`).not.toContain(q);
     }
   });
+  it("never calls the report card an audit report", () => {
+    expect(text).not.toMatch(/audit report/i);
+  });
   it("has no 'scored' or 'named supervisor'", () => {
     expect(text).not.toMatch(/scored/i);
     expect(text).not.toMatch(/named supervisor/i);
   });
   it("report card mentions recap, photos and 5th business day", () => {
-    const card = Array.from(doc.querySelectorAll(".commitment-card")).find((c) => /audit report/i.test(c.textContent));
+    const card = Array.from(doc.querySelectorAll(".commitment-card")).find((c) => c.querySelector("h4")?.textContent === "A monthly report card");
+    expect(card).toBeDefined();
     expect(card.textContent).toMatch(/schedule recap/i);
     expect(card.textContent).toMatch(/before-and-after photos/i);
     expect(card.textContent).toMatch(/5th business day/i);
