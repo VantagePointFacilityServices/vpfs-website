@@ -152,7 +152,31 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
 
+    // Tablet/phone: the copy sits in normal flow above the form, so reserve the tallest
+    // slide's copy height — otherwise the form jumps each time the slide changes.
+    var caption = carousel.querySelector('.carousel-bottom');
+    var stacked = window.matchMedia('(max-width:1000px)');
+    function reserveCaptionHeight() {
+      if (!caption) return;
+      caption.style.minHeight = '';
+      if (!stacked.matches) return;
+      var tallest = 0;
+      slides.forEach(function (s) {
+        if (overlayHeading) overlayHeading.textContent = s.dataset.h1 || '';
+        if (captionHeading) captionHeading.textContent = s.dataset.lead || '';
+        tallest = Math.max(tallest, caption.offsetHeight);
+      });
+      caption.style.minHeight = tallest + 'px';
+      show(current);
+    }
+    var resizeTimer = null;
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(reserveCaptionHeight, 150);
+    });
+
     show(0);
+    reserveCaptionHeight();
     // data-carousel-paused holds the first slide (dots hidden in CSS); remove it to re-enable
     if (!carousel.hasAttribute('data-carousel-paused')) restart();
   }
