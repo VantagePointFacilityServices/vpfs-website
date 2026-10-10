@@ -43,3 +43,34 @@ describe("about.html founder story", () => {
     expect(html).toContain('<meta name="robots" content="noindex">');
   });
 });
+
+describe("about.html lower half", () => {
+  const order = ["Founder", "In Blake's words", "What we stand for", "Local families", "Partner with us"];
+  it("keeps section order", () => {
+    const idx = order.map((e) => html.indexOf(e));
+    idx.forEach((i) => expect(i).toBeGreaterThan(-1));
+    expect([...idx].sort((a, b) => a - b)).toEqual(idx);
+    expect(html.indexOf("Talk to the Founder")).toBeGreaterThan(idx[4]);
+  });
+
+  const section = (eyebrow) =>
+    Array.from(doc.querySelectorAll("section")).find((s) => s.querySelector(".eyebrow")?.textContent === eyebrow);
+
+  it("local families links careers and mentions award rates", () => {
+    const s = section("Local families");
+    expect(s.querySelector('a[href="careers.html"]')).not.toBeNull();
+    expect(s.textContent).toMatch(/award rates/i);
+  });
+
+  it("partner block links contact, names audiences, no money", () => {
+    const s = section("Partner with us");
+    expect(s.querySelector('a[href="contact.html"]')).not.toBeNull();
+    expect(s.textContent).toMatch(/strata managers/i);
+    expect(s.textContent).toMatch(/real estate agents/i);
+    expect(s.textContent).not.toMatch(/\$|reward/i);
+  });
+
+  it("drops the old boutique heading", () => {
+    expect(html).not.toContain("Fewer clients, not less care");
+  });
+});
