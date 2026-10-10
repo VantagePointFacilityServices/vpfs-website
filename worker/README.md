@@ -16,6 +16,10 @@ the AI Receptionist mid-call, so every endpoint responds with CORS headers
 restricted to an explicit origin allowlist (see `ALLOWED_ORIGINS` in
 `worker.js`) rather than trusting only server-to-server callers.
 
+`/area-request` (the Locations page's Request a new area form) upserts the
+GHL contact with its postcode and tags it `new-area-request` — not
+`website-lead`, so the booking workflows don't start. See `docs/WORKER.md`.
+
 `/lead` (Step 1 of the website's booking gate — name/email/phone) upserts
 the GHL contact (matched by email/phone, so a repeat enquiry reuses the
 existing contact rather than erroring), tags it `website-lead`, and returns
