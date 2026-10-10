@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (!item.contains(e.relatedTarget)) setOpen(false);
     });
   });
-  // Services hero carousel — auto-advance every 5s, opacity crossfade, dot nav
+  // Services hero carousel — auto-advance every 10s, opacity crossfade, dot nav
   var carousel = document.querySelector('.carousel');
   if (carousel) {
     var slides = Array.prototype.slice.call(carousel.querySelectorAll('.carousel-slide'));
@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function restart() {
       if (timer) clearInterval(timer);
-      timer = setInterval(next, 5000);
+      timer = setInterval(next, 10000);
     }
 
     dots.forEach(function (dot, i) {

@@ -261,6 +261,10 @@ describe("site-wide navigation", () => {
       expect(doc.querySelector('#nav-locations a[href="locations.html#northern-rivers"]').textContent).toBe("Northern Rivers");
     });
   });
+  it("about.html is noindex and out of the sitemap until the page is complete", () => {
+    expect(read("about.html")).toContain('<meta name="robots" content="noindex">');
+    expect(sitemap).not.toContain(`${ORIGIN}/about.html`);
+  });
   it("cleaning-by-site-type.html stays in the sitemap (no page body links it since the Services link was removed)", () => {
     expect(readFileSync(resolve(SITE, "sitemap.xml"), "utf8")).toContain(ORIGIN + "/cleaning-by-site-type.html");
   });
