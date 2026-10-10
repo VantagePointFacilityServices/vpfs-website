@@ -1,7 +1,7 @@
 /**
  * Vantage Point — GHL Lead Scoring Worker (v3, two-stage lead gate + two-stage applicant funnel)
  *
- * Eight endpoints, routed by path. Most fire on GHL workflow webhooks, but
+ * Nine endpoints, routed by path. Most fire on GHL workflow webhooks, but
  * /lead, /gate and /slots are also called directly by the public browser (the
  * website's own two-step booking-gate JS), and /gate is additionally
  * called live by the AI Receptionist mid-call — see corsHeaders()/
@@ -15,6 +15,11 @@
  *                    Never scores anything; conversion_page is a
  *                    pass-through tag and lead_channel is derived from
  *                    the visitor's utms/click ids/referrer.
+ *
+ *   POST /area-request — the Locations page's "Request a new area" form
+ *                    (name, email, phone, postcode). Upserts the GHL
+ *                    contact and tags it new-area-request (not
+ *                    website-lead). Same honeypot + Turnstile as /lead.
  *
  *   POST /slots    — takes the signed booking_token from /gate and
  *                    returns the open walkthrough days/times from the
@@ -236,6 +241,9 @@ async function route(request, env) {
   if (url.pathname === "/lead") {
     return handleLead(payload, env, request);
   }
+  if (url.pathname === "/area-request") {
+    return handleAreaRequest(payload, env, request);
+  }
   if (url.pathname === "/slots") {
     return handleSlots(payload, env);
   }
@@ -314,6 +322,45 @@ async function handleLead(payload, env, request) {
   await addTagsInGHL(result.contactId, tags, env);
 
   return jsonResponse({ contact_id: result.contactId });
+}
+
+// ---- /area-request — "REQUEST A NEW AREA" ------------------------------
+// Called by the browser from the Locations page form. Same contact upsert as
+// /lead, but tagged new-area-request — never website-lead, so the walkthrough
+// booking workflows don't start. A GHL workflow on that tag follows up once
+// the postcode is covered.
+const AREA_REQUEST_TAG = "new-area-request";
+const AREA_REQUEST_CONVERSION_PAGE = "website-locations-area-request";
+
+async function handleAreaRequest(payload, env, request) {
+  const f = { ...extractLeadFields(payload), conversionPage: AREA_REQUEST_CONVERSION_PAGE, marketingConsent: false };
+
+  // Bot filled the invisible field — look successful, create nothing.
+  if (f.honeypot) return jsonResponse({ ok: true });
+
+  const turnstile = await verifyTurnstile(
+    payload.turnstile_token,
+    request.headers.get("CF-Connecting-IP"),
+    env
+  );
+  if (turnstile === "rejected") {
+    return new Response("Verification failed", { status: 403 });
+  }
+
+  if (!f.email || !f.phone || !f.postcode) {
+    return new Response("Missing required field: email, phone and postcode are required", { status: 400 });
+  }
+
+  const result = await upsertContactInGHL(f, env);
+  if (!result.success) {
+    return new Response("Could not save the request", { status: 502 });
+  }
+
+  const tags = [AREA_REQUEST_TAG];
+  if (turnstile === "unverified") tags.push(TURNSTILE_UNVERIFIED_TAG);
+  await addTagsInGHL(result.contactId, tags, env);
+
+  return jsonResponse({ ok: true });
 }
 
 // Returns "passed", "rejected", or "unverified" (Cloudflare unreachable —

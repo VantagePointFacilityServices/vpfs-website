@@ -23,7 +23,8 @@ describe.each(PAGES)("%s collection notices", (page) => {
   it("gives every non-lead form exactly one notice, matching its type, before the Step 1 submit", () => {
     for (const form of forms) {
       const notices = form.querySelectorAll(".form-privacy-notice");
-      if (noticeTypeFor(form) === "lead") {
+      // Lead and Request-a-new-area forms carry no inline notice; the Privacy Policy covers them.
+      if (noticeTypeFor(form) === "lead" || noticeTypeFor(form) === "area") {
         expect(notices.length).toBe(0);
         continue;
       }

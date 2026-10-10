@@ -3,7 +3,6 @@ const LINKS = 'How we handle them: <a href="/privacy.html#collection-notice">col
 
 export const NOTICES = {
   careers: `We collect these details to assess your application, including any screening checks a client site requires (we'll ask first). ${LINKS}`,
-  area: `We collect these details to tell you when we cover your area. ${LINKS}`,
 };
 
 export function noticeTypeFor(form) {

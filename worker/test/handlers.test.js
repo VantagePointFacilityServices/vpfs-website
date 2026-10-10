@@ -1824,3 +1824,70 @@ describe("/book", () => {
     expect(r.headers.get("Access-Control-Allow-Origin")).toBe(origin);
   });
 });
+
+// /area-request — the Locations page's "Request a new area" form. Same GHL
+// upsert + additive tag as /lead, but tagged new-area-request (never
+// website-lead, so the booking workflows don't start).
+describe("POST /area-request", () => {
+  const body = {
+    first_name: "Sam", last_name: "Lee", email: "sam@example.com", phone: "0400000001", postcode: "4870",
+  };
+
+  it("upserts the contact with the postcode and tags it new-area-request only", async () => {
+    global.fetch = mockLeadGhl("area-contact-1");
+    const res = await worker.fetch(makeRequest("/area-request", body), env);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+
+    const sent = upsertBody(global.fetch);
+    expect(sent.locationId).toBe("loc-123");
+    expect(sent.email).toBe("sam@example.com");
+    expect(fieldsFromLastCall({ mock: { calls: [global.fetch.mock.calls[0]] } })).toMatchObject({
+      postcode: "4870",
+      conversion_page: "website-locations-area-request",
+    });
+
+    const [tagUrl, tagOpts] = global.fetch.mock.calls[1];
+    expect(tagUrl).toBe("https://services.leadconnectorhq.com/contacts/area-contact-1/tags");
+    expect(JSON.parse(tagOpts.body).tags).toEqual(["new-area-request"]);
+  });
+
+  it("requires email, phone and postcode", async () => {
+    global.fetch = mockGhlOk();
+    for (const missing of ["email", "phone", "postcode"]) {
+      const res = await worker.fetch(makeRequest("/area-request", { ...body, [missing]: "" }), env);
+      expect(res.status, missing).toBe(400);
+    }
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("silently accepts a honeypot hit without calling GHL", async () => {
+    global.fetch = mockGhlOk();
+    const res = await worker.fetch(makeRequest("/area-request", { ...body, url: "spam.example" }), env);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("rejects a missing Turnstile token once the secret is set", async () => {
+    global.fetch = mockGhlOk();
+    const res = await worker.fetch(makeRequest("/area-request", body), { ...env, TURNSTILE_SECRET_KEY: "ts-secret" });
+    expect(res.status).toBe(403);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("reports a GHL failure so the visitor can try again", async () => {
+    global.fetch = vi.fn().mockResolvedValue(new Response("boom", { status: 500 }));
+    const res = await worker.fetch(makeRequest("/area-request", body), env);
+    expect(res.status).toBe(502);
+  });
+
+  it("allows the website origin (CORS)", async () => {
+    global.fetch = mockLeadGhl("area-contact-2");
+    const res = await worker.fetch(
+      makeRequest("/area-request", body, { headers: { Origin: ALLOWED_ORIGIN } }),
+      env
+    );
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(ALLOWED_ORIGIN);
+  });
+});
