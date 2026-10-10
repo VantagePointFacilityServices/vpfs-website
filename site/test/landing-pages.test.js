@@ -163,8 +163,8 @@ const BANNED = [
 ];
 const MEDICAL_EXTRA = [/infection[- ]control/i, /AGPAL|QIP|RACGP/, /TGA/, /clinical waste/i, /accredit/i];
 // page -> banned patterns (as source strings) tolerated. services.html is the restored
-// tabbed scope page, which still carries the eco / clinical badges the landing pages dropped.
-const LEGACY_ALLOW = { "services.html": ["eco products", "clinical-grade", "sharps"] };
+// tabbed scope page, which still carries the clinical lines the landing pages dropped (its Eco products badge is gone).
+const LEGACY_ALLOW = { "services.html": ["clinical-grade", "sharps"] };
 
 function visibleText(page) {
   const doc = parse(page);
