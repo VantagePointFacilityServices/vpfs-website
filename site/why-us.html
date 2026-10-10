@@ -76,6 +76,18 @@
           <a href="services.html#industrial">Industrial</a>
         </div>
       </div>
+      <div class="nav-item has-dropdown">
+        <a href="locations.html" class="nav-dropdown-toggle">Locations</a>
+        <button class="nav-dropdown-chevron" aria-expanded="false" aria-controls="nav-locations" aria-label="Toggle Locations submenu">
+          <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="nav-dropdown-menu" id="nav-locations">
+          <a href="locations.html#sunshine-coast">Sunshine Coast</a>
+          <a href="locations.html#brisbane">Brisbane</a>
+          <a href="locations.html#gold-coast">Gold Coast</a>
+          <a href="locations.html#northern-rivers">Northern Rivers</a>
+        </div>
+      </div>
       <a data-href="about.html" hidden>About</a><!-- Hidden until the page is complete with photos; to restore, drop `hidden` and rename data-href to href. -->
       <a href="contact.html">Contact</a>
     </nav>
@@ -239,14 +251,14 @@
           <div class="commitment-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
           <h4>The same faces on site</h4>
         </div>
-        <p>A dedicated team, police checked and inducted on your building, with a named supervisor who answers the phone.</p>
+        <p>A dedicated team, police checked and inducted on your building, and a direct line to us when you need something sorted.</p>
       </div>
       <div class="commitment-card">
         <div class="commitment-head">
           <div class="commitment-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.35 8.75a1 1 0 0 1-.65.01C8.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></div>
-          <h4>A monthly audit report</h4>
+          <h4>A monthly report card</h4>
         </div>
-        <p>Scored against your scope by someone who did not do the cleaning. Sent to you either way.</p>
+        <p>A schedule recap and before-and-after photos, sent to you by the 5th business day of each month.</p>
       </div>
       <div class="commitment-card">
         <div class="commitment-head">
@@ -259,29 +271,70 @@
   </div>
 </section>
 
-<!-- ============ TESTIMONIALS ============ -->
+<!-- ============ PROOF YOU CAN SEE TODAY ============ -->
+<section id="proof" class="proof-section">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Proof you can see today</span>
+      <h2>Check us before you meet us</h2>
+    </div>
+    <div class="proof-grid">
+      <article class="commitment-card proof-item" id="proof-report-card">
+        <span class="tab-badge proof-sample">Sample</span>
+        <h3>Monthly Cleaning Report Card</h3>
+        <p class="small">Example office, Gold Coast &mdash; last month</p>
+        <ul class="proof-list">
+          <li>Schedule recap: every scheduled clean delivered against the agreed schedule</li>
+          <li>Before-and-after photos for each area we worked on</li>
+        </ul>
+        <div class="proof-photos">
+          <div class="proof-photo">Before photo</div>
+          <div class="proof-photo">After photo</div>
+          <div class="proof-photo">After photo</div>
+        </div>
+      </article>
+      <article class="commitment-card proof-item" id="proof-scope">
+        <span class="tab-badge proof-sample">Sample</span>
+        <h3>Written scope</h3>
+        <p class="small">Office scope schedule (excerpt) &mdash; Example office</p>
+        <ul class="proof-list">
+          <li><strong>Reception/lobby:</strong> vacuum, dust, glass entry doors &mdash; daily</li>
+          <li><strong>Meeting rooms:</strong> wipe tables, vacuum, whiteboard check &mdash; 3 days a week</li>
+          <li><strong>Restrooms:</strong> full clean, restock consumables, fixture polish &mdash; daily</li>
+        </ul>
+      </article>
+      <article class="commitment-card proof-item" id="proof-guarantee">
+        <h3>Our guarantee</h3>
+        <p>Report a cleaning issue within 24 hours and we will re-clean the affected areas by the next business day. If the re-clean also falls short, we credit the price of that visit.</p>
+        <p class="small">This is in addition to your rights under the Australian Consumer Law.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ REVIEWS (hidden until genuine reviews exist) ============ -->
+<!--
+  To add a genuine review: add an <li class="review-entry"> inside the list below with
+  the quote, the name/role as the client approves, the site type, the source ("Google review"
+  or "Testimonial") and the date. Once there is at least one entry, drop the `hidden`
+  attribute from this section. No Google widget, no Review schema.
+-->
+<section id="reviews" class="reviews-section" hidden>
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Reviews</span>
+      <h2>What our clients say</h2>
+    </div>
+    <ul class="review-list"></ul>
+  </div>
+</section>
+
+<!-- ============ NEXT STEP ============ -->
 <section class="testimonials-section" style="background:var(--surface-wash);">
   <div class="wrap">
     <div class="section-head">
-      <span class="eyebrow">Client feedback</span>
-      <h2>What property managers say</h2>
-    </div>
-    <div class="testi-grid">
-      <div class="testi-card">
-        <blockquote>&ldquo;Three years in and I have never had to send a photo of something they missed.&rdquo;</blockquote>
-        <div class="name">Facilities Manager</div>
-        <div class="role">Mixed-use tower, Southport</div>
-      </div>
-      <div class="testi-card">
-        <blockquote>&ldquo;The audit report lands before our committee meeting. That alone changed the conversation.&rdquo;</blockquote>
-        <div class="name">Strata Committee Chair</div>
-        <div class="role">84-lot complex, Broadbeach</div>
-      </div>
-      <div class="testi-card">
-        <blockquote>&ldquo;Our staff noticed the difference in the first week. Nobody mentions cleaning any more.&rdquo;</blockquote>
-        <div class="name">Practice Manager</div>
-        <div class="role">Medical centre, Robina</div>
-      </div>
+      <span class="eyebrow">Next step</span>
+      <h2>Talk to us about your building</h2>
     </div>
     <div class="testi-actions">
       <span class="tab-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.35 8.75a1 1 0 0 1-.65.01C8.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>Quality controlled</span>

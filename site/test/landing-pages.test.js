@@ -257,10 +257,14 @@ describe("site-wide navigation", () => {
       expect(about.hasAttribute("href")).toBe(false);
       expect(hrefs(doc.querySelectorAll("header a, footer a"))).not.toContain("about.html");
     });
-    it("header nav is Home, Services, About (hidden), Contact; no Locations dropdown", () => {
+    it("header nav is Home, Services, Locations, About (hidden), Contact", () => {
       const top = Array.from(doc.querySelectorAll(".main-nav > a, .main-nav > .nav-item > a"), (a) => a.textContent.trim());
-      expect(top).toEqual(["Home", "Services", "About", "Contact"]);
-      expect(doc.querySelector("#nav-locations")).toBeNull();
+      expect(top).toEqual(["Home", "Services", "Locations", "About", "Contact"]);
+    });
+    it("header Locations dropdown links the four region groups", () => {
+      expect(hrefs(doc.querySelectorAll("#nav-locations a"))).toEqual(
+        ["sunshine-coast", "brisbane", "gold-coast", "northern-rivers"].map((r) => "locations.html#" + r));
+      expect(doc.querySelector('#nav-locations a[href="locations.html#northern-rivers"]').textContent).toBe("Northern Rivers");
     });
   });
   it("about.html is noindex and out of the sitemap until the page is complete", () => {
