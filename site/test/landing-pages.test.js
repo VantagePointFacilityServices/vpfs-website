@@ -244,11 +244,11 @@ describe("site-wide navigation", () => {
       expect(a).not.toBeNull();
       expect(a.closest("li").hasAttribute("hidden")).toBe(true);
     });
-    it("footer Company shows Locations, Contact, Careers, with Why us and About us hidden and unlinked", () => {
+    it("footer Company lists Why us, About us, Locations, Contact, Careers, Resources, with Why us, About us and Resources hidden and unlinked", () => {
       const items = Array.from(doc.querySelectorAll("footer h4 + ul")).find((ul) => ul.previousElementSibling.textContent === "Company").querySelectorAll("li");
-      expect(Array.from(items, (li) => li.textContent.trim())).toEqual(["Why us", "Locations", "About us", "Contact", "Careers"]);
+      expect(Array.from(items, (li) => li.textContent.trim())).toEqual(["Why us", "About us", "Locations", "Contact", "Careers", "Resources"]);
       const hidden = Array.from(items).filter((li) => li.hasAttribute("hidden"));
-      expect(hidden.map((li) => li.textContent.trim())).toEqual(["Why us", "About us"]);
+      expect(hidden.map((li) => li.textContent.trim())).toEqual(["Why us", "About us", "Resources"]);
       expect(hidden.every((li) => !li.querySelector("a").hasAttribute("href"))).toBe(true);
     });
     it("header nav hides the About link and does not link about.html", () => {
@@ -257,8 +257,10 @@ describe("site-wide navigation", () => {
       expect(about.hasAttribute("href")).toBe(false);
       expect(hrefs(doc.querySelectorAll("header a, footer a"))).not.toContain("about.html");
     });
-    it("header Locations dropdown says Northern Rivers", () => {
-      expect(doc.querySelector('#nav-locations a[href="locations.html#northern-rivers"]').textContent).toBe("Northern Rivers");
+    it("header nav is Home, Services, About (hidden), Contact; no Locations dropdown", () => {
+      const top = Array.from(doc.querySelectorAll(".main-nav > a, .main-nav > .nav-item > a"), (a) => a.textContent.trim());
+      expect(top).toEqual(["Home", "Services", "About", "Contact"]);
+      expect(doc.querySelector("#nav-locations")).toBeNull();
     });
   });
   it("about.html is noindex and out of the sitemap until the page is complete", () => {
