@@ -253,12 +253,15 @@ describe("why-us.html how we start, straight answers, real person", () => {
     const first = doc.querySelector(".commitments-section");
     expect(first.compareDocumentPosition(doc.getElementById("how-we-start")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
-  it("how we get started has exactly 4 steps, no check-in", () => {
+  it("how we get started has 5 steps, with the check-in after the first two cleans as step 4 (C-OPS-01 step 8)", () => {
     const sec = doc.getElementById("how-we-start");
     expect(sec.querySelector("h2").textContent).toBe("How we get started");
-    expect(sec.querySelectorAll("ol > li")).toHaveLength(4);
-    expect(sec.textContent).toMatch(/5th business day/);
-    expect(sec.textContent).not.toMatch(/check-in|first clean/i);
+    const steps = Array.from(sec.querySelectorAll("ol > li"), (li) => li.textContent);
+    expect(steps).toHaveLength(5);
+    expect(steps[3]).toMatch(/first two cleans/);
+    expect(steps[4]).toMatch(/5th business day/);
+    // C-OPS-01 promises a follow-up after the first two cleans, nothing faster or more frequent.
+    expect(sec.textContent).not.toMatch(/first clean\b|within \d+ (business )?(hours|days)|every week|weekly/i);
   });
   it("straight answers wording, no details or FAQPage", () => {
     const sec = doc.getElementById("straight-answers");
