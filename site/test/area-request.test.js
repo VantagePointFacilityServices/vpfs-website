@@ -80,6 +80,10 @@ describe("locations.html wiring", () => {
     expect(form.querySelector(".turnstile-widget[data-sitekey]")).not.toBeNull();
   });
 
+  it("keeps the section hidden until the GHL new-area-request workflow is live", () => {
+    expect(form.closest("section").hasAttribute("hidden")).toBe(true);
+  });
+
   it("loads the area-request script", () => {
     expect(doc.querySelector('script[type="module"][src="assets/js/area-request.js"]')).not.toBeNull();
   });
