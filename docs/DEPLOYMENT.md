@@ -199,9 +199,10 @@ declares.
 # Canonical host serves over HTTPS
 curl -I https://www.vantagepointfacilityservices.com.au
 
-# Bare apex redirects to www (GitHub Pages side, not Cloudflare)
-curl -I https://vantagepointfacilityservices.com.au
-# expect: 301 Location: https://www.vantagepointfacilityservices.com.au/
+# Bare apex redirects to www (Cloudflare Redirect Rule on the proxied apex,
+# with Cloudflare's certificate — GitHub's cert covers www only)
+curl -I https://vantagepointfacilityservices.com.au/why-us.html
+# expect: HTTP/2 301, location: https://www.vantagepointfacilityservices.com.au/why-us.html
 
 # Bare apex must NOT show someone else's page (see Troubleshooting: GoDaddy leftovers)
 curl -sL https://vantagepointfacilityservices.com.au | grep -o '<title>[^<]*'
@@ -254,6 +255,13 @@ to verify.
   record exists and doesn't authorize `letsencrypt.org`, remove or fix
   it (not something `sync-dns.mjs` manages today — check the Cloudflare
   DNS tab directly).
+- **`https://vantagepointfacilityservices.com.au` shows a certificate
+  warning (`*.github.io` cert)** — the apex A records have gone back to
+  `proxied: false`, so GitHub serves the apex, and GitHub's cert only
+  covers `www`. Re-adding the custom domain in Settings > Pages did not
+  re-issue it with the apex (tried 2026-10-11). Fix: keep the apex A
+  records `proxied: true` with the apex redirect rule in the `.com.au`
+  zone file, and run `sync-dns.mjs --apply`.
 - **`sync-dns.mjs` fails with "No Cloudflare zone found"** — the domain
   hasn't finished the Part 1/2 nameserver handoff yet (still shows
   "Pending Nameserver Update" in Cloudflare), or the API token in Part 4

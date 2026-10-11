@@ -7,29 +7,36 @@ zone: vantagepointfacilityservices.com.au
 
 records:
   # --- Website (GitHub Pages) — deployed by .github/workflows/deploy-website.yml ---
-  # DNS-only (proxied: false) at apex/www: GitHub issues its own TLS cert for
-  # the custom domain and needs to see the real GitHub IPs to do that. A
-  # `site/CNAME` file (committed alongside this) tells GitHub which custom
-  # domain to serve. Only switch proxied to true after GitHub's custom-domain
-  # HTTPS check has gone green in repo Settings > Pages — and if you do, set
-  # Cloudflare's SSL/TLS mode to "Full" (not "Flexible"), or you'll get a
-  # redirect loop.
+  # `www` is DNS-only (proxied: false): GitHub issues its own TLS cert for the
+  # canonical custom domain (`site/CNAME` = www.vantagepointfacilityservices.com.au)
+  # and needs to see the real GitHub IPs to do that.
+  #
+  # The bare apex is PROXIED (2026-10-11). GitHub's cert only ever covered
+  # `www` (issued 2026-09-14, while leftover GoDaddy apex records were still
+  # live) and re-adding the custom domain did not re-issue it with the apex,
+  # so https://vantagepointfacilityservices.com.au showed GitHub's
+  # *.github.io cert (browser warning). Cloudflare now terminates TLS for the
+  # apex with its Universal SSL cert and the `redirects:` rule below sends it
+  # to www in one 301. The rule matches every apex request, so traffic never
+  # reaches GitHub through Cloudflare and there is no redirect loop whatever
+  # the SSL/TLS mode. The GitHub IPs stay as the content so that switching
+  # back to proxied: false restores the old behaviour exactly.
   - type: A
     name: vantagepointfacilityservices.com.au
     content: 185.199.108.153
-    proxied: false
+    proxied: true
   - type: A
     name: vantagepointfacilityservices.com.au
     content: 185.199.109.153
-    proxied: false
+    proxied: true
   - type: A
     name: vantagepointfacilityservices.com.au
     content: 185.199.110.153
-    proxied: false
+    proxied: true
   - type: A
     name: vantagepointfacilityservices.com.au
     content: 185.199.111.153
-    proxied: false
+    proxied: true
   - type: CNAME
     name: www.vantagepointfacilityservices.com.au
     content: vantagepointfacilityservices.github.io
@@ -130,4 +137,13 @@ records:
   # --- deploys, and having two systems both try to own the same record will ---
   # --- fight each other. ---
 
-redirects: []
+redirects:
+  # Bare apex -> canonical www, one 301 hop, path and query string preserved
+  # (e.g. /why-us.html?ref=x -> https://www.vantagepointfacilityservices.com.au/why-us.html?ref=x).
+  # Needs the proxied apex A records above. `www` is not matched: it is
+  # DNS-only and served by GitHub Pages directly.
+  - description: "Redirect apex to www.vantagepointfacilityservices.com.au"
+    expression: 'http.host eq "vantagepointfacilityservices.com.au"'
+    target_expression: 'concat("https://www.vantagepointfacilityservices.com.au", http.request.uri.path)'
+    status_code: 301
+    preserve_query_string: true
