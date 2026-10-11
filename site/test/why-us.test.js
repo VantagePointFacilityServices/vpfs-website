@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, readdirSync } from "fs";
+import { readFileSync, readdirSync, existsSync } from "fs";
 import { resolve } from "path";
+import { createHash } from "crypto";
 
 const SITE = resolve(__dirname, "..");
 const read = (page) => readFileSync(resolve(SITE, page), "utf8");
@@ -80,6 +81,14 @@ describe("why-us.html proof and reviews", () => {
     const n = r.querySelectorAll(".review-entry").length;
     expect(r.hasAttribute("hidden")).toBe(n === 0);
   });
+  it("case studies hidden iff zero entries, after reviews", () => {
+    const c = doc.querySelector("#case-studies");
+    expect(c).not.toBeNull();
+    expect(doc.getElementById("reviews").compareDocumentPosition(c) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const n = c.querySelectorAll(".case-study-entry").length;
+    expect(c.hasAttribute("hidden")).toBe(n === 0);
+    expect(c.querySelector("h2").textContent).toBe("Buildings we look after");
+  });
   it("samples use only 'Example office' as the business name", () => {
     expect(proof.textContent).toMatch(/Example office/);
     const samples = ["proof-report-card", "proof-scope"].map((id) => doc.getElementById(id).textContent).join(" ");
@@ -87,5 +96,183 @@ describe("why-us.html proof and reviews", () => {
   });
   it("has no Review schema markup", () => {
     expect(read("why-us.html")).not.toMatch(/itemtype=["'][^"']*Review/);
+  });
+});
+
+describe("why-us.html tone pass, scope card and sample images", () => {
+  it("has the 'Every room, written down' card linking to the sample", () => {
+    expect(text).not.toContain("A scope you can hold us to");
+    const card = Array.from(doc.querySelectorAll(".commitment-card")).find((c) => c.querySelector("h4")?.textContent === "Every room, written down");
+    expect(card).toBeDefined();
+    expect(card.textContent).toContain("Restrooms");
+    expect(card.querySelector('a[href="#proof-scope"]')).not.toBeNull();
+    expect(doc.getElementById("proof-scope").querySelector("h3").textContent).toBe("Written scope: office cleaning plan");
+  });
+  it("has no banned phrases", () => {
+    const BANNED = ["premier", "best", "#1", "second to none", "exceptional", "100%", "refund", "inspection records", "named supervisor", "get back to you within", "call back within"];
+    const lower = read("why-us.html").toLowerCase();
+    for (const b of BANNED) expect(lower, b).not.toContain(b);
+  });
+  it("does not carry About-only claims (D9)", () => {
+    expect(text).not.toMatch(/public liability/i);
+    expect(text).not.toContain("$20");
+  });
+  it("temp images exist and are named -temp.svg", () => {
+    const imgs = Array.from(doc.querySelectorAll("#proof img[data-temp-image]"));
+    expect(imgs.map((i) => i.getAttribute("src"))).toEqual([
+      "assets/img/whyus-sample-before-temp.svg",
+      "assets/img/whyus-sample-after-desk-temp.svg",
+      "assets/img/whyus-sample-after-restroom-temp.svg",
+    ]);
+    for (const i of imgs) {
+      const src = i.getAttribute("src");
+      expect(src).toMatch(/-temp\.svg$/);
+      expect(existsSync(resolve(SITE, src)), src).toBe(true);
+      expect(i.getAttribute("alt")).toBeTruthy();
+    }
+  });
+  it("keeps every pre-existing image file present and unchanged (D28)", () => {
+    // Every file in site/assets/img at merge-base 53465ce, with the first 16 hex chars of its sha256.
+    const EXISTING = {
+  "broadbeach-podium-loading-dock-clean.svg": "df5fd4fac4ebc0b7",
+  "bundall-serviced-office-kitchenette-clean.svg": "df5fd4fac4ebc0b7",
+  "bundall-tower-lift-lobby-access.svg": "df5fd4fac4ebc0b7",
+  "burleigh-james-street-retail-suite-clean.svg": "df5fd4fac4ebc0b7",
+  "burleigh-west-business-estate-access.svg": "df5fd4fac4ebc0b7",
+  "carrara-sports-precinct-amenities-clean.svg": "df5fd4fac4ebc0b7",
+  "childcare-change-area-toilets-clean.svg": "df5fd4fac4ebc0b7",
+  "childcare-cleaning-gold-coast-hero.svg": "07d68db10c32b607",
+  "childcare-supervisor-session-checklist.svg": "df5fd4fac4ebc0b7",
+  "commercial-cleaning-bundall-hero.svg": "07d68db10c32b607",
+  "commercial-cleaning-burleigh-heads-hero.svg": "df5fd4fac4ebc0b7",
+  "commercial-cleaning-helensvale-coomera-hero.svg": "df5fd4fac4ebc0b7",
+  "commercial-cleaning-nerang-carrara-hero.svg": "df5fd4fac4ebc0b7",
+  "commercial-cleaning-robina-varsity-lakes-hero.svg": "df5fd4fac4ebc0b7",
+  "commercial-cleaning-southport-hero.svg": "07d68db10c32b607",
+  "commercial-cleaning-surfers-paradise-broadbeach-hero.svg": "07d68db10c32b607",
+  "coomera-business-park-access.svg": "df5fd4fac4ebc0b7",
+  "facility-types/education-480.webp": "614635719008bb67",
+  "facility-types/education-800.webp": "4eed09ced2db0242",
+  "facility-types/industrial-480.webp": "ec82a260666f36ce",
+  "facility-types/industrial-800.webp": "aa9ebb3bf3a64c5d",
+  "facility-types/medical-480.webp": "42f3121eb28984ab",
+  "facility-types/medical-800.webp": "4ef779262b5684d5",
+  "facility-types/office-480.webp": "837fcfed94545e91",
+  "facility-types/office-800.webp": "dd094039b9d62c06",
+  "facility-types/strata-480.webp": "5403d7960e3bd3b5",
+  "facility-types/strata-800.webp": "d23ee8649dbde596",
+  "helensvale-transport-hub-office-clean.svg": "df5fd4fac4ebc0b7",
+  "homepage-hero-offices-background.jpg": "a9f1a2c59abe030d",
+  "homepage-office-image.png": "971f608a349050d0",
+  "logo-navy.svg": "d10c2ffac300ccc2",
+  "logo-white.svg": "fe37272edaaa11d0",
+  "mark-navy.svg": "ccd926fe2f4e670e",
+  "mark-white.svg": "a5a4538296baf273",
+  "medical-centre-cleaning-gold-coast-hero.svg": "07d68db10c32b607",
+  "medical-reception-desk-clean.svg": "df5fd4fac4ebc0b7",
+  "medical-waiting-room-clean.svg": "df5fd4fac4ebc0b7",
+  "nerang-industrial-unit-office-clean.svg": "df5fd4fac4ebc0b7",
+  "office-cleaning-gold-coast-hero.svg": "07d68db10c32b607",
+  "office-reception-meeting-room-clean.svg": "df5fd4fac4ebc0b7",
+  "office-workstation-desk-cleaning.svg": "df5fd4fac4ebc0b7",
+  "offices-slide-show-1.jpg": "d5268498ef56565c",
+  "offices-slide-show-2.jpg": "02488e62255d91ae",
+  "offices-slide-show-3.jpg": "a9f1a2c59abe030d",
+  "robina-town-centre-suite-clean.svg": "df5fd4fac4ebc0b7",
+  "school-classroom-toilet-block-clean.svg": "df5fd4fac4ebc0b7",
+  "school-cleaning-gold-coast-hero.svg": "07d68db10c32b607",
+  "school-holiday-deep-clean-planning.svg": "df5fd4fac4ebc0b7",
+  "site-walkthrough-480.webp": "df9c7621fa82543a",
+  "site-walkthrough-930.webp": "c6bf80e207b591cc",
+  "southport-clinic-reception-clean.svg": "df5fd4fac4ebc0b7",
+  "southport-tower-basement-access.svg": "df5fd4fac4ebc0b7",
+  "strata-bin-room-clean.svg": "df5fd4fac4ebc0b7",
+  "strata-cleaning-gold-coast-hero.svg": "07d68db10c32b607",
+  "strata-entry-glass-amenities.svg": "df5fd4fac4ebc0b7",
+  "strata-lobby-cleaning.svg": "df5fd4fac4ebc0b7",
+  "supervisor-inspection-office-checklist.svg": "df5fd4fac4ebc0b7",
+  "surfers-paradise-tower-car-park-clean.svg": "df5fd4fac4ebc0b7",
+  "varsity-lakes-business-park-access.svg": "df5fd4fac4ebc0b7",
+  "warehouse-industrial-cleaning-gold-coast-hero.svg": "07d68db10c32b607",
+  "warehouse-industrial-floor-zone-cleaning.svg": "df5fd4fac4ebc0b7",
+  "warehouse-industrial-shift-changeover-clean.svg": "df5fd4fac4ebc0b7",
+  "warehouse-industrial-site-induction-ppe.svg": "df5fd4fac4ebc0b7"
+    };
+    expect(Object.keys(EXISTING)).toHaveLength(63);
+    for (const [f, hash] of Object.entries(EXISTING)) {
+      const path = resolve(SITE, "assets/img", f);
+      expect(existsSync(path), f).toBe(true);
+      expect(createHash("sha256").update(readFileSync(path)).digest("hex").slice(0, 16), f).toBe(hash);
+    }
+  });
+});
+
+describe("why-us.html proof of work", () => {
+  const sec = doc.getElementById("proof-of-work");
+  const rows = Array.from(sec.querySelectorAll(".work-row"));
+  const IMGS = ["checked", "walkthrough", "cloths", "checklist", null, "uniform"];
+  it("sits after #proof and before #reviews", () => {
+    expect(doc.getElementById("proof").compareDocumentPosition(sec) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(sec.compareDocumentPosition(doc.getElementById("reviews")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+  it("has six rows in order", () => {
+    expect(rows.map((r) => r.querySelector("h3").textContent)).toEqual([
+      "Checked before they set foot on your site",
+      "Your building, recorded on day one",
+      "The right cloth and the right chemical",
+      "Every shift opens and closes the same way",
+      "We\u2019re careful with what we photograph",
+      "Presented like professionals",
+    ]);
+  });
+  it("has one temp image with alt per row, except row 5", () => {
+    rows.forEach((r, i) => {
+      const imgs = r.querySelectorAll("img[data-temp-image]");
+      if (IMGS[i] === null) return expect(imgs).toHaveLength(0);
+      expect(imgs).toHaveLength(1);
+      expect(imgs[0].getAttribute("src")).toBe(`assets/img/whyus-pow-${IMGS[i]}-temp.svg`);
+      expect(existsSync(resolve(SITE, imgs[0].getAttribute("src")))).toBe(true);
+      expect(imgs[0].getAttribute("alt")).toBeTruthy();
+    });
+  });
+  it("row 1 names the insurance certificate but no cover amount", () => {
+    expect(rows[0].textContent).toContain("insurance certificate");
+    expect(rows[0].textContent).not.toMatch(/\$|million|public liability/i);
+  });
+  it("avoids banned terms and response times", () => {
+    expect(sec.textContent).not.toMatch(/GPS|Connecteam|inspect|audit|score/i);
+    expect(sec.textContent).not.toMatch(/within \d+|response time|minutes|hours/i);
+  });
+});
+
+describe("why-us.html how we start, straight answers, real person", () => {
+  const after = (a, b) => expect(doc.getElementById(a).compareDocumentPosition(doc.getElementById(b)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  it("orders sections W2, W3, W4, W4b, W5, W6, reviews, next step", () => {
+    const ids = ["how-we-start", "proof", "proof-of-work", "straight-answers", "reach-us", "reviews"];
+    for (let i = 1; i < ids.length; i++) after(ids[i - 1], ids[i]);
+    const first = doc.querySelector(".commitments-section");
+    expect(first.compareDocumentPosition(doc.getElementById("how-we-start")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+  it("how we get started has exactly 4 steps, no check-in", () => {
+    const sec = doc.getElementById("how-we-start");
+    expect(sec.querySelector("h2").textContent).toBe("How we get started");
+    expect(sec.querySelectorAll("ol > li")).toHaveLength(4);
+    expect(sec.textContent).toMatch(/5th business day/);
+    expect(sec.textContent).not.toMatch(/check-in|first clean/i);
+  });
+  it("straight answers wording, no details or FAQPage", () => {
+    const sec = doc.getElementById("straight-answers");
+    for (const w of ["12-month", "Flexible", "signature"]) expect(sec.textContent).toContain(w);
+    expect(Array.from(sec.querySelectorAll("h3"), (h) => h.textContent)).toHaveLength(4);
+    expect(sec.querySelector("details")).toBeNull();
+    expect(read("why-us.html")).not.toContain("<details");
+    expect(read("why-us.html")).not.toContain("FAQPage");
+  });
+  it("reach block has tel and mailto links and hours, no response time", () => {
+    const sec = doc.getElementById("reach-us");
+    expect(sec.querySelector('a[href="tel:0756512257"]')).not.toBeNull();
+    expect(sec.querySelector('a[href="mailto:booking@vantagepointfacilityservices.com.au"]')).not.toBeNull();
+    expect(sec.textContent).toContain("Mon\u2013Sun 7am\u20139pm");
+    expect(sec.textContent).not.toMatch(/within|minutes|response/i);
   });
 });

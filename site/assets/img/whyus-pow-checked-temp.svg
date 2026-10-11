@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img" aria-label="Illustration of a uniformed cleaner at a building entrance beside a completed compliance checklist">
+<rect width="1600" height="900" fill="#F4F6FA"/>
+<rect x="420" y="120" width="760" height="660" fill="#EDEFF7"/>
+<rect x="600" y="300" width="400" height="480" fill="#CFE3F2" stroke="#BCBFCC" stroke-width="10"/>
+<line x1="800" y1="300" x2="800" y2="780" stroke="#BCBFCC" stroke-width="8"/>
+<rect x="420" y="160" width="760" height="60" fill="#0F3060"/>
+<rect y="780" width="1600" height="120" fill="#D3D6E0"/>
+<g transform="translate(800,860)">
+<rect x="-40.5" y="-162.0" width="35.1" height="162.0" rx="10.8" fill="#2A2F3A"/>
+<rect x="5.4" y="-162.0" width="35.1" height="162.0" rx="10.8" fill="#2A2F3A"/>
+<rect x="-45.900000000000006" y="-10.8" width="43.2" height="13.5" rx="6.75" fill="#1E1E24"/>
+<rect x="2.7" y="-10.8" width="43.2" height="13.5" rx="6.75" fill="#1E1E24"/>
+<path d="M-56.7 -159.3 L-51.300000000000004 -283.5 Q0 -305.1 51.300000000000004 -283.5 L56.7 -159.3 Z" fill="#0F3060"/>
+<rect x="-21.6" y="-264.6" width="43.2" height="10.8" rx="5.4" fill="#FFFFFF" opacity=".85"/>
+<rect x="48.6" y="-278.1" width="21.6" height="116.10000000000001" rx="10.8" fill="#0F3060"/>
+<circle cx="59.400000000000006" cy="-159.3" r="10.8" fill="#8D5A3B"/>
+<rect x="-70.2" y="-278.1" width="21.6" height="116.10000000000001" rx="10.8" fill="#0F3060"/>
+<circle cx="-59.400000000000006" cy="-159.3" r="10.8" fill="#8D5A3B"/>
+<rect x="-12.15" y="-313.20000000000005" width="24.3" height="21.6" fill="#8D5A3B"/>
+<circle cx="0" cy="-340.20000000000005" r="35.1" fill="#4A3426"/>
+<circle cx="-33.75" cy="-337.5" r="6.75" fill="#8D5A3B"/><circle cx="33.75" cy="-337.5" r="6.75" fill="#8D5A3B"/>
+</g>
+<g transform="translate(1330,470)">
+<rect x="-81.0" y="-108.0" width="162.0" height="216.0" rx="10.8" fill="#8A6A4A"/>
+<rect x="-70.2" y="-90.0" width="140.4" height="187.20000000000002" rx="5.4" fill="#fff"/>
+<rect x="-30.6" y="-118.8" width="61.2" height="23.400000000000002" rx="7.2" fill="#6E7180"/>
+<rect x="-54.0" y="-72.0" width="18.0" height="18.0" rx="3.6" fill="none" stroke="#0F3060" stroke-width="2.7"/>
+<path d="M-50.4 -63.0 L-45.0 -57.6 L-37.800000000000004 -68.4" fill="none" stroke="#2E9D5B" stroke-width="3.6" stroke-linecap="round"/>
+<rect x="-27.0" y="-67.5" width="81.0" height="9.0" rx="4.5" fill="#D3D6E0"/>
+<rect x="-54.0" y="-37.8" width="18.0" height="18.0" rx="3.6" fill="none" stroke="#0F3060" stroke-width="2.7"/>
+<path d="M-50.4 -28.8 L-45.0 -23.4 L-37.800000000000004 -34.2" fill="none" stroke="#2E9D5B" stroke-width="3.6" stroke-linecap="round"/>
+<rect x="-27.0" y="-33.3" width="59.4" height="9.0" rx="4.5" fill="#D3D6E0"/>
+<rect x="-54.0" y="-3.5999999999999996" width="18.0" height="18.0" rx="3.6" fill="none" stroke="#0F3060" stroke-width="2.7"/>
+<path d="M-50.4 5.4 L-45.0 10.8 L-37.800000000000004 0.0" fill="none" stroke="#2E9D5B" stroke-width="3.6" stroke-linecap="round"/>
+<rect x="-27.0" y="0.9000000000000004" width="81.0" height="9.0" rx="4.5" fill="#D3D6E0"/>
+<rect x="-54.0" y="30.6" width="18.0" height="18.0" rx="3.6" fill="none" stroke="#0F3060" stroke-width="2.7"/>
+<path d="M-50.4 39.6 L-45.0 45.0 L-37.800000000000004 34.2" fill="none" stroke="#2E9D5B" stroke-width="3.6" stroke-linecap="round"/>
+<rect x="-27.0" y="35.1" width="59.4" height="9.0" rx="4.5" fill="#D3D6E0"/>
+<rect x="-54.0" y="64.8" width="18.0" height="18.0" rx="3.6" fill="none" stroke="#0F3060" stroke-width="2.7"/>
+<path d="M-50.4 73.8 L-45.0 79.2 L-37.800000000000004 68.39999999999999" fill="none" stroke="#2E9D5B" stroke-width="3.6" stroke-linecap="round"/>
+<rect x="-27.0" y="69.3" width="81.0" height="9.0" rx="4.5" fill="#D3D6E0"/>
+</g>
+<circle cx="1420" cy="330" r="50" fill="#2E9D5B"/><path d="M1397.5 330 L1415.0 347.5 L1445.0 312.5" fill="none" stroke="#fff" stroke-width="11.0" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

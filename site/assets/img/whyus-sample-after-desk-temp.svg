@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600" role="img" aria-label="Illustration of the same office desk after cleaning, wiped clear with an empty bin">
+<rect width="800" height="600" fill="#F4F6FA"/><rect y="430" width="800" height="170" fill="#D3D6E0"/><rect x="48.0" y="60.0" width="224.00000000000003" height="228.0" rx="6" fill="#CFE3F2" stroke="#BCBFCC" stroke-width="6"/><line x1="160.0" y1="60.0" x2="160.0" y2="288.0" stroke="#BCBFCC" stroke-width="5"/><rect x="576.0" y="72.0" width="160.0" height="48.0" rx="4" fill="#EDEFF7"/>
+<g transform="translate(400,430)">
+<rect x="-260" y="-20" width="520" height="24" rx="6" fill="#B08968"/>
+<rect x="-240" y="4" width="20" height="150" fill="#6E7180"/><rect x="220" y="4" width="20" height="150" fill="#6E7180"/>
+<rect x="-90" y="-150" width="180" height="110" rx="8" fill="#2A2F3A"/><rect x="-80" y="-140" width="160" height="90" rx="4" fill="#3E4A5C"/>
+<rect x="-14" y="-40" width="28" height="22" fill="#6E7180"/>
+<rect x="-70" y="-34" width="140" height="12" rx="4" fill="#BCBFCC"/>
+<rect x="140" y="-64" width="30" height="42" rx="5" fill="#fff" stroke="#9DA2B3" stroke-width="3"/>
+<g transform="translate(300,150)"><rect x="-34" y="-80" width="68" height="80" rx="6" fill="#6E7180"/></g>
+<path d="M-220 -46 l8 -14 l8 14 l14 8 l-14 8 l-8 14 l-8 -14 l-14 -8 z" fill="#fff"/>
+<path d="M200 -100 l6 -10 l6 10 l10 6 l-10 6 l-6 10 l-6 -10 l-10 -6 z" fill="#fff"/>
+</g>
+</svg>

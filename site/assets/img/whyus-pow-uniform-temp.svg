@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img" aria-label="Illustration of two cleaners in navy uniforms working in an office, seen from behind">
+<rect width="1600" height="900" fill="#F4F6FA"/><rect y="680" width="1600" height="220" fill="#D3D6E0"/><rect x="96.0" y="90.0" width="448.00000000000006" height="342.0" rx="6" fill="#CFE3F2" stroke="#BCBFCC" stroke-width="6"/><line x1="320.0" y1="90.0" x2="320.0" y2="432.0" stroke="#BCBFCC" stroke-width="5"/><rect x="1152.0" y="108.0" width="320.0" height="72.0" rx="4" fill="#EDEFF7"/>
+<g transform="translate(240,700) scale(1.3)"><rect x="-22" y="-50" width="44" height="50" rx="6" fill="#6E7180"/><ellipse cx="-14" cy="-80" rx="18" ry="36" fill="#4F8A5B" transform="rotate(-20 -14 -80)"/><ellipse cx="14" cy="-86" rx="18" ry="40" fill="#5E9C69" transform="rotate(18 14 -86)"/><ellipse cx="0" cy="-96" rx="14" ry="40" fill="#6BAA75"/></g>
+<g transform="translate(620,850)">
+<rect x="-36.0" y="-144.0" width="31.2" height="144.0" rx="9.6" fill="#2A2F3A"/>
+<rect x="4.8" y="-144.0" width="31.2" height="144.0" rx="9.6" fill="#2A2F3A"/>
+<rect x="-40.8" y="-9.6" width="38.4" height="12.0" rx="6.0" fill="#1E1E24"/>
+<rect x="2.4" y="-9.6" width="38.4" height="12.0" rx="6.0" fill="#1E1E24"/>
+<path d="M-50.4 -141.6 L-45.6 -252.0 Q0 -271.2 45.6 -252.0 L50.4 -141.6 Z" fill="#0F3060"/>
+<rect x="-19.2" y="-235.2" width="38.4" height="9.6" rx="4.8" fill="#FFFFFF" opacity=".85"/>
+<rect x="43.199999999999996" y="-247.2" width="19.2" height="103.2" rx="9.6" fill="#0F3060"/>
+<circle cx="52.8" cy="-141.6" r="9.6" fill="#F1C9A5"/>
+<rect x="-62.4" y="-247.2" width="19.2" height="103.2" rx="9.6" fill="#0F3060"/>
+<circle cx="-52.8" cy="-141.6" r="9.6" fill="#F1C9A5"/>
+<rect x="-10.799999999999999" y="-278.4" width="21.599999999999998" height="19.2" fill="#F1C9A5"/>
+<circle cx="0" cy="-302.4" r="31.2" fill="#1E1E24"/>
+<path d="M-31.2 -302.4 Q-36.0 -246.0 -16.8 -240.0 L16.8 -240.0 Q36.0 -246.0 31.2 -302.4 Z" fill="#1E1E24"/>
+<circle cx="-30.0" cy="-300.0" r="6.0" fill="#F1C9A5"/><circle cx="30.0" cy="-300.0" r="6.0" fill="#F1C9A5"/>
+</g>
+<g transform="translate(900,850)">
+<rect x="-36.0" y="-144.0" width="31.2" height="144.0" rx="9.6" fill="#2A2F3A"/>
+<rect x="4.8" y="-144.0" width="31.2" height="144.0" rx="9.6" fill="#2A2F3A"/>
+<rect x="-40.8" y="-9.6" width="38.4" height="12.0" rx="6.0" fill="#1E1E24"/>
+<rect x="2.4" y="-9.6" width="38.4" height="12.0" rx="6.0" fill="#1E1E24"/>
+<path d="M-50.4 -141.6 L-45.6 -252.0 Q0 -271.2 45.6 -252.0 L50.4 -141.6 Z" fill="#0F3060"/>
+<rect x="-19.2" y="-235.2" width="38.4" height="9.6" rx="4.8" fill="#FFFFFF" opacity=".85"/>
+<rect x="43.199999999999996" y="-247.2" width="19.2" height="103.2" rx="9.6" fill="#0F3060"/>
+<circle cx="52.8" cy="-141.6" r="9.6" fill="#C68A5E"/>
+<rect x="-62.4" y="-247.2" width="19.2" height="103.2" rx="9.6" fill="#0F3060"/>
+<circle cx="-52.8" cy="-141.6" r="9.6" fill="#C68A5E"/>
+<rect x="-10.799999999999999" y="-278.4" width="21.599999999999998" height="19.2" fill="#C68A5E"/>
+<circle cx="0" cy="-302.4" r="31.2" fill="#2B1D14"/>
+<circle cx="-30.0" cy="-300.0" r="6.0" fill="#C68A5E"/><circle cx="30.0" cy="-300.0" r="6.0" fill="#C68A5E"/>
+</g>
+<g transform="translate(1160,850)"><rect x="-40" y="-110" width="80" height="110" rx="14" fill="#D94A4A"/><rect x="-6" y="-260" width="12" height="160" fill="#6E7180"/><circle cx="-26" cy="0" r="10" fill="#1E1E24"/><circle cx="26" cy="0" r="10" fill="#1E1E24"/></g>
+</svg>

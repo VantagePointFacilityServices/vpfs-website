@@ -19,10 +19,43 @@ describe("about.html founder story", () => {
     expect(html.toLowerCase()).not.toContain(w.toLowerCase());
   });
 
-  it("has three photo placeholders in the founder area, (b) protecting the boys' faces", () => {
-    const slots = Array.from(doc.querySelectorAll(".founder-section .image-slot .slot-caption"), (c) => c.textContent);
+  it("has three founder-area photo slots, each a temp image; boys' alt says from behind", () => {
+    const slots = Array.from(doc.querySelectorAll(".founder-section .image-slot"));
     expect(slots).toHaveLength(3);
-    expect(slots[1]).toMatch(/faces must not be identifiable/i);
+    for (const s of slots) {
+      const img = s.querySelector("img[data-temp-image]");
+      expect(img).not.toBeNull();
+      expect(img.getAttribute("src")).toMatch(/-temp\.svg$/);
+      expect(img.getAttribute("alt").trim()).not.toBe("");
+      expect(s.textContent).not.toMatch(/to be added/i);
+    }
+    expect(slots[1].querySelector("img").getAttribute("alt")).toMatch(/from behind/i);
+  });
+
+  it("Local families slot holds a temp image with alt text", () => {
+    const img = doc.querySelector(".people-section .image-slot img[data-temp-image]");
+    expect(img.getAttribute("src")).toMatch(/-temp\.svg$/);
+    expect(img.getAttribute("alt").trim()).not.toBe("");
+    expect(doc.body.textContent).not.toMatch(/to be added/i);
+  });
+
+  it("hero details line has Pty Ltd, Reedy Creek, a tel: link and no ABN", () => {
+    const hero = doc.querySelector(".page-hero");
+    expect(hero.textContent).toContain("Pty Ltd");
+    expect(hero.textContent).toContain("Reedy Creek");
+    expect(hero.querySelector('a[href^="tel:"]')).not.toBeNull();
+    expect(hero.textContent).not.toContain("ABN");
+  });
+
+  it("How we work section mentions amaysim", () => {
+    const s = Array.from(doc.querySelectorAll("section")).find((x) => x.querySelector(".eyebrow")?.textContent === "How we work");
+    expect(s.textContent).toContain("amaysim");
+  });
+
+  it("has no police checked, inspection records or culture-scheme words", () => {
+    expect(text).not.toMatch(/police checked/i);
+    expect(text).not.toMatch(/inspection records/i);
+    expect(text).not.toMatch(/bonus|leaderboard|championship|ranked|scored/i);
   });
 
   it("attributes two quotes to Blake Warton, Founder", () => {
@@ -50,13 +83,20 @@ describe("about.html lower half", () => {
     expect(sections[0].classList.contains("page-hero")).toBe(true);
     expect(sections.at(-1).classList.contains("final-cta")).toBe(true);
     expect(sections.at(-1).textContent).toContain("Talk to the Founder");
-    const eyebrows = Array.from(doc.querySelectorAll("body > section:not(.page-hero) .eyebrow"), (e) => e.textContent.trim());
-    expect(eyebrows).toEqual(["Founder", "In Blake's words", "What we stand for", "Local families", "Partner with us"]);
+    const eyebrows = Array.from(doc.querySelectorAll("body > section:not(.page-hero):not([hidden]) .eyebrow"), (e) => e.textContent.trim());
+    expect(eyebrows).toEqual(["Founder", "How we work", "Our standard", "In Blake's words", "What we stand for", "Local families", "Paperwork", "Partner with us"]);
   });
 
   it("keeps the Local families text out of the photo placeholder", () => {
     const slot = doc.querySelector(".people-section .image-slot");
     expect(slot.querySelector("h2, a[href='careers.html']")).toBeNull();
+  });
+
+  it("lays the single Our standard image in one column, not half of a two-column grid", () => {
+    const css = readFileSync(resolve(__dirname, "..", "assets/css/style.css"), "utf8");
+    expect(css).toMatch(/\.standard-section \.process-wrap\s*\{[^}]*grid-template-columns:\s*1fr/);
+    const slots = doc.querySelectorAll(".standard-section .process-wrap > *");
+    expect(slots).toHaveLength(1);
   });
 
   it("styles the founder pull quotes and eyebrow (not browser defaults)", () => {
@@ -74,12 +114,39 @@ describe("about.html lower half", () => {
     expect(s.textContent).toMatch(/award rates/i);
   });
 
+  it("Paperwork copy: $20M cover and certificate, no insurer, ABN or memberships", () => {
+    const s = section("Paperwork");
+    expect(s.textContent).toContain("$20 million public liability");
+    expect(s.textContent).toContain("certificate of currency");
+    expect(s.textContent).not.toMatch(/ABN|member|insurer|QBE|Allianz|CGU|WHS/i);
+  });
+
+  it("#team is hidden exactly while it has no .team-entry items, after Paperwork and before Partner", () => {
+    const team = doc.querySelector("section#team");
+    expect(team.hasAttribute("hidden")).toBe(team.querySelectorAll(".team-entry").length === 0);
+    const order = Array.from(doc.querySelectorAll("body > section")).map((x) => x.id === "team" ? "Team" : x.querySelector(".eyebrow")?.textContent);
+    expect(order.indexOf("Team")).toBe(order.indexOf("Paperwork") + 1);
+    expect(order.indexOf("Partner with us")).toBe(order.indexOf("Team") + 1);
+  });
+
   it("partner block links contact, names audiences, no money", () => {
     const s = section("Partner with us");
     expect(s.querySelector('a[href="contact.html"]')).not.toBeNull();
     expect(s.textContent).toMatch(/strata managers/i);
     expect(s.textContent).toMatch(/real estate agents/i);
     expect(s.textContent).not.toMatch(/\$|reward/i);
+  });
+
+  it("Our standard section: copy, no figures, own section with one temp image", () => {
+    const s = section("Our standard");
+    expect(s.querySelector("h2").textContent).toContain("done properly");
+    expect(s.textContent).toContain("young, local business");
+    expect(s.textContent).not.toMatch(/\d/);
+    expect(s.textContent).not.toMatch(/personally (read|check)/i);
+    expect(s.classList.contains("founder-section")).toBe(false);
+    const imgs = s.querySelectorAll("img[data-temp-image]");
+    expect(imgs).toHaveLength(1);
+    expect(imgs[0].getAttribute("alt")).toBeTruthy();
   });
 
   it("drops the old boutique heading", () => {

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img" aria-label="Illustration of a completed shift checklist next to a camera and a before-and-after photo pair">
+<rect width="1600" height="900" fill="#F4F6FA"/>
+<g transform="translate(560,470)">
+<rect x="-216.0" y="-288.0" width="432.0" height="576.0" rx="28.799999999999997" fill="#8A6A4A"/>
+<rect x="-187.2" y="-240.0" width="374.4" height="499.2" rx="14.399999999999999" fill="#fff"/>
+<rect x="-81.6" y="-316.8" width="163.2" height="62.4" rx="19.2" fill="#6E7180"/>
+<rect x="-144.0" y="-192.0" width="48.0" height="48.0" rx="9.6" fill="none" stroke="#0F3060" stroke-width="7.199999999999999"/>
+<path d="M-134.4 -168.0 L-120.0 -153.6 L-100.8 -182.4" fill="none" stroke="#2E9D5B" stroke-width="9.6" stroke-linecap="round"/>
+<rect x="-72.0" y="-180.0" width="216.0" height="24.0" rx="12.0" fill="#D3D6E0"/>
+<rect x="-144.0" y="-100.8" width="48.0" height="48.0" rx="9.6" fill="none" stroke="#0F3060" stroke-width="7.199999999999999"/>
+<path d="M-134.4 -76.8 L-120.0 -62.4 L-100.8 -91.19999999999999" fill="none" stroke="#2E9D5B" stroke-width="9.6" stroke-linecap="round"/>
+<rect x="-72.0" y="-88.8" width="158.4" height="24.0" rx="12.0" fill="#D3D6E0"/>
+<rect x="-144.0" y="-9.600000000000001" width="48.0" height="48.0" rx="9.6" fill="none" stroke="#0F3060" stroke-width="7.199999999999999"/>
+<path d="M-134.4 14.399999999999999 L-120.0 28.799999999999997 L-100.8 0.0" fill="none" stroke="#2E9D5B" stroke-width="9.6" stroke-linecap="round"/>
+<rect x="-72.0" y="2.3999999999999986" width="216.0" height="24.0" rx="12.0" fill="#D3D6E0"/>
+<rect x="-144.0" y="81.6" width="48.0" height="48.0" rx="9.6" fill="none" stroke="#0F3060" stroke-width="7.199999999999999"/>
+<path d="M-134.4 105.6 L-120.0 120.0 L-100.8 91.19999999999999" fill="none" stroke="#2E9D5B" stroke-width="9.6" stroke-linecap="round"/>
+<rect x="-72.0" y="93.6" width="158.4" height="24.0" rx="12.0" fill="#D3D6E0"/>
+<rect x="-144.0" y="172.79999999999998" width="48.0" height="48.0" rx="9.6" fill="none" stroke="#0F3060" stroke-width="7.199999999999999"/>
+<path d="M-134.4 196.79999999999998 L-120.0 211.2 L-100.8 182.39999999999998" fill="none" stroke="#2E9D5B" stroke-width="9.6" stroke-linecap="round"/>
+<rect x="-72.0" y="184.79999999999998" width="216.0" height="24.0" rx="12.0" fill="#D3D6E0"/>
+</g>
+<g transform="translate(1100,340)"><rect x="-96.0" y="-64.0" width="192.0" height="128.0" rx="22.400000000000002" fill="#0F3060"/><rect x="-41.6" y="-86.4" width="64.0" height="28.8" rx="8.0" fill="#0F3060"/><circle r="41.6" fill="#EDEFF7"/><circle r="25.6" fill="#1B4A8A"/><circle cx="-9.600000000000001" cy="-9.600000000000001" r="8.0" fill="#fff" opacity=".7"/></g>
+<rect x="980" y="480" width="200" height="150" rx="10" fill="#D3D6E0"/><rect x="1200" y="480" width="200" height="150" rx="10" fill="#EDEFF7" stroke="#2E9D5B" stroke-width="6"/>
+<path d="M1190 555 l-14 -12 v24 z" fill="#6E7180"/>
+<circle cx="1380" cy="470" r="34" fill="#2E9D5B"/><path d="M1364.7 470 L1376.6 481.9 L1397.0 458.1" fill="none" stroke="#fff" stroke-width="7.48" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
