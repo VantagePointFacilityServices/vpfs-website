@@ -44,6 +44,17 @@ describe("why-us.html only makes true claims", () => {
   });
 });
 
+describe("no page overclaims the monthly report card", () => {
+  // The report card is a schedule recap and photos, not a scored or independent audit.
+  const OVERCLAIMS = [/audited every month/i, /monthly audit/i, /independent quality audit/i, /scored against the scope/i];
+  it("no page calls it an audit or a score", () => {
+    for (const f of walk(SITE)) {
+      const c = readFileSync(f, "utf8");
+      for (const re of OVERCLAIMS) expect(c, `${f}: ${re}`).not.toMatch(re);
+    }
+  });
+});
+
 describe("why-us.html proof and reviews", () => {
   const proof = doc.querySelector("#proof");
   const items = Array.from(proof.querySelectorAll(".proof-item"));
