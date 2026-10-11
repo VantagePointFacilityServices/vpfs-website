@@ -92,6 +92,13 @@ describe("about.html lower half", () => {
     expect(slot.querySelector("h2, a[href='careers.html']")).toBeNull();
   });
 
+  it("lays the single Our standard image in one column, not half of a two-column grid", () => {
+    const css = readFileSync(resolve(__dirname, "..", "assets/css/style.css"), "utf8");
+    expect(css).toMatch(/\.standard-section \.process-wrap\s*\{[^}]*grid-template-columns:\s*1fr/);
+    const slots = doc.querySelectorAll(".standard-section .process-wrap > *");
+    expect(slots).toHaveLength(1);
+  });
+
   it("styles the founder pull quotes and eyebrow (not browser defaults)", () => {
     const css = readFileSync(resolve(__dirname, "..", "assets/css/style.css"), "utf8");
     expect(css).toMatch(/\.founder-section blockquote\s*\{/);

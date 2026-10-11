@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync, existsSync } from "fs";
 import { resolve } from "path";
+import { createHash } from "crypto";
 
 const SITE = resolve(__dirname, "..");
 const read = (page) => readFileSync(resolve(SITE, page), "utf8");
@@ -130,10 +131,79 @@ describe("why-us.html tone pass, scope card and sample images", () => {
       expect(i.getAttribute("alt")).toBeTruthy();
     }
   });
-  it("keeps the pre-existing image files", () => {
-    const EXISTING = ["broadbeach-podium-loading-dock-clean.svg","homepage-hero-offices-background.jpg","homepage-office-image.png","logo-navy.svg","offices-slide-show-1.jpg","site-walkthrough-480.webp","office-cleaning-gold-coast-hero.svg","facility-types"];
-    const files = readdirSync(resolve(SITE, "assets/img"));
-    for (const f of EXISTING) expect(files).toContain(f);
+  it("keeps every pre-existing image file present and unchanged (D28)", () => {
+    // Every file in site/assets/img at merge-base 53465ce, with the first 16 hex chars of its sha256.
+    const EXISTING = {
+  "broadbeach-podium-loading-dock-clean.svg": "df5fd4fac4ebc0b7",
+  "bundall-serviced-office-kitchenette-clean.svg": "df5fd4fac4ebc0b7",
+  "bundall-tower-lift-lobby-access.svg": "df5fd4fac4ebc0b7",
+  "burleigh-james-street-retail-suite-clean.svg": "df5fd4fac4ebc0b7",
+  "burleigh-west-business-estate-access.svg": "df5fd4fac4ebc0b7",
+  "carrara-sports-precinct-amenities-clean.svg": "df5fd4fac4ebc0b7",
+  "childcare-change-area-toilets-clean.svg": "df5fd4fac4ebc0b7",
+  "childcare-cleaning-gold-coast-hero.svg": "07d68db10c32b607",
+  "childcare-supervisor-session-checklist.svg": "df5fd4fac4ebc0b7",
+  "commercial-cleaning-bundall-hero.svg": "07d68db10c32b607",
+  "commercial-cleaning-burleigh-heads-hero.svg": "df5fd4fac4ebc0b7",
+  "commercial-cleaning-helensvale-coomera-hero.svg": "df5fd4fac4ebc0b7",
+  "commercial-cleaning-nerang-carrara-hero.svg": "df5fd4fac4ebc0b7",
+  "commercial-cleaning-robina-varsity-lakes-hero.svg": "df5fd4fac4ebc0b7",
+  "commercial-cleaning-southport-hero.svg": "07d68db10c32b607",
+  "commercial-cleaning-surfers-paradise-broadbeach-hero.svg": "07d68db10c32b607",
+  "coomera-business-park-access.svg": "df5fd4fac4ebc0b7",
+  "facility-types/education-480.webp": "614635719008bb67",
+  "facility-types/education-800.webp": "4eed09ced2db0242",
+  "facility-types/industrial-480.webp": "ec82a260666f36ce",
+  "facility-types/industrial-800.webp": "aa9ebb3bf3a64c5d",
+  "facility-types/medical-480.webp": "42f3121eb28984ab",
+  "facility-types/medical-800.webp": "4ef779262b5684d5",
+  "facility-types/office-480.webp": "837fcfed94545e91",
+  "facility-types/office-800.webp": "dd094039b9d62c06",
+  "facility-types/strata-480.webp": "5403d7960e3bd3b5",
+  "facility-types/strata-800.webp": "d23ee8649dbde596",
+  "helensvale-transport-hub-office-clean.svg": "df5fd4fac4ebc0b7",
+  "homepage-hero-offices-background.jpg": "a9f1a2c59abe030d",
+  "homepage-office-image.png": "971f608a349050d0",
+  "logo-navy.svg": "d10c2ffac300ccc2",
+  "logo-white.svg": "fe37272edaaa11d0",
+  "mark-navy.svg": "ccd926fe2f4e670e",
+  "mark-white.svg": "a5a4538296baf273",
+  "medical-centre-cleaning-gold-coast-hero.svg": "07d68db10c32b607",
+  "medical-reception-desk-clean.svg": "df5fd4fac4ebc0b7",
+  "medical-waiting-room-clean.svg": "df5fd4fac4ebc0b7",
+  "nerang-industrial-unit-office-clean.svg": "df5fd4fac4ebc0b7",
+  "office-cleaning-gold-coast-hero.svg": "07d68db10c32b607",
+  "office-reception-meeting-room-clean.svg": "df5fd4fac4ebc0b7",
+  "office-workstation-desk-cleaning.svg": "df5fd4fac4ebc0b7",
+  "offices-slide-show-1.jpg": "d5268498ef56565c",
+  "offices-slide-show-2.jpg": "02488e62255d91ae",
+  "offices-slide-show-3.jpg": "a9f1a2c59abe030d",
+  "robina-town-centre-suite-clean.svg": "df5fd4fac4ebc0b7",
+  "school-classroom-toilet-block-clean.svg": "df5fd4fac4ebc0b7",
+  "school-cleaning-gold-coast-hero.svg": "07d68db10c32b607",
+  "school-holiday-deep-clean-planning.svg": "df5fd4fac4ebc0b7",
+  "site-walkthrough-480.webp": "df9c7621fa82543a",
+  "site-walkthrough-930.webp": "c6bf80e207b591cc",
+  "southport-clinic-reception-clean.svg": "df5fd4fac4ebc0b7",
+  "southport-tower-basement-access.svg": "df5fd4fac4ebc0b7",
+  "strata-bin-room-clean.svg": "df5fd4fac4ebc0b7",
+  "strata-cleaning-gold-coast-hero.svg": "07d68db10c32b607",
+  "strata-entry-glass-amenities.svg": "df5fd4fac4ebc0b7",
+  "strata-lobby-cleaning.svg": "df5fd4fac4ebc0b7",
+  "supervisor-inspection-office-checklist.svg": "df5fd4fac4ebc0b7",
+  "surfers-paradise-tower-car-park-clean.svg": "df5fd4fac4ebc0b7",
+  "varsity-lakes-business-park-access.svg": "df5fd4fac4ebc0b7",
+  "warehouse-industrial-cleaning-gold-coast-hero.svg": "07d68db10c32b607",
+  "warehouse-industrial-floor-zone-cleaning.svg": "df5fd4fac4ebc0b7",
+  "warehouse-industrial-shift-changeover-clean.svg": "df5fd4fac4ebc0b7",
+  "warehouse-industrial-site-induction-ppe.svg": "df5fd4fac4ebc0b7"
+    };
+    expect(Object.keys(EXISTING)).toHaveLength(63);
+    for (const [f, hash] of Object.entries(EXISTING)) {
+      const path = resolve(SITE, "assets/img", f);
+      expect(existsSync(path), f).toBe(true);
+      expect(createHash("sha256").update(readFileSync(path)).digest("hex").slice(0, 16), f).toBe(hash);
+    }
   });
 });
 
