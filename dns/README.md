@@ -68,11 +68,13 @@ documentation-reserved placeholder IP, `192.0.2.1`).
 ## Current zones
 
 - **`vantagepointfacilityservices.com.au`** — the live commercial site.
-  Apex and `www` both point at GitHub Pages, but `www` is canonical —
+  `www` is canonical and DNS-only, pointing at GitHub Pages —
   `site/CNAME` is `www.vantagepointfacilityservices.com.au`, matching
-  every page's `<link rel="canonical">`/`og:url` and `sitemap.xml`, so
-  GitHub redirects the bare apex to `www` rather than the other way
-  round (deployed by `.github/workflows/deploy-website.yml`). Also lists
+  every page's `<link rel="canonical">`/`og:url` and `sitemap.xml`
+  (deployed by `.github/workflows/deploy-website.yml`). The bare apex is
+  **proxied** and a Cloudflare redirect rule sends it to `www` (301, path
+  and query kept), because GitHub's certificate only covers `www`
+  (changed 2026-10-11; see the zone file comment). Also lists
   the **live** Google Workspace email records and GoHighLevel's
   email-sending domain (`noreply.` — Mailgun MX/SPF/DKIM), pulled from the
   live zone 2026-09-29. A GoHighLevel custom domain for funnels is still
