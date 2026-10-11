@@ -96,12 +96,12 @@ There are **two ways in**:
   back, a walkthrough is a no-show, a proposal is lost), a workflow sends
   a webhook to one of the other five endpoints.
 
-### The eight endpoints at a glance
+### The nine endpoints at a glance
 
 | Endpoint | Called by | When | What it does |
 |---|---|---|---|
 | `/lead` | Website (Step 1) | Visitor submits name/email/phone/postcode | Creates or matches the GHL contact, tags it `website-lead`, returns its ID |
-| `/area-request` | Website (Locations page) | Visitor submits the Request a new area form (name/email/phone/postcode) | Same honeypot and Turnstile checks as `/lead`; requires email, phone and postcode. Creates or matches the GHL contact with `postcode` and `conversion_page: website-locations-area-request`, tags it `new-area-request` (never `website-lead`, so the booking workflows don't start). `200 { ok: true }`; `400` missing field; `403` failed Turnstile; `502` GHL error |
+| `/area-request` | Website (Locations page) | Visitor submits the Request a new area form (name/email/phone/postcode) | Same honeypot and Turnstile checks as `/lead`; requires email, phone and postcode. Creates or matches the GHL contact with `postcode` and `conversion_page: website-locations-area-request`, tags it `new-area-request` (never `website-lead`, so the booking workflows don't start). `200 { ok: true }`; `400` missing field; `403` failed Turnstile; `502` GHL error. **The form's section is hidden** (PR #75) until a GHL workflow acts on the `new-area-request` tag; to restore it, drop `hidden` from `section.areas-cta` in `site/locations.html` and delete the stays-hidden test in `site/test/area-request.test.js` |
 | `/gate` | Website (Step 2), AI Receptionist | Visitor answers facility type / budget / frequency | Checks disqualifiers, scores, sets the tier, returns a signed `booking_token` for Priority / Standard leads |
 | `/slots` | Website (after Step 2) | Qualified visitor's Step 2 dialog opens the picker | Verifies the `booking_token`, reads GHL free slots (next 30 days, Brisbane time) from the calendar matching the token's tier, returns `{ timezone, window_days, days: [{ date, slots }] }`. 403 bad/expired token, 503 if `BOOKING_TOKEN_SECRET` unset, 502 `slots_unavailable` on a GHL error |
 | `/book` | Website (picker) | Visitor clicks Book on a chosen time | Body `{ booking_token, start_time, site_address }`. Verifies the token, then checks `start_time` is within now → now + 30 days (the same window `/slots` offers). If the contact already has an upcoming, non-cancelled appointment it creates nothing. Otherwise reads the calendar's slot length (GHL does not work out `endTime`) and creates a confirmed "Walkthrough" appointment on the tier's calendar for the token's contact with `toNotify: true` and `address` set to the trimmed `site_address`, then saves it to the contact with `PUT /contacts/{cid}` `{ address1 }` (best effort: if that call fails the booking still returns 200, with `contact_address_saved: false` added). Responses: `200 { booked: true, start_time, end_time }`; `400` missing/invalid/past/beyond-30-day `start_time`, or a missing, blank or over-200-character `site_address` (checked before any GHL call); `403` bad/expired token; `409 { error: "already_booked", start_time }`; `409 { error: "slot_unavailable" }` (GHL refused the slot); `502 { error: "booking_failed" }` (other GHL failure); `503` if `BOOKING_TOKEN_SECRET` unset |
@@ -552,6 +552,27 @@ went wrong.
 3. `cd worker && npx wrangler secret put TURNSTILE_SECRET_KEY` with the **secret key**.
    Until then the Worker skips the check. Do this *after* step 2 is live, or
    every `/lead` without a token gets rejected.
+
+**Status (2026-10-11):** steps 1 and 2 are done; step 3 is not. The live site key is
+`0x4AAAAAAFKpftSypIZ3KEQk` on every booking form (and the area form), and Cloudflare
+accepts it on the live domain. `wrangler secret list` shows only `GHL_API_KEY` and
+`BOOKING_TOKEN_SECRET`, so `/lead` and `/area-request` currently rely on the honeypot
+alone. The careers form doesn't post to the Worker, so enforcing the check doesn't affect it.
+
+To finish step 3:
+
+1. Cloudflare dashboard → **Turnstile** → open the widget with site key
+   `0x4AAAAAAFKpftSypIZ3KEQk` → copy its **Secret key**. It must be *that* widget's
+   secret: any other secret fails every real token, and every booking gets a `403`.
+2. In your own terminal (the prompt hides the value; don't paste it into a chat or a
+   command line that's logged): `cd worker && npx wrangler secret put TURNSTILE_SECRET_KEY`.
+3. `npx wrangler secret list` — `TURNSTILE_SECRET_KEY` is now listed.
+4. Check it's enforced: a `POST /lead` with no `turnstile_token` returns `403`
+   (before the secret it returns `400` for missing fields instead).
+5. Make one real booking from a normal browser on the live site and confirm the
+   contact reaches GHL tagged `website-lead`. If it doesn't, remove the secret
+   (`npx wrangler secret delete TURNSTILE_SECRET_KEY`) to reopen the form while you
+   check the widget and secret match.
 
 ---
 
