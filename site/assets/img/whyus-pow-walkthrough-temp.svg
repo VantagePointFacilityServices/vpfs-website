@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img" aria-label="Illustration of a building floor plan with photo pins marking each room recorded on the first walkthrough">
+<rect width="1600" height="900" fill="#F4F6FA"/>
+<rect x="200" y="110" width="1200" height="680" rx="16" fill="#fff" stroke="#0F3060" stroke-width="10"/>
+<line x1="700" y1="110" x2="700" y2="500" stroke="#0F3060" stroke-width="8"/><line x1="200" y1="500" x2="1400" y2="500" stroke="#0F3060" stroke-width="8"/>
+<line x1="1050" y1="500" x2="1050" y2="790" stroke="#0F3060" stroke-width="8"/><rect x="420" y="490" width="120" height="20" fill="#fff"/><rect x="1110" y="490" width="120" height="20" fill="#fff"/>
+<path d="M450 340 C410 290 416 240 450 240 C484 240 490 290 450 340 Z" fill="#D94A4A"/><circle cx="450" cy="278" r="16" fill="#fff"/>
+<path d="M1050 340 C1010 290 1016 240 1050 240 C1084 240 1090 290 1050 340 Z" fill="#D94A4A"/><circle cx="1050" cy="278" r="16" fill="#fff"/>
+<path d="M620 690 C580 640 586 590 620 590 C654 590 660 640 620 690 Z" fill="#D94A4A"/><circle cx="620" cy="628" r="16" fill="#fff"/>
+<path d="M1230 690 C1190 640 1196 590 1230 590 C1264 590 1270 640 1230 690 Z" fill="#D94A4A"/><circle cx="1230" cy="628" r="16" fill="#fff"/>
+<g transform="translate(1290,200)"><rect x="-66.0" y="-44.0" width="132.0" height="88.0" rx="15.400000000000002" fill="#0F3060"/><rect x="-28.6" y="-59.400000000000006" width="44.0" height="19.8" rx="5.5" fill="#0F3060"/><circle r="28.6" fill="#EDEFF7"/><circle r="17.6" fill="#1B4A8A"/><circle cx="-6.6000000000000005" cy="-6.6000000000000005" r="5.5" fill="#fff" opacity=".7"/></g>
+</svg>
