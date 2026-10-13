@@ -117,3 +117,19 @@ describe("footer link", () => {
     expect(["subcontractor.html", "/subcontractor.html"]).toContain(next.querySelector("a").getAttribute("href"));
   });
 });
+
+describe("subcontractor.html display fixes", () => {
+  it("has a light hero eyebrow", () => {
+    expect(doc.querySelector(".hero-inner .eyebrow").classList.contains("on-inverse")).toBe(true);
+  });
+
+  it("gives the What you get section an h2", () => {
+    const eyebrow = Array.from(doc.querySelectorAll(".eyebrow")).find((e) => text(e) === "What you get");
+    expect(eyebrow.closest("section").querySelector("h2")).not.toBeNull();
+  });
+
+  it("lets the hero email break after the @", () => {
+    const a = doc.querySelector('.hero-grid a[href^="mailto:"]');
+    expect(a.innerHTML).toContain("careers@<wbr>");
+  });
+});

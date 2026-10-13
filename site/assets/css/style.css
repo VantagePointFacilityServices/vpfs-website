@@ -304,6 +304,9 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
   .logo img{ height:40px; }
 }
 @media (max-width:480px){ .header-cta .btn{ padding:11px 14px; font-size:.88rem; } }
+.logo{ flex:0 1 auto; min-width:110px; }
+.logo img{ display:block; max-width:100%; object-fit:contain; object-position:left center; }
+@media (max-width:420px){ .header-cta .btn .btn-chip{ display:none; } .header-inner{ gap:var(--space-3); } }
 
 /* ===== Hero — inverse (Home / Services) ===== */
 .hero-inverse{
@@ -319,7 +322,7 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 }
 .hero-inner h1, .hero-inner h2, .hero-inner .lead, .hero-checks li, .hero-trust,
 .hero-single .eyebrow, .hero-single h1, .hero-single .lead, .carousel-bottom h1, .carousel-caption h2{ text-shadow:0 1px 3px rgba(0,0,0,.65), 0 2px 16px rgba(0,0,0,.42); }
-.hero-grid{ position:relative; z-index:1; display:grid; grid-template-columns:1.15fr .85fr; gap:var(--space-8); align-items:start; padding:56px 0; }
+.hero-grid{ position:relative; z-index:1; display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr); gap:var(--space-8); align-items:start; padding:56px 0; }
 .hero-grid .contact-form h3{ font-size:1.5rem; white-space:nowrap; text-align:center; }
 .hero-inner{ max-width:640px; display:flex; flex-direction:column; gap:var(--space-5); }
 .hero-inner > *{ margin:0; }
@@ -337,7 +340,7 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 .hero-checks.on-light svg{ color:var(--vp-white); background:var(--vp-navy); }
 .hero-trust{ font-size:var(--fs-p1); font-weight:800; color:var(--vp-white); display:flex; align-items:center; gap:var(--space-2); }
 .hero-trust svg{ width:24px; height:24px; flex:none; color:var(--vp-white); }
-@media (max-width:1000px){ .hero-grid{ grid-template-columns:1fr; padding-bottom:var(--space-7); } }
+@media (max-width:1000px){ .hero-grid{ grid-template-columns:minmax(0,1fr); padding-bottom:var(--space-7); } }
 
 /* Trust badges */
 .trust-badges{ display:flex; flex-wrap:wrap; gap:var(--space-2); }
@@ -412,8 +415,8 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 @media (min-width:1140px){ .card-grid{ grid-template-columns:repeat(5,1fr); } }
 
 /* Careers: six cards, three per row instead of the home page's five-across layout */
-@media (min-width:641px){ .card-grid.card-grid-careers{ grid-template-columns:repeat(3,1fr); } }
-@media (min-width:1140px){ .card-grid.card-grid-careers{ grid-template-columns:repeat(3,1fr); } }
+@media (min-width:641px){ .card-grid.card-grid-careers{ grid-template-columns:repeat(2,1fr); } }
+@media (min-width:1140px){ .card-grid.card-grid-careers{ grid-template-columns:repeat(4,1fr); } }
 .info-card{
   display:flex; flex-direction:column;
   background:var(--surface-card);
@@ -976,8 +979,12 @@ html:has(.booking-dialog[open]){ overflow:hidden; } /* stop the page scrolling b
 
 /* Careers talent-pool page */
 .career-ladder{ margin:var(--space-4) 0; padding-left:var(--space-5); display:grid; gap:var(--space-3); }
-.careers-list{ margin:var(--space-3) 0; }
+.careers-list, .requirements-list{ margin:var(--space-3) 0 var(--space-6); }
 .hero-response{ margin-top:var(--space-4); }
+.hero-inverse .hero-response{ color:rgba(255,255,255,.88); text-shadow:0 1px 3px rgba(0,0,0,.65); }
+.contact-form a[href^="mailto:"]{ overflow-wrap:anywhere; }
+.career-ladder, .career-ladder + .small{ max-width:680px; }
+#pay .section-head:last-child{ margin-bottom:0; }
 .step2-question{ border:0; padding:0; margin:0 0 var(--space-4); }
 .step2-question legend{ font-weight:600; margin-bottom:var(--space-2); padding:0; }
 
@@ -985,3 +992,6 @@ html:has(.booking-dialog[open]){ overflow:hidden; } /* stop the page scrolling b
    is "contact" until the GHL people sub-account is live, then "form". */
 body[data-applicant-intake="contact"] [data-intake-only="form"],
 body[data-applicant-intake="form"] [data-intake-only="contact"]{ display:none !important; }
+
+/* Long email addresses must wrap rather than force sideways scroll on phones */
+a[href^="mailto:"]{ overflow-wrap:anywhere; }
