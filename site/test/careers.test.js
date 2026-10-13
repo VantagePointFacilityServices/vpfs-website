@@ -162,3 +162,17 @@ describe("careers.html approved copy", () => {
     expect(text).toContain("with someone on site to show you the scope, and you’re paid for it.");
   });
 });
+
+describe("careers.html section backgrounds", () => {
+  it("alternates white and wash between the hero and the final call to action", () => {
+    const sections = [...doc.querySelectorAll("body > section, main > section")].filter(
+      (s) => !s.hidden && !s.classList.contains("hero-inverse") && !s.classList.contains("final-cta")
+    );
+    const isWash = (s) => (s.getAttribute("style") || "").includes("--surface-wash");
+    expect(sections.length).toBeGreaterThan(3);
+    sections.slice(1).forEach((s, i) => {
+      expect(isWash(s), `#${s.id || i + 1} repeats its neighbour's background`).not.toBe(isWash(sections[i]));
+    });
+    expect(isWash(sections[sections.length - 1])).toBe(true);
+  });
+});

@@ -1,7 +1,9 @@
-# subcontractor.html layout check (shot.mjs + CDP measurement)
+# subcontractor.html layout check (2026-10-13)
 
-Screenshots taken with `shot.mjs` at 1366, 390 and 360px, committed in `screenshots/` (`subcontractor-<width>-NN.png`); numbers from
-`measure-subcontractor-layout.mjs` (run after full load, `.card-grid-careers` "What you get"):
+The evidence is the screenshots: taken with `shot.mjs` at 1366, 390 and 360px, committed in `screenshots/`
+(`subcontractor-<width>-NN.png`). The numbers below were read once from the "What you get" `.card-grid-careers`
+grid after full page load, using a one-off Chrome DevTools measurement script that was not kept in the repo
+(it needed a dev server on a fixed port):
 
 | width | scrollWidth / clientWidth | columns | card heights (px) | card widths (px) |
 |---|---|---|---|---|
