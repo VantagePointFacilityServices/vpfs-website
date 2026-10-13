@@ -164,8 +164,7 @@ const BANNED = [
 const MEDICAL_EXTRA = [/infection[- ]control/i, /AGPAL|QIP|RACGP/, /TGA/, /clinical waste/i, /accredit/i];
 // page -> banned patterns (as source strings) tolerated. services.html is the restored
 // tabbed scope page, which still carries the clinical lines the landing pages dropped (its Eco products badge is gone).
-// subcontractor.html: "best" appears only in the approved Step 2 question "Which best describes you?" (not a claim).
-const LEGACY_ALLOW = { "services.html": ["clinical-grade", "sharps"], "subcontractor.html": ["best"] };
+const LEGACY_ALLOW = { "services.html": ["clinical-grade", "sharps"] };
 
 function visibleText(page) {
   const doc = parse(page);
