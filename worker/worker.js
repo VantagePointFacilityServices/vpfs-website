@@ -68,30 +68,25 @@
  *                    segment, distinct from gate-stage DQ segments,
  *                    since these leads already passed qualification.
  *
- *   POST /apply    — fires on the CAREERS PAGE Stage 1 capture form
- *                    (site/careers.html — name, phone, email,
- *                    postcode only). Checks the one DQ knowable this
- *                    early (service-area postcode) and, if it clears,
- *                    writes applicant_stage: "screening_survey_sent"
- *                    so a GHL workflow can send the mandatory Stage 2
- *                    screening survey. No fit score is calculated
- *                    here. An out-of-area applicant is routed straight
- *                    to Unsuccessful without ever seeing the survey.
+ *   POST /apply    — fires from the browser on the careers and
+ *                    subcontractor pages' Step 1 form (name, email,
+ *                    phone, postcode, engagement track). Creates or
+ *                    updates the contact in the PEOPLE GHL sub-account
+ *                    (never the commercial one — see peopleEnv), writes
+ *                    engagement_track / postcode / applicant_stage:
+ *                    "started" / applicant_captured_at, tags it
+ *                    applicant-employee or applicant-subcontractor and
+ *                    returns { contact_id } so the browser can open the
+ *                    Step 2 dialog. Same Turnstile + honeypot handling
+ *                    as /area-request.
  *
- *   POST /apply-screen — fires on the MANDATORY Stage 2 screening
- *                    survey (sent by SMS/email after /apply clears).
- *                    Scores a job applicant against hard eligibility
- *                    gates (minimum experience, right to work, police
- *                    check) plus a fit score (experience, availability,
- *                    transport, physical capability, attitude), and
- *                    routes the contact into one of three GHL
- *                    recruitment pipelines: Priority, Standard, or
- *                    Unsuccessful. Also captures Blue Card and subcontractor-
- *                    insurance status as non-scoring enrichment signals
- *                    (applicant_blue_card_eligible, applicant_subcontractor_ready)
- *                    for downstream HR decisions. Unsuccessful applicants
- *                    are still recorded (not deleted) — see the "why
- *                    capture unsuccessful applicants at all" note below.
+ *   POST /apply-screen — browser-called Step 2 of the applicant funnel.
+ *                    Applies the per-track disqualifiers and fit score
+ *                    (PRD D18), writes score/tier/dq flag/stage to the
+ *                    contact in the people sub-account, and returns
+ *                    { tier, result: book | shortlist | unsuccessful,
+ *                    dq_flag, booking_token? }. Employees get "shortlist"
+ *                    while EMPLOYEE_INTAKE_OPEN is not "true".
  *
  * Mirrors the structure of the existing Xero <-> GHL sync worker.
  *
@@ -149,23 +144,33 @@ const FREQUENCY_TO_WEEKLY = {
 };
 
 // ---- CAREERS APPLICATION SCORING CONFIG --------------------------------
-// Applicants share the same SERVICE_POSTCODES gate as leads — a cleaner
-// who can't reasonably reach a Gold Coast site is a hard DQ the same way
-// an out-of-area client site is, just from the other direction. The
-// postcode gate is checked at Stage 1 (/apply); everything else below is
-// checked at Stage 2 (/apply-screen).
+// Applicants are checked against APPLICANT_POSTCODES, deliberately wider
+// than the lead gate's SERVICE_POSTCODES (recruit where the sites are, PRD
+// D8). The check happens at Step 2 (/apply-screen), as /gate does for leads.
+//
+// Gold Coast 4207-4230 and Tweed 2485-2490 per PRD D8. The ranges are
+// deliberately generous: a postcode in range that has no residents simply
+// never appears. NOT yet checked suburb-by-suburb against Australia Post's
+// postcode file (no reliable source was reachable from the build
+// environment) -- verify before go-live.
+const APPLICANT_POSTCODES = [
+  ...Array.from({ length: 24 }, (_, i) => String(4207 + i)), // Gold Coast 4207-4230
+  ...Array.from({ length: 6 }, (_, i) => String(2485 + i)), // Tweed 2485-2490
+];
 
-// Cross-checked against standard AU commercial-cleaning recruitment
-// practice: under 1 year of experience is now a hard floor, not just a
-// low scoring band — see commercial/docs/recruitment-scoring-and-application-form.md
-// ("Why a hard floor on experience now") in the vpos repo.
+// Under 1 year of experience is a hard floor on both tracks (PRD D18).
 const MIN_EXPERIENCE_LEVELS = ["none", "under_1_year"]; // any of these -> hard DQ
 
+// Experience points (of 40) differ per track (PRD D18).
 const EXPERIENCE_SCORE = {
-  none: 0,
-  under_1_year: 0,
-  "1_to_3_years": 25,
-  "3_plus_years": 40,
+  employee: { none: 0, under_1_year: 0, "1_to_3_years": 25, "3_plus_years": 40 },
+  subcontractor: {
+    none: 0,
+    under_1_year: 0,
+    "1_to_3_years": 25,
+    "3_to_5_years": 32,
+    "5_plus_years": 40,
+  },
 };
 
 const AVAILABILITY_SCORE = {
@@ -244,6 +249,12 @@ async function route(request, env) {
   if (url.pathname === "/area-request") {
     return handleAreaRequest(payload, env, request);
   }
+  if (url.pathname === "/apply") {
+    return handleApply(payload, env, request);
+  }
+  if (url.pathname === "/apply-screen") {
+    return handleApplyScreen(payload, env);
+  }
   if (url.pathname === "/slots") {
     return handleSlots(payload, env);
   }
@@ -268,13 +279,6 @@ async function route(request, env) {
   if (url.pathname === "/outcome") {
     return handleOutcome(contactId, payload, env);
   }
-  if (url.pathname === "/apply") {
-    return handleApply(contactId, payload, env);
-  }
-  if (url.pathname === "/apply-screen") {
-    return handleApplyScreen(contactId, payload, env);
-  }
-
   return new Response("Unknown route", { status: 404 });
 }
 
@@ -490,11 +494,12 @@ function hmacKey(env, usage) {
   );
 }
 
-async function signBookingToken({ cid, tier }, env) {
+async function signBookingToken({ cid, tier, aud, track }, env) {
   if (!env.BOOKING_TOKEN_SECRET) return null;
-  const payload = b64urlEncode(
-    new TextEncoder().encode(JSON.stringify({ cid, tier, exp: Date.now() + BOOKING_TOKEN_TTL_MS }))
-  );
+  const claims = { cid, tier, exp: Date.now() + BOOKING_TOKEN_TTL_MS };
+  if (aud) claims.aud = aud; // applicant tokens carry { aud: "applicant", track }
+  if (track) claims.track = track;
+  const payload = b64urlEncode(new TextEncoder().encode(JSON.stringify(claims)));
   const key = await hmacKey(env, "sign");
   const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
   return `${payload}.${b64urlEncode(new Uint8Array(sig))}`;
@@ -514,13 +519,36 @@ async function verifyBookingToken(token, env) {
       new TextEncoder().encode(parts[0])
     );
     if (!ok) return null;
-    const { cid, tier, exp } = JSON.parse(new TextDecoder().decode(b64urlDecode(parts[0])));
+    const { cid, tier, exp, aud, track } = JSON.parse(new TextDecoder().decode(b64urlDecode(parts[0])));
     if (typeof cid !== "string" || !cid || !BOOKING_TIERS.includes(tier)) return null;
     if (typeof exp !== "number" || Date.now() >= exp) return null;
-    return { cid, tier };
+    // Lead tokens have no aud claim and keep their original shape. An aud
+    // is only ever "applicant", and then must name a known track.
+    if (aud === undefined) return { cid, tier };
+    if (aud !== "applicant" || !APPLICANT_TRACKS.includes(track)) return null;
+    return { cid, tier, aud, track };
   } catch {
     return null;
   }
+}
+
+// What /slots and /book use for a verified token: lead tokens (no aud) keep
+// the lead walkthrough calendars and the commercial credentials; applicant
+// tokens use the track's interview calendar and the people credentials.
+// Returns null when the calendar or credentials aren't configured.
+function bookingContext(claims, env) {
+  if (claims.aud === "applicant") {
+    const calendarId =
+      claims.track === "employee"
+        ? env.CALENDAR_INTERVIEW_EMPLOYEE_ID
+        : claims.track === "subcontractor"
+          ? env.CALENDAR_INTERVIEW_SUBCONTRACTOR_ID
+          : null;
+    if (!calendarId || !env.GHL_PEOPLE_API_KEY || !env.GHL_PEOPLE_LOCATION_ID) return null;
+    return { calendarId, genv: peopleEnv(env), applicant: true };
+  }
+  const calendarId = calendarIdForTier(claims.tier, env);
+  return calendarId ? { calendarId, genv: env, applicant: false } : null;
 }
 
 function calendarIdForTier(tier, env) {
@@ -540,10 +568,11 @@ async function handleSlots(payload, env) {
   if (!claims) {
     return new Response("Invalid booking token", { status: 403 });
   }
-  const calendarId = calendarIdForTier(claims.tier, env);
-  if (!calendarId) {
+  const bctx = bookingContext(claims, env);
+  if (!bctx) {
     return slotsUnavailable();
   }
+  const { calendarId, genv } = bctx;
 
   const timezone = env.BOOKING_TIMEZONE || DEFAULT_BOOKING_TIMEZONE;
   const now = Date.now();
@@ -558,7 +587,7 @@ async function handleSlots(payload, env) {
     const res = await fetch(`${GHL_API_BASE}/calendars/${calendarId}/free-slots?${params}`, {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${env.GHL_API_KEY}`,
+        Authorization: `Bearer ${genv.GHL_API_KEY}`,
         Version: GHL_CALENDARS_API_VERSION,
       },
     });
@@ -575,11 +604,28 @@ async function handleSlots(payload, env) {
     .map((date) => {
       const raw = data[date];
       const list = Array.isArray(raw) ? raw : raw && raw.slots;
-      return { date, slots: Array.isArray(list) ? [...list].sort() : [] };
+      return { date, slots: Array.isArray(list) ? normaliseSlots(list) : [] };
     })
     .filter((d) => d.slots.length > 0);
 
   return jsonResponse({ timezone, window_days: SLOTS_WINDOW_DAYS, days });
+}
+
+// Standard calendars list free slots as start-time strings. Group/class
+// calendars (the interview calendars) may report each as an object with the
+// seats left; a full class (0 seats) is not bookable, so drop it.
+function normaliseSlots(list) {
+  const out = [];
+  for (const item of list) {
+    if (typeof item === "string") {
+      out.push(item);
+    } else if (item && typeof item === "object") {
+      const start = item.startTime || item.slot || item.start;
+      const seats = item.seatsLeft ?? item.availableSeats ?? item.seats;
+      if (typeof start === "string" && !(typeof seats === "number" && seats <= 0)) out.push(start);
+    }
+  }
+  return out.sort();
 }
 
 function slotsUnavailable() {
@@ -612,16 +658,19 @@ async function handleBook(payload, env) {
     return new Response("Invalid start_time", { status: 400 });
   }
 
+  // Applicants book an interview, not a site walkthrough: no address.
+  const isApplicant = claims.aud === "applicant";
   const siteAddress = typeof (payload && payload.site_address) === "string" ? payload.site_address.trim() : "";
-  if (!siteAddress || siteAddress.length > 200) {
+  if (!isApplicant && (!siteAddress || siteAddress.length > 200)) {
     return new Response("Invalid site_address", { status: 400 });
   }
 
-  const calendarId = calendarIdForTier(claims.tier, env);
-  if (!calendarId) return bookingFailed();
+  const bctx = bookingContext(claims, env);
+  if (!bctx) return bookingFailed();
+  const { calendarId, genv } = bctx;
 
   const headers = {
-    Authorization: `Bearer ${env.GHL_API_KEY}`,
+    Authorization: `Bearer ${genv.GHL_API_KEY}`,
     Version: GHL_CALENDARS_API_VERSION,
     "Content-Type": "application/json",
   };
@@ -663,14 +712,14 @@ async function handleBook(payload, env) {
       headers,
       body: JSON.stringify({
         calendarId,
-        locationId: env.GHL_LOCATION_ID,
+        locationId: genv.GHL_LOCATION_ID,
         contactId: claims.cid,
         startTime: startRaw,
         endTime,
-        title: "Walkthrough",
+        title: isApplicant ? "Group interview" : "Walkthrough",
         appointmentStatus: "confirmed",
         toNotify: true,
-        address: siteAddress,
+        ...(isApplicant ? {} : { address: siteAddress }),
       }),
     });
     if (!res.ok) {
@@ -688,6 +737,14 @@ async function handleBook(payload, env) {
     }
   } catch {
     return bookingFailed();
+  }
+
+  if (isApplicant) {
+    // Best effort: the booking already exists, so a failed tag must not fail it.
+    try {
+      await addTagsInGHL(claims.cid, [APPLICANT_INTERVIEW_BOOKED_TAG], genv);
+    } catch {}
+    return jsonResponse({ booked: true, start_time: startRaw, end_time: endTime });
   }
 
   // Best effort: the booking already exists, so a failure here must not fail it.
@@ -1150,162 +1207,243 @@ async function handleOutcome(contactId, payload, env) {
   return new Response("Unknown outcome_type", { status: 400 });
 }
 
-// ---- /apply — CAREERS PAGE STAGE 1 CAPTURE FORM ------------------------
-// Short capture form (name/phone/email/postcode) — the only thing checked
-// here is the postcode gate, since it's the one DQ knowable this early and
-// there's no reason to send a full screening survey (with document
-// uploads) to someone who can't be rostered regardless of fit. Everyone
-// who clears gets no score yet — that happens at /apply-screen once the
-// Stage 2 survey comes back.
-async function handleApply(contactId, payload, env) {
-  const f = extractApplyStartFields(payload);
+// ---- /apply — APPLICANT STEP 1 CAPTURE ----------------------------------
+// Called by the browser from the careers and subcontractor pages. Creates or
+// updates the applicant in the PEOPLE sub-account and returns contact_id; the
+// postcode check now happens in Step 2 (/apply-screen), as /gate does for
+// leads. If the people credentials aren't configured this refuses (503)
+// rather than ever falling back to the commercial account.
+const APPLICANT_TRACKS = ["employee", "subcontractor"];
+const APPLICANT_INTERVIEW_BOOKED_TAG = "applicant-interview-booked";
 
-  const dq = checkApplicantAreaDisqualifier(f);
-
-  const writeback = dq.disqualified
-    ? {
-        applicant_tier: "unsuccessful",
-        applicant_dq_flag: dq.reason,
-        applicant_captured_at: new Date().toISOString(),
-      }
-    : {
-        applicant_stage: "screening_survey_sent",
-        applicant_dq_flag: "none",
-        applicant_captured_at: new Date().toISOString(),
-      };
-
-  const result = await writeBackToGHL(contactId, { postcode: f.postcode, ...writeback }, env);
-
-  return jsonResponse({
-    contactId,
-    stage: "apply",
-    applicant_stage: dq.disqualified ? "unsuccessful" : "screening_survey_sent",
-    tier: dq.disqualified ? "unsuccessful" : "pending",
-    dq_flag: dq.reason || "none",
-    ghl_update: result,
-  });
+// The GHL helpers read GHL_API_KEY / GHL_LOCATION_ID, so swapping in the
+// people pair reuses them unchanged for the people sub-account.
+function peopleEnv(env) {
+  return { ...env, GHL_API_KEY: env.GHL_PEOPLE_API_KEY, GHL_LOCATION_ID: env.GHL_PEOPLE_LOCATION_ID };
 }
 
-function extractApplyStartFields(payload) {
-  const cf = payload.customFields || payload.custom_fields || {};
-  return {
-    firstName: cf.first_name || "",
-    lastName: cf.last_name || "",
-    phone: cf.phone || "",
-    email: cf.email || "",
-    postcode: cf.postcode || "",
+async function handleApply(rawPayload, env, request) {
+  // Trim every string input so padded values never reach GHL.
+  const payload = Object.fromEntries(
+    Object.entries(rawPayload).map(([k, v]) => [k, typeof v === "string" ? v.trim() : v])
+  );
+  const f = {
+    ...extractLeadFields(payload),
+    conversionPage: "",
+    marketingConsent: false,
   };
+  const track = typeof payload.engagement_track === "string" ? payload.engagement_track.trim() : "";
+
+  // Bot filled the invisible field — look successful, create nothing.
+  if (f.honeypot) return jsonResponse({ ok: true });
+
+  const turnstile = await verifyTurnstile(
+    payload.turnstile_token,
+    request.headers.get("CF-Connecting-IP"),
+    env
+  );
+  if (turnstile === "rejected") {
+    return new Response("Verification failed", { status: 403 });
+  }
+
+  if (!f.email || !f.phone || !f.postcode) {
+    return new Response("Missing required field: email, phone and postcode are required", { status: 400 });
+  }
+  if (!APPLICANT_TRACKS.includes(track)) {
+    return new Response("Invalid engagement_track", { status: 400 });
+  }
+
+  if (!env.GHL_PEOPLE_API_KEY || !env.GHL_PEOPLE_LOCATION_ID) {
+    return new Response("Applicant intake is not configured", { status: 503 });
+  }
+  const penv = peopleEnv(env);
+
+  f.extraFields = {
+    engagement_track: track,
+    applicant_stage: "started",
+    applicant_captured_at: new Date().toISOString(),
+  };
+
+  const result = await upsertContactInGHL(f, penv);
+  if (!result.success || !result.contactId) {
+    return new Response("Could not save the application", { status: 502 });
+  }
+
+  // The contact exists by now: a failed tag call only means the
+  // tag-triggered GHL workflow won't fire, so it must not stop the applicant.
+  const tags = [`applicant-${track}`];
+  if (turnstile === "unverified") tags.push(TURNSTILE_UNVERIFIED_TAG);
+  await addTagsInGHL(result.contactId, tags, penv);
+
+  return jsonResponse({ contact_id: result.contactId });
 }
 
-// The one Stage 1 disqualifier — mirrors the lead gate's own Stage 1
-// postcode DQ. No flex path (there's no "confirm" follow-up for this; an
-// applicant who's genuinely out of area re-applies from scratch if they
-// relocate).
+// Out-of-area DQ, checked against APPLICANT_POSTCODES (not the lead gate's
+// SERVICE_POSTCODES). A missing postcode is rejected as incomplete by
+// /apply-screen before this runs, so it is not a DQ here.
 function checkApplicantAreaDisqualifier(f) {
-  if (f.postcode && !SERVICE_POSTCODES.includes(f.postcode)) {
+  if (f.postcode && !APPLICANT_POSTCODES.includes(f.postcode)) {
     return { disqualified: true, reason: "unsuccessful-out-of-area" };
   }
 
   return { disqualified: false, reason: null };
 }
 
-// ---- /apply-screen — MANDATORY STAGE 2 SCREENING SURVEY -----------------
-// Same shape as /gate: hard disqualifiers first, then a fit score for
-// everyone who clears them. A failed hard disqualifier here still gets a
-// fit score run for the record (see checkApplicantDisqualifiers) since
-// none of these is a spectrum the applicant can flex on later — but we
-// still want the fit data captured in case circumstances change and they
-// re-apply down the track.
-async function handleApplyScreen(contactId, payload, env) {
-  const f = extractApplicantScreenFields(payload);
+// ---- /apply-screen -- STEP 2 PER-TRACK SCREENING -------------------------
+// Browser-called with the contact_id from /apply. Hard disqualifiers first
+// (PRD D18, per track), then a per-track fit score. Everything is written to
+// the contact in the PEOPLE sub-account; a contact_id from any other
+// sub-account fails the write (the people token cannot see it) and the
+// request returns 502 without issuing a token.
+const EXPERIENCE_OPTIONS = {
+  employee: ["none", "under_1_year", "1_to_3_years", "3_plus_years"],
+  subcontractor: ["none", "under_1_year", "1_to_3_years", "3_to_5_years", "5_plus_years"],
+};
+const COMMON_SCREEN_FIELDS = [
+  "postcode",
+  "cleaning_experience",
+  "right_to_work",
+  "police_check_status",
+  "blue_card_status",
+  "availability",
+  "start_availability",
+  "reliable_transport",
+  "physical_capability",
+  "passion_rating",
+];
+const SUBCONTRACTOR_SCREEN_FIELDS = ["has_own_insurance_and_abn", "own_equipment", "works_for_other_clients"];
 
-  const dq = checkApplicantDisqualifiers(f);
-  const score = calculateApplicantScore(f);
+async function handleApplyScreen(rawPayload, env) {
+  const payload = Object.fromEntries(
+    Object.entries(rawPayload).map(([k, v]) => [k, typeof v === "string" ? v.trim() : v])
+  );
+  const contactId = payload.contact_id || payload.contactId;
+  if (!contactId) return new Response("Missing contact_id", { status: 400 });
+
+  const track = payload.engagement_track;
+  if (!APPLICANT_TRACKS.includes(track)) {
+    return new Response("Invalid engagement_track", { status: 400 });
+  }
+  const required = [...COMMON_SCREEN_FIELDS, ...(track === "subcontractor" ? SUBCONTRACTOR_SCREEN_FIELDS : [])];
+  const missing = required.filter((k) => typeof payload[k] !== "string" || !payload[k]);
+  if (missing.length) {
+    return new Response(`Incomplete screening answers: ${missing.join(", ")}`, { status: 400 });
+  }
+  if (!EXPERIENCE_OPTIONS[track].includes(payload.cleaning_experience.toLowerCase())) {
+    return new Response("Invalid cleaning_experience for this track", { status: 400 });
+  }
+
+  if (!env.GHL_PEOPLE_API_KEY || !env.GHL_PEOPLE_LOCATION_ID) {
+    return new Response("Applicant intake is not configured", { status: 503 });
+  }
+  const penv = peopleEnv(env);
+
+  const f = extractApplicantScreenFields(payload);
+  const dq = checkApplicantDisqualifiers(track, f);
+  const score = applicantScore(track, f);
   const tier = dq.disqualified ? "unsuccessful" : applicantTierFromScore(score);
+
+  let result;
+  if (tier === "unsuccessful") result = "unsuccessful";
+  else if (track === "employee" && env.EMPLOYEE_INTAKE_OPEN !== "true") result = "shortlist";
+  else result = "book";
 
   const blueCardEligible = f.blueCardStatus === "current_blue_card_held" || f.blueCardStatus === "willing_to_obtain";
   const subcontractorReady = f.hasOwnInsuranceAndAbn === "yes";
 
-  const result = await writeBackToGHL(
+  const write = await writeBackToGHL(
     contactId,
     {
       applicant_score: score,
       applicant_tier: tier,
       applicant_dq_flag: dq.disqualified ? dq.reason : "none",
       applicant_screened_at: new Date().toISOString(),
+      applicant_stage: result === "unsuccessful" ? "unsuccessful" : result === "shortlist" ? "shortlisted" : "screened",
       applicant_blue_card_eligible: blueCardEligible,
       applicant_subcontractor_ready: subcontractorReady,
-      police_check_document: f.policeCheckDocument,
-      blue_card_document: f.blueCardDocument,
-      insurance_certificate: f.insuranceCertificate,
       start_availability: f.startAvailability,
     },
-    env
+    penv
   );
+  if (!write.success) {
+    return new Response("Could not save the screening result", { status: 502 });
+  }
 
-  return jsonResponse({
-    contactId,
-    stage: "apply-screen",
-    score,
-    tier,
-    dq_flag: dq.reason || "none",
-    blue_card_eligible: blueCardEligible,
-    subcontractor_ready: subcontractorReady,
-    ghl_update: result,
-  });
+  // The tag triggers the GHL workflows; a failed tag call must not stop the
+  // applicant seeing their result.
+  const tag = result === "unsuccessful" ? "applicant-unsuccessful" : result === "shortlist" ? "applicant-shortlist" : null;
+  if (tag) await addTagsInGHL(contactId, [tag], penv);
+
+  const body = { tier, result, dq_flag: dq.disqualified ? dq.reason : "none" };
+  if (result === "book") {
+    const token = await signBookingToken({ cid: contactId, tier, aud: "applicant", track }, env);
+    if (token) body.booking_token = token;
+  }
+  return jsonResponse(body);
 }
 
 function extractApplicantScreenFields(payload) {
-  const cf = payload.customFields || payload.custom_fields || {};
+  const low = (v) => (typeof v === "string" ? v.toLowerCase() : "");
   return {
-    experience: (cf.cleaning_experience || "").toLowerCase(),
-    rightToWork: (cf.right_to_work || "").toLowerCase(),
-    policeCheckStatus: (cf.police_check_status || "").toLowerCase(),
-    policeCheckDocument: cf.police_check_document || "",
-    blueCardStatus: (cf.blue_card_status || "").toLowerCase(),
-    blueCardDocument: cf.blue_card_document || "",
-    hasOwnInsuranceAndAbn: (cf.has_own_insurance_and_abn || "").toLowerCase(),
-    insuranceCertificate: cf.insurance_certificate || "",
-    availability: (cf.availability || "").toLowerCase(),
-    startAvailability: (cf.start_availability || "").toLowerCase(),
-    reliableTransport: (cf.reliable_transport || "").toLowerCase(),
-    physicalCapability: (cf.physical_capability || "").toLowerCase(),
-    passion: (cf.passion_rating || "").toLowerCase(),
+    postcode: typeof payload.postcode === "string" ? payload.postcode : "",
+    experience: low(payload.cleaning_experience),
+    rightToWork: low(payload.right_to_work),
+    policeCheckStatus: low(payload.police_check_status),
+    blueCardStatus: low(payload.blue_card_status),
+    hasOwnInsuranceAndAbn: low(payload.has_own_insurance_and_abn),
+    ownEquipment: low(payload.own_equipment),
+    worksForOtherClients: low(payload.works_for_other_clients),
+    availability: low(payload.availability),
+    startAvailability: low(payload.start_availability),
+    reliableTransport: low(payload.reliable_transport),
+    physicalCapability: low(payload.physical_capability),
+    passion: low(payload.passion_rating),
   };
 }
 
-// Hard gates only — legal/access/experience requirements with no flex
-// path (there's no "confirm" follow-up for these; a "no" here is final
-// unless the applicant's circumstances change and they re-apply).
-// Availability/transport/attitude are scoring inputs, not gates — an
-// applicant who clears the floor but is light on other fit dimensions
-// should still be reachable in Standard, not auto-rejected. Blue Card and
-// insurance/ABN status are captured elsewhere but deliberately never
-// checked here — see the parent scoring doc's "Why Blue Card and insurance/
-// ABN aren't hard disqualifiers" note.
-function checkApplicantDisqualifiers(f) {
+// Hard gates (PRD D18), in the table's order. No flex path: a "no" here is
+// final unless the applicant's circumstances change and they re-apply.
+function checkApplicantDisqualifiers(track, f) {
   if (MIN_EXPERIENCE_LEVELS.includes(f.experience)) {
     return { disqualified: true, reason: "unsuccessful-insufficient-experience" };
   }
-
   if (f.rightToWork === "no") {
     return { disqualified: true, reason: "unsuccessful-no-right-to-work" };
   }
-
   if (f.policeCheckStatus === "not_willing") {
     return { disqualified: true, reason: "unsuccessful-no-police-check" };
+  }
+  const area = checkApplicantAreaDisqualifier(f);
+  if (area.disqualified) return area;
+
+  if (track === "subcontractor") {
+    if (f.hasOwnInsuranceAndAbn === "no") {
+      return { disqualified: true, reason: "unsuccessful-no-abn-redirect-careers" };
+    }
+    if (f.ownEquipment === "no") {
+      return { disqualified: true, reason: "unsuccessful-no-own-equipment" };
+    }
+    if (f.reliableTransport === "no") {
+      return { disqualified: true, reason: "unsuccessful-no-transport" };
+    }
   }
 
   return { disqualified: false, reason: null };
 }
 
-function calculateApplicantScore(f) {
+// Per-track fit score (PRD D18). Employee: transport scores 15. Subcontractor:
+// transport is a hard gate instead, and "works for other clients" scores 15.
+function applicantScore(track, f) {
   let score = 0;
 
-  score += EXPERIENCE_SCORE[f.experience] ?? 0;
+  score += (EXPERIENCE_SCORE[track] || {})[f.experience] ?? 0;
   score += AVAILABILITY_SCORE[f.availability] ?? 0;
   score += PASSION_SCORE[f.passion] ?? 0;
-  if (f.reliableTransport === "yes") score += 15;
+  if (track === "subcontractor") {
+    if (f.worksForOtherClients === "yes") score += 15;
+  } else if (f.reliableTransport === "yes") {
+    score += 15;
+  }
   if (f.physicalCapability === "yes") score += 10;
 
   return Math.min(score, 100);
@@ -1351,6 +1489,7 @@ async function upsertContactInGHL(f, env) {
     utm_campaign: f.utm_campaign,
     utm_term: f.utm_term,
     utm_content: f.utm_content,
+    ...f.extraFields,
   })
     .filter(([, value]) => value)
     .map(([key, value]) => ({ key, field_value: String(value) }));
@@ -1453,6 +1592,7 @@ export {
   monthsUntilContractRenewal,
   checkApplicantAreaDisqualifier,
   checkApplicantDisqualifiers,
-  calculateApplicantScore,
+  applicantScore,
+  APPLICANT_POSTCODES,
   applicantTierFromScore,
 };

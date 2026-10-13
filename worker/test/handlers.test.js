@@ -1073,338 +1073,297 @@ describe("field defaults and alternate payload shapes", () => {
   });
 });
 
-describe("POST /apply (Stage 1 — careers.html capture form)", () => {
-  it("clears an in-area applicant to the screening survey stage, unscored", async () => {
-    global.fetch = mockGhlOk();
-    const req = makeRequest("/apply", {
-      contact_id: "a1",
-      customFields: {
-        first_name: "Sam",
-        last_name: "Lee",
-        phone: "0400000000",
-        email: "sam@example.com",
-        postcode: "4211",
-      },
-    });
+describe("POST /apply (Step 1 — applicant capture, people sub-account)", () => {
+  const peopleEnvVars = {
+    ...env,
+    GHL_PEOPLE_API_KEY: "people-key",
+    GHL_PEOPLE_LOCATION_ID: "people-loc",
+  };
+  const body = {
+    first_name: "Sam",
+    last_name: "Lee",
+    email: "sam@example.com",
+    phone: "0400000000",
+    postcode: "4211",
+    engagement_track: "employee",
+  };
 
-    const res = await worker.fetch(req, env);
-    const json = await res.json();
+  it("upserts in the people sub-account, tags the track and returns contact_id", async () => {
+    global.fetch = mockLeadGhl("app-1");
+    const res = await worker.fetch(makeRequest("/apply", body), peopleEnvVars);
 
     expect(res.status).toBe(200);
-    expect(json.applicant_stage).toBe("screening_survey_sent");
-    expect(json.tier).toBe("pending");
-    expect(json.dq_flag).toBe("none");
+    expect(await res.json()).toEqual({ contact_id: "app-1" });
+    expect(global.fetch).toHaveBeenCalledTimes(2);
 
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-    const [url, options] = global.fetch.mock.calls[0];
-    expect(url).toBe("https://services.leadconnectorhq.com/contacts/a1");
-    expect(options.method).toBe("PUT");
-
-    const fields = fieldsFromLastCall(global.fetch);
-    expect(fields.applicant_stage).toBe("screening_survey_sent");
-    expect(fields.applicant_dq_flag).toBe("none");
+    const [upsertUrl, upsertOpts] = global.fetch.mock.calls[0];
+    expect(upsertUrl).toBe("https://services.leadconnectorhq.com/contacts/upsert");
+    const sent = JSON.parse(upsertOpts.body);
+    expect(sent.locationId).toBe("people-loc");
+    expect(upsertOpts.headers.Authorization).toBe("Bearer people-key");
+    const fields = Object.fromEntries(sent.customFields.map((f) => [f.key, f.field_value]));
+    expect(fields.engagement_track).toBe("employee");
     expect(fields.postcode).toBe("4211");
-    expect(fields.applicant_tier).toBeUndefined();
+    expect(fields.applicant_stage).toBe("started");
+    expect(fields.applicant_captured_at).toBeTruthy();
+
+    const [tagUrl, tagOpts] = global.fetch.mock.calls[1];
+    expect(tagUrl).toBe("https://services.leadconnectorhq.com/contacts/app-1/tags");
+    expect(tagOpts.headers.Authorization).toBe("Bearer people-key");
+    expect(JSON.parse(tagOpts.body).tags).toEqual(["applicant-employee"]);
   });
 
-  it("routes an out-of-area applicant straight to unsuccessful without sending a survey", async () => {
-    global.fetch = mockGhlOk();
-    const req = makeRequest("/apply", {
-      contact_id: "a2",
-      customFields: { first_name: "Jo", phone: "0400000000", email: "jo@example.com", postcode: "9999" },
-    });
-
-    const res = await worker.fetch(req, env);
-    const json = await res.json();
-
-    expect(json.applicant_stage).toBe("unsuccessful");
-    expect(json.tier).toBe("unsuccessful");
-    expect(json.dq_flag).toBe("unsuccessful-out-of-area");
-
-    const fields = fieldsFromLastCall(global.fetch);
-    expect(fields.applicant_tier).toBe("unsuccessful");
-    expect(fields.applicant_dq_flag).toBe("unsuccessful-out-of-area");
-    expect(fields.applicant_stage).toBeUndefined();
-  });
-
-  it("accepts custom_fields (snake_case) as an alternative to customFields", async () => {
-    global.fetch = mockGhlOk();
-    const req = makeRequest("/apply", {
-      contact_id: "a3",
-      custom_fields: { first_name: "Sam", phone: "0400000000", email: "sam@example.com", postcode: "4211" },
-    });
-
-    const res = await worker.fetch(req, env);
-    const json = await res.json();
-    expect(json.applicant_stage).toBe("screening_survey_sent");
-  });
-
-  it("treats a completely empty customFields object as clearing the (missing) postcode gate", async () => {
-    global.fetch = mockGhlOk();
-    const req = makeRequest("/apply", { contact_id: "a4", customFields: {} });
-
-    const res = await worker.fetch(req, env);
-    const json = await res.json();
-
-    expect(json.dq_flag).toBe("none");
-    expect(json.applicant_stage).toBe("screening_survey_sent");
-  });
-
-  it("surfaces a failed GHL write without throwing", async () => {
-    global.fetch = vi.fn().mockResolvedValue(new Response("server error", { status: 500 }));
-    const req = makeRequest("/apply", {
-      contact_id: "a5",
-      customFields: { first_name: "Sam", phone: "0400000000", email: "sam@example.com", postcode: "4211" },
-    });
-
-    const res = await worker.fetch(req, env);
-    const json = await res.json();
-
+  it("trims whitespace from every submitted field", async () => {
+    global.fetch = mockLeadGhl("app-3");
+    const padded = Object.fromEntries(Object.entries(body).map(([k, v]) => [k, `  ${v} `]));
+    const res = await worker.fetch(makeRequest("/apply", padded), peopleEnvVars);
     expect(res.status).toBe(200);
-    expect(json.ghl_update.success).toBe(false);
-    expect(json.ghl_update.status).toBe(500);
+    const sent = JSON.parse(global.fetch.mock.calls[0][1].body);
+    expect(sent.email).toBe("sam@example.com");
+    expect(sent.phone).toBe("0400000000");
+    expect(sent.firstName).toBe("Sam");
+    expect(sent.lastName).toBe("Lee");
+    const fields = Object.fromEntries(sent.customFields.map((f) => [f.key, f.field_value]));
+    expect(fields.postcode).toBe("4211");
+  });
+
+  it("rejects whitespace-only required fields", async () => {
+    global.fetch = vi.fn();
+    const res = await worker.fetch(makeRequest("/apply", { ...body, email: "   " }), peopleEnvVars);
+    expect(res.status).toBe(400);
+  });
+
+  it("never uses the commercial location ID or token on any GHL call", async () => {
+    global.fetch = mockLeadGhl("app-2");
+    await worker.fetch(makeRequest("/apply", { ...body, engagement_track: "subcontractor" }), peopleEnvVars);
+
+    for (const [, opts] of global.fetch.mock.calls) {
+      expect(opts.headers.Authorization).not.toContain("test-key");
+      expect(opts.body).not.toContain("loc-123");
+    }
+    expect(JSON.parse(global.fetch.mock.calls[1][1].body).tags).toEqual(["applicant-subcontractor"]);
+  });
+
+  it("returns 503 and calls GHL not at all when the people credentials are missing", async () => {
+    for (const e of [env, { ...env, GHL_PEOPLE_API_KEY: "k" }, { ...env, GHL_PEOPLE_LOCATION_ID: "l" }]) {
+      global.fetch = vi.fn();
+      const res = await worker.fetch(makeRequest("/apply", body), e);
+      expect(res.status).toBe(503);
+      expect(global.fetch).not.toHaveBeenCalled();
+    }
+  });
+
+  it("returns 400 when email, phone or postcode is missing", async () => {
+    for (const missing of ["email", "phone", "postcode"]) {
+      global.fetch = vi.fn();
+      const res = await worker.fetch(makeRequest("/apply", { ...body, [missing]: "" }), peopleEnvVars);
+      expect(res.status).toBe(400);
+      expect(global.fetch).not.toHaveBeenCalled();
+    }
+  });
+
+  it("returns 400 for an unknown or missing track", async () => {
+    for (const track of ["admin", "", undefined]) {
+      global.fetch = vi.fn();
+      const res = await worker.fetch(makeRequest("/apply", { ...body, engagement_track: track }), peopleEnvVars);
+      expect(res.status).toBe(400);
+      expect(global.fetch).not.toHaveBeenCalled();
+    }
+  });
+
+  it("answers 200 {ok:true} to a filled honeypot without calling GHL", async () => {
+    global.fetch = vi.fn();
+    const res = await worker.fetch(makeRequest("/apply", { ...body, url: "spam.example" }), peopleEnvVars);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("returns 403 when Turnstile rejects the token", async () => {
+    global.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ success: false }), { status: 200 }));
+    const res = await worker.fetch(makeRequest("/apply", body), { ...peopleEnvVars, TURNSTILE_SECRET_KEY: "ts" });
+    expect(res.status).toBe(403);
+  });
+
+  it("proceeds and adds turnstile-unverified when Cloudflare is unreachable", async () => {
+    global.fetch = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("network"))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ contact: { id: "app-3" } }), { status: 200 }))
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }));
+    const res = await worker.fetch(
+      makeRequest("/apply", { ...body, turnstile_token: "tok" }),
+      { ...peopleEnvVars, TURNSTILE_SECRET_KEY: "ts" }
+    );
+    expect(res.status).toBe(200);
+    expect((await res.json()).contact_id).toBe("app-3");
+    expect(JSON.parse(global.fetch.mock.calls[2][1].body).tags).toEqual(["applicant-employee", "turnstile-unverified"]);
+  });
+
+  it("returns 502 when the upsert fails", async () => {
+    global.fetch = vi.fn().mockResolvedValue(new Response("boom", { status: 500 }));
+    const res = await worker.fetch(makeRequest("/apply", body), peopleEnvVars);
+    expect(res.status).toBe(502);
   });
 });
 
-describe("POST /apply-screen (Stage 2 — mandatory screening survey)", () => {
-  it("qualifies a strong applicant into priority", async () => {
+describe("POST /apply-screen (Step 2 per-track screening)", () => {
+  const screenEnv = {
+    GHL_API_KEY: "commercial-key",
+    GHL_LOCATION_ID: "commercial-loc",
+    GHL_PEOPLE_API_KEY: "people-key",
+    GHL_PEOPLE_LOCATION_ID: "people-loc",
+    BOOKING_TOKEN_SECRET: "s3cret",
+  };
+
+  const employee = {
+    contact_id: "e1",
+    engagement_track: "employee",
+    postcode: "4211",
+    cleaning_experience: "3_plus_years",
+    right_to_work: "yes",
+    police_check_status: "willing_no_current_check",
+    blue_card_status: "not_applicable",
+    availability: "flexible",
+    start_availability: "immediately",
+    reliable_transport: "yes",
+    physical_capability: "yes",
+    passion_rating: "genuinely_passionate",
+  };
+  const subcontractor = {
+    ...employee,
+    contact_id: "s1",
+    engagement_track: "subcontractor",
+    cleaning_experience: "5_plus_years",
+    has_own_insurance_and_abn: "yes",
+    own_equipment: "yes",
+    works_for_other_clients: "yes",
+  };
+
+  async function screen(body, e = screenEnv) {
     global.fetch = mockGhlOk();
-    const req = makeRequest("/apply-screen", {
-      contact_id: "b1",
-      customFields: {
-        cleaning_experience: "3_plus_years",
-        right_to_work: "yes",
-        police_check_status: "current_check_held",
-        police_check_document: "https://files.example.com/npc.pdf",
-        blue_card_status: "not_applicable",
-        has_own_insurance_and_abn: "no",
-        availability: "flexible",
-        start_availability: "immediately",
-        reliable_transport: "yes",
-        physical_capability: "yes",
-        passion_rating: "genuinely_passionate",
-      },
+    const res = await worker.fetch(makeRequest("/apply-screen", body), e);
+    return { res, json: res.status === 200 ? await res.json() : null };
+  }
+  const putFields = () => {
+    const [, o] = global.fetch.mock.calls.find(([, o]) => o.method === "PUT");
+    return Object.fromEntries(JSON.parse(o.body).customFields.map((f) => [f.key, f.field_value]));
+  };
+  const tagsSent = () =>
+    global.fetch.mock.calls.filter(([u]) => u.endsWith("/tags")).map(([, o]) => JSON.parse(o.body).tags);
+
+  it("book: a qualifying subcontractor gets a token and no tag", async () => {
+    const { json } = await screen(subcontractor);
+    expect(json).toMatchObject({ tier: "priority", result: "book", dq_flag: "none" });
+    expect(json.booking_token).toBeTruthy();
+    expect(tagsSent()).toEqual([]);
+    expect(putFields().applicant_tier).toBe("priority");
+  });
+
+  it("book: always for a subcontractor, even with EMPLOYEE_INTAKE_OPEN off", async () => {
+    const { json } = await screen(subcontractor, { ...screenEnv, EMPLOYEE_INTAKE_OPEN: "false" });
+    expect(json.result).toBe("book");
+  });
+
+  it("shortlist: a qualifying employee with the intake off gets no token and the shortlist tag", async () => {
+    const { json } = await screen(employee);
+    expect(json).toMatchObject({ result: "shortlist", tier: "priority" });
+    expect(json.booking_token).toBeUndefined();
+    expect(tagsSent()).toEqual([["applicant-shortlist"]]);
+  });
+
+  it("book: a qualifying employee with the intake on gets an applicant token", async () => {
+    const { json } = await screen(employee, { ...screenEnv, EMPLOYEE_INTAKE_OPEN: "true" });
+    expect(json.result).toBe("book");
+    expect(await verifyBookingToken(json.booking_token, screenEnv)).toMatchObject({
+      cid: "e1",
+      aud: "applicant",
+      track: "employee",
     });
+  });
 
-    const res = await worker.fetch(req, env);
-    const json = await res.json();
+  it("the weakest applicant who clears every gate lands at the Standard floor (30), so only a DQ is unsuccessful", async () => {
+    const { json } = await screen({
+      ...employee,
+      cleaning_experience: "1_to_3_years",
+      availability: "weekends_only",
+      reliable_transport: "no",
+      physical_capability: "no",
+      passion_rating: "just_a_job",
+    });
+    expect(json).toMatchObject({ tier: "standard", result: "shortlist" });
+    expect(putFields().applicant_score).toBe("30");
+  });
 
-    expect(res.status).toBe(200);
-    expect(json.tier).toBe("priority");
+  // One case per D18 disqualifier row, per track.
+  const common = [
+    ["experience under 1 year", { cleaning_experience: "under_1_year" }, "unsuccessful-insufficient-experience"],
+    ["no experience", { cleaning_experience: "none" }, "unsuccessful-insufficient-experience"],
+    ["no right to work", { right_to_work: "no" }, "unsuccessful-no-right-to-work"],
+    ["police check not willing", { police_check_status: "not_willing" }, "unsuccessful-no-police-check"],
+    ["out of area", { postcode: "9999" }, "unsuccessful-out-of-area"],
+  ];
+  it.each(common)("employee DQ: %s", async (_n, over, flag) => {
+    const { json } = await screen({ ...employee, ...over });
+    expect(json).toMatchObject({ tier: "unsuccessful", result: "unsuccessful", dq_flag: flag });
+    expect(json.booking_token).toBeUndefined();
+    expect(putFields().applicant_dq_flag).toBe(flag);
+    expect(tagsSent()).toEqual([["applicant-unsuccessful"]]);
+  });
+  it.each([
+    ...common,
+    ["no ABN and insurance", { has_own_insurance_and_abn: "no" }, "unsuccessful-no-abn-redirect-careers"],
+    ["no own equipment", { own_equipment: "no" }, "unsuccessful-no-own-equipment"],
+    ["no own transport", { reliable_transport: "no" }, "unsuccessful-no-transport"],
+  ])("subcontractor DQ: %s", async (_n, over, flag) => {
+    const { json } = await screen({ ...subcontractor, ...over });
+    expect(json).toMatchObject({ tier: "unsuccessful", result: "unsuccessful", dq_flag: flag });
+    expect(json.booking_token).toBeUndefined();
+    expect(tagsSent()).toEqual([["applicant-unsuccessful"]]);
+  });
+
+  it("employee without own transport is scored, not disqualified", async () => {
+    const { json } = await screen({ ...employee, reliable_transport: "no" });
     expect(json.dq_flag).toBe("none");
-    expect(json.score).toBe(100);
-    expect(json.blue_card_eligible).toBe(false);
-    expect(json.subcontractor_ready).toBe(false);
+    expect(putFields().applicant_score).toBe("85");
+  });
 
+  it("out-of-area uses APPLICANT_POSTCODES: a Tweed postcode passes, which the lead gate would reject", async () => {
+    const { json } = await screen({ ...employee, postcode: "2486" });
+    expect(json.dq_flag).toBe("none");
+  });
+
+  it("incomplete answers -> 400 (common, track-specific, bad track, bad experience option)", async () => {
+    const { reliable_transport, ...noTransport } = employee;
+    expect((await screen(noTransport)).res.status).toBe(400);
+    const { own_equipment, ...noEquipment } = subcontractor;
+    expect((await screen(noEquipment)).res.status).toBe(400);
+    expect((await screen({ ...employee, engagement_track: "other" })).res.status).toBe(400);
+    expect((await screen({ ...employee, cleaning_experience: "5_plus_years" })).res.status).toBe(400);
+    expect((await screen({ ...employee, contact_id: "" })).res.status).toBe(400);
+  });
+
+  it("503 and no GHL call when the people credentials are missing", async () => {
+    const { res } = await screen(employee, { GHL_API_KEY: "k", GHL_LOCATION_ID: "l" });
+    expect(res.status).toBe(503);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("every write uses the people credentials, never the commercial pair", async () => {
+    await screen(employee);
+    expect(global.fetch.mock.calls.length).toBeGreaterThan(1);
+    for (const [, options] of global.fetch.mock.calls) {
+      expect(options.headers.Authorization).toBe("Bearer people-key");
+    }
+  });
+
+  it("502 and no token when the write fails (e.g. a contact outside the people sub-account)", async () => {
+    global.fetch = vi.fn().mockResolvedValue(new Response("not found", { status: 404 }));
+    const res = await worker.fetch(makeRequest("/apply-screen", subcontractor), screenEnv);
+    expect(res.status).toBe(502);
     expect(global.fetch).toHaveBeenCalledTimes(1);
-    const [url, options] = global.fetch.mock.calls[0];
-    expect(url).toBe("https://services.leadconnectorhq.com/contacts/b1");
-    expect(options.method).toBe("PUT");
-
-    const fields = fieldsFromLastCall(global.fetch);
-    expect(fields.applicant_tier).toBe("priority");
-    expect(fields.applicant_score).toBe("100");
-    expect(fields.applicant_dq_flag).toBe("none");
-    expect(fields.police_check_document).toBe("https://files.example.com/npc.pdf");
-  });
-
-  it("scores a mid-range applicant into standard", async () => {
-    global.fetch = mockGhlOk();
-    const req = makeRequest("/apply-screen", {
-      contact_id: "b2",
-      customFields: {
-        cleaning_experience: "1_to_3_years",
-        right_to_work: "yes",
-        police_check_status: "willing_no_current_check",
-        availability: "business_hours",
-        reliable_transport: "yes",
-        physical_capability: "no",
-        passion_rating: "take_pride",
-      },
-    });
-
-    const res = await worker.fetch(req, env);
-    const json = await res.json();
-
-    expect(json.tier).toBe("standard");
-    expect(json.dq_flag).toBe("none");
-  });
-
-  it("routes an under-1-year-experience applicant straight to unsuccessful without a fit gate", async () => {
-    global.fetch = mockGhlOk();
-    const req = makeRequest("/apply-screen", {
-      contact_id: "b3",
-      customFields: {
-        cleaning_experience: "under_1_year",
-        right_to_work: "yes",
-        police_check_status: "willing_no_current_check",
-        availability: "flexible",
-        reliable_transport: "yes",
-        physical_capability: "yes",
-        passion_rating: "genuinely_passionate",
-      },
-    });
-
-    const res = await worker.fetch(req, env);
-    const json = await res.json();
-
-    expect(json.tier).toBe("unsuccessful");
-    expect(json.dq_flag).toBe("unsuccessful-insufficient-experience");
-    // Fit score is still calculated and recorded even though the tier is
-    // forced to unsuccessful, so the applicant's data isn't discarded.
-    const fields = fieldsFromLastCall(global.fetch);
-    expect(fields.applicant_score).toBe("60");
-    expect(fields.applicant_tier).toBe("unsuccessful");
-  });
-
-  it("routes a no-right-to-work applicant to unsuccessful", async () => {
-    global.fetch = mockGhlOk();
-    const req = makeRequest("/apply-screen", {
-      contact_id: "b4",
-      customFields: {
-        cleaning_experience: "3_plus_years",
-        right_to_work: "no",
-        police_check_status: "willing_no_current_check",
-      },
-    });
-
-    const res = await worker.fetch(req, env);
-    const json = await res.json();
-
-    expect(json.dq_flag).toBe("unsuccessful-no-right-to-work");
-    expect(json.tier).toBe("unsuccessful");
-  });
-
-  it("routes a police-check refusal to unsuccessful", async () => {
-    global.fetch = mockGhlOk();
-    const req = makeRequest("/apply-screen", {
-      contact_id: "b5",
-      customFields: {
-        cleaning_experience: "3_plus_years",
-        right_to_work: "yes",
-        police_check_status: "not_willing",
-      },
-    });
-
-    const res = await worker.fetch(req, env);
-    const json = await res.json();
-
-    expect(json.dq_flag).toBe("unsuccessful-no-police-check");
-    expect(json.tier).toBe("unsuccessful");
-  });
-
-  it("the weakest-possible applicant who still clears the hard gates lands at the Standard floor, not Unsuccessful", async () => {
-    // With the 1-year experience floor now a hard DQ, the lowest score any
-    // eligible applicant can post is 25 (min experience) + 5 (min
-    // availability) + 0 + 0 + 0 = 30 — exactly Standard's floor. An
-    // eligible-but-weak applicant can no longer land in Unsuccessful via
-    // fit score alone; only a hard DQ routes there now. See the parent
-    // scoring doc's feedback-loop note on this consequence.
-    global.fetch = mockGhlOk();
-    const req = makeRequest("/apply-screen", {
-      contact_id: "b6",
-      customFields: {
-        cleaning_experience: "1_to_3_years",
-        right_to_work: "yes",
-        police_check_status: "willing_no_current_check",
-        availability: "weekends_only",
-        reliable_transport: "no",
-        physical_capability: "no",
-        passion_rating: "just_a_job",
-      },
-    });
-
-    const res = await worker.fetch(req, env);
-    const json = await res.json();
-
-    expect(json.score).toBe(30);
-    expect(json.tier).toBe("standard");
-    expect(json.dq_flag).toBe("none");
-  });
-
-  it("flags Blue-Card-eligible and subcontractor-ready enrichment signals without affecting score or tier", async () => {
-    global.fetch = mockGhlOk();
-    const req = makeRequest("/apply-screen", {
-      contact_id: "b7",
-      customFields: {
-        cleaning_experience: "1_to_3_years",
-        right_to_work: "yes",
-        police_check_status: "willing_no_current_check",
-        blue_card_status: "willing_to_obtain",
-        has_own_insurance_and_abn: "yes",
-        insurance_certificate: "https://files.example.com/coc.pdf",
-        availability: "business_hours",
-        reliable_transport: "yes",
-        physical_capability: "no",
-        passion_rating: "take_pride",
-      },
-    });
-
-    const res = await worker.fetch(req, env);
-    const json = await res.json();
-
-    expect(json.tier).toBe("standard");
-    expect(json.blue_card_eligible).toBe(true);
-    expect(json.subcontractor_ready).toBe(true);
-
-    const fields = fieldsFromLastCall(global.fetch);
-    expect(fields.applicant_blue_card_eligible).toBe("true");
-    expect(fields.applicant_subcontractor_ready).toBe("true");
-    expect(fields.insurance_certificate).toBe("https://files.example.com/coc.pdf");
-  });
-
-  it("accepts custom_fields (snake_case) as an alternative to customFields", async () => {
-    global.fetch = mockGhlOk();
-    const req = makeRequest("/apply-screen", {
-      contact_id: "b8",
-      custom_fields: {
-        cleaning_experience: "3_plus_years",
-        right_to_work: "yes",
-        police_check_status: "willing_no_current_check",
-        availability: "flexible",
-        reliable_transport: "yes",
-        physical_capability: "yes",
-        passion_rating: "genuinely_passionate",
-      },
-    });
-
-    const res = await worker.fetch(req, env);
-    const json = await res.json();
-    expect(json.tier).toBe("priority");
-  });
-
-  it("treats a completely empty customFields object as a qualifying zero-score applicant", async () => {
-    global.fetch = mockGhlOk();
-    const req = makeRequest("/apply-screen", { contact_id: "b9", customFields: {} });
-
-    const res = await worker.fetch(req, env);
-    const json = await res.json();
-
-    expect(json.dq_flag).toBe("none");
-    expect(json.score).toBe(0);
-    expect(json.tier).toBe("unsuccessful");
-  });
-
-  it("surfaces a failed GHL write without throwing", async () => {
-    global.fetch = vi.fn().mockResolvedValue(new Response("server error", { status: 500 }));
-    const req = makeRequest("/apply-screen", {
-      contact_id: "b10",
-      customFields: {
-        cleaning_experience: "3_plus_years",
-        right_to_work: "yes",
-        police_check_status: "willing_no_current_check",
-      },
-    });
-
-    const res = await worker.fetch(req, env);
-    const json = await res.json();
-
-    expect(res.status).toBe(200);
-    expect(json.ghl_update.success).toBe(false);
-    expect(json.ghl_update.status).toBe(500);
   });
 });
-
 describe("CORS", () => {
   it("answers an OPTIONS preflight for /gate from an allowed origin", async () => {
     const req = makeRequest("/gate", null, {
@@ -1889,5 +1848,124 @@ describe("POST /area-request", () => {
       env
     );
     expect(res.headers.get("Access-Control-Allow-Origin")).toBe(ALLOWED_ORIGIN);
+  });
+});
+
+describe("Step 3 — applicant interview booking (/slots, /book)", () => {
+  const benv = {
+    GHL_API_KEY: "lead-key",
+    GHL_LOCATION_ID: "lead-loc",
+    GHL_PEOPLE_API_KEY: "people-key",
+    GHL_PEOPLE_LOCATION_ID: "people-loc",
+    BOOKING_TOKEN_SECRET: "s3cret",
+    CALENDAR_PRIORITY_ID: "lead-pri",
+    CALENDAR_STANDARD_ID: "lead-std",
+    CALENDAR_INTERVIEW_EMPLOYEE_ID: "int-emp",
+    CALENDAR_INTERVIEW_SUBCONTRACTOR_ID: "int-sub",
+  };
+  const tok = (claims) => signBookingToken({ cid: "c1", tier: "priority", ...claims }, benv);
+  const future = new Date(Date.now() + 3 * 24 * 3600 * 1000).toISOString().replace(/\.\d+Z$/, "+00:00");
+  const urls = () => global.fetch.mock.calls.map(([u]) => u);
+
+  function mockCal(slotsBody) {
+    return vi.fn(async (u, o = {}) => {
+      if (u.includes("/free-slots")) return new Response(JSON.stringify(slotsBody), { status: 200 });
+      if (u.endsWith("/appointments") && o.method === "GET") return new Response('{"events":[]}', { status: 200 });
+      if (/\/calendars\/[^/]+$/.test(u)) return new Response('{"calendar":{"slotDuration":60}}', { status: 200 });
+      return new Response("{}", { status: 200 });
+    });
+  }
+  const slotsFor = async (token, e = benv) => worker.fetch(makeRequest("/slots", { booking_token: token }), e);
+  const bookFor = async (token, e = benv) =>
+    worker.fetch(makeRequest("/book", { booking_token: token, start_time: future }), e);
+
+  it.each([
+    ["employee", "int-emp"],
+    ["subcontractor", "int-sub"],
+  ])("/slots for a %s applicant uses its interview calendar and the people credentials", async (track, calId) => {
+    global.fetch = mockCal({ "2099-01-01": { slots: ["b", "a"] } });
+    const res = await slotsFor(await tok({ aud: "applicant", track }));
+    expect(res.status).toBe(200);
+    expect(urls()[0]).toContain(`/calendars/${calId}/free-slots`);
+    expect(global.fetch.mock.calls[0][1].headers.Authorization).toBe("Bearer people-key");
+    expect((await res.json()).days).toEqual([{ date: "2099-01-01", slots: ["a", "b"] }]);
+  });
+
+  it("/slots drops full class slots (0 seats left) and keeps others", async () => {
+    global.fetch = mockCal({
+      "2099-01-01": { slots: [{ startTime: "x", seatsLeft: 0 }, { startTime: "y", seatsLeft: 3 }] },
+      "2099-01-02": { slots: [{ startTime: "z", seatsLeft: 0 }] },
+    });
+    const res = await slotsFor(await tok({ aud: "applicant", track: "employee" }));
+    expect((await res.json()).days).toEqual([{ date: "2099-01-01", slots: ["y"] }]);
+  });
+
+  it("/book creates the appointment on the track calendar in the people account and tags the booking", async () => {
+    global.fetch = mockCal({});
+    const res = await bookFor(await tok({ aud: "applicant", track: "subcontractor" }));
+    expect(res.status).toBe(200);
+    expect((await res.json()).booked).toBe(true);
+    const post = global.fetch.mock.calls.find(([u, o]) => u.endsWith("/events/appointments") && o.method === "POST");
+    const body = JSON.parse(post[1].body);
+    expect(body).toMatchObject({ calendarId: "int-sub", locationId: "people-loc", contactId: "c1" });
+    expect(post[1].headers.Authorization).toBe("Bearer people-key");
+    const tag = global.fetch.mock.calls.find(([u]) => u.endsWith("/tags"));
+    expect(JSON.parse(tag[1].body).tags).toEqual(["applicant-interview-booked"]);
+    expect(tag[1].headers.Authorization).toBe("Bearer people-key");
+    expect(global.fetch.mock.calls.some(([u, o]) => o.method === "PUT")).toBe(false);
+  });
+
+  it("a missing interview calendar id gives the unavailable fallback, not an error page", async () => {
+    global.fetch = mockCal({});
+    const e = { ...benv, CALENDAR_INTERVIEW_EMPLOYEE_ID: "" };
+    const res = await slotsFor(await tok({ aud: "applicant", track: "employee" }), e);
+    expect(res.status).toBe(502);
+    expect((await res.json()).error).toBe("slots_unavailable");
+    expect(global.fetch).not.toHaveBeenCalled();
+    const book = await bookFor(await tok({ aud: "applicant", track: "employee" }), e);
+    expect((await book.json()).error).toBe("booking_failed");
+  });
+
+  it("a /slots failure from GHL gives the unavailable fallback", async () => {
+    global.fetch = vi.fn().mockResolvedValue(new Response("no", { status: 500 }));
+    const res = await slotsFor(await tok({ aud: "applicant", track: "employee" }));
+    expect((await res.json()).error).toBe("slots_unavailable");
+  });
+
+  it("applicant token → lead calendars: never touched", async () => {
+    global.fetch = mockCal({});
+    await slotsFor(await tok({ aud: "applicant", track: "employee" }));
+    await bookFor(await tok({ aud: "applicant", track: "employee" }));
+    expect(urls().some((u) => u.includes("lead-pri") || u.includes("lead-std"))).toBe(false);
+  });
+
+  it("lead token → interview calendars: never touched, lead credentials used", async () => {
+    global.fetch = mockCal({});
+    await slotsFor(await tok({}));
+    expect(urls().some((u) => u.includes("int-emp") || u.includes("int-sub"))).toBe(false);
+    expect(global.fetch.mock.calls[0][1].headers.Authorization).toBe("Bearer lead-key");
+  });
+
+  it("employee token → subcontractor calendar: never touched", async () => {
+    global.fetch = mockCal({});
+    await slotsFor(await tok({ aud: "applicant", track: "employee" }));
+    await bookFor(await tok({ aud: "applicant", track: "employee" }));
+    expect(urls().some((u) => u.includes("int-sub"))).toBe(false);
+  });
+
+  it("subcontractor token → employee calendar: never touched", async () => {
+    global.fetch = mockCal({});
+    await slotsFor(await tok({ aud: "applicant", track: "subcontractor" }));
+    await bookFor(await tok({ aud: "applicant", track: "subcontractor" }));
+    expect(urls().some((u) => u.includes("int-emp"))).toBe(false);
+  });
+
+  it("an applicant token with an unknown track or a foreign aud is rejected", async () => {
+    global.fetch = mockCal({});
+    for (const claims of [{ aud: "applicant", track: "bogus" }, { aud: "applicant" }, { aud: "lead", track: "employee" }]) {
+      expect((await slotsFor(await tok(claims))).status).toBe(403);
+      expect((await bookFor(await tok(claims))).status).toBe(403);
+    }
+    expect(global.fetch).not.toHaveBeenCalled();
   });
 });
