@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync, readdirSync } from "fs";
-import { resolve } from "path";
+import { readFileSync, readdirSync, statSync } from "fs";
+import { resolve, join, relative } from "path";
 
 const SITE_DIR = resolve(__dirname, "..");
 const html = readFileSync(resolve(SITE_DIR, "subcontractor.html"), "utf8");
@@ -99,14 +99,21 @@ describe("subcontractor.html schema and discovery", () => {
 
 describe("footer link", () => {
   const isRedirect = (h) => /<meta http-equiv="refresh"/.test(h);
-  const pages = readdirSync(SITE_DIR).filter((f) => f.endsWith(".html"))
-    .filter((f) => !isRedirect(readFileSync(resolve(SITE_DIR, f), "utf8")));
+  // Walks subfolders too: the generated resources/ pages carry the footer as well.
+  const discoverPages = (dir = SITE_DIR) => readdirSync(dir).flatMap((name) => {
+    if (name === "node_modules") return [];
+    const full = join(dir, name);
+    if (statSync(full).isDirectory()) return discoverPages(full);
+    return name.endsWith(".html") ? [relative(SITE_DIR, full)] : [];
+  });
+  const pages = discoverPages().filter((f) => !isRedirect(readFileSync(resolve(SITE_DIR, f), "utf8")));
 
   it.each(pages)("%s links Subcontract with us right after Careers", (page) => {
     const d = new DOMParser().parseFromString(readFileSync(resolve(SITE_DIR, page), "utf8"), "text/html");
     const careers = Array.from(d.querySelectorAll("footer li")).find((li) => li.textContent.trim() === "Careers");
     const next = careers.nextElementSibling;
     expect(next.textContent.trim()).toBe("Subcontract with us");
-    expect(next.querySelector("a").getAttribute("href")).toBe("subcontractor.html");
+    // Root pages link relatively; resources/ pages use a root-relative path.
+    expect(["subcontractor.html", "/subcontractor.html"]).toContain(next.querySelector("a").getAttribute("href"));
   });
 });
