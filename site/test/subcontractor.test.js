@@ -36,9 +36,42 @@ describe("subcontractor.html copy", () => {
 
   it("passes the employee-programme guardrail", () => {
     const visible = html.toLowerCase();
-    for (const word of ["bonus", "roster", "equipment supplied", "crew", "promot"]) {
+    for (const word of ["bonus", "roster", "equipment supplied", "crew", "promot",
+      "no deductions", "accept or decline", "join our team", "shifts", "wages", "uniform", "supervisor"]) {
       expect(visible).not.toContain(word);
     }
+  });
+});
+
+describe("subcontractor.html approved copy", () => {
+  it("states the four D3 lines", () => {
+    const lines = Array.from(doc.querySelectorAll("#the-business .business-lines li"), (li) => text(li));
+    expect(lines).toEqual([
+      "No franchise fee and no joining fee.",
+      "You can send your own workers, once they\u2019re police-checked and inducted before their first site.",
+      "This is a subcontract, not employment.",
+      "We win and manage the clients; you deliver the scope.",
+    ]);
+  });
+
+  it("has the new meta descriptions, matching across og and twitter", () => {
+    const d = "No franchise fee and no joining fee. Subcontract Gold Coast commercial cleaning sites with your own ABN: we win and manage the clients, you deliver the scope.";
+    expect(doc.querySelector('meta[name="description"]').content).toBe(d);
+    expect(doc.querySelector('meta[property="og:description"]').content).toBe(d);
+    expect(doc.querySelector('meta[name="twitter:description"]').content).toBe(d);
+  });
+
+  it("has the intro, role description and growth copy", () => {
+    const body = text(doc.body);
+    for (const s of [
+      "The business side is simple. We win and manage the clients; you deliver the scope.",
+      "Induction also covers emergency response, the SDS register, the key register, Connecteam and confidentiality.",
+      "What the work is",
+      "offices, medical and dental centres, strata buildings and education sites",
+      "You run the business and deliver the scope in your own way, with your own equipment and insurance.",
+      "Your own workers can come with you once they\u2019re police-checked and inducted.",
+      "Your first job with us is a paid trial. It lets both of us see the fit before we go further.",
+    ]) expect(body).toContain(s);
   });
 });
 
