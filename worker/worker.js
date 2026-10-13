@@ -148,14 +148,19 @@ const FREQUENCY_TO_WEEKLY = {
 // than the lead gate's SERVICE_POSTCODES (recruit where the sites are, PRD
 // D8). The check happens at Step 2 (/apply-screen), as /gate does for leads.
 //
-// Gold Coast 4207-4230 and Tweed 2485-2490 per PRD D8. The ranges are
-// deliberately generous: a postcode in range that has no residents simply
-// never appears. NOT yet checked suburb-by-suburb against Australia Post's
-// postcode file (no reliable source was reachable from the build
-// environment) -- verify before go-live.
+// Gold Coast and Tweed Shire (PRD D8), checked 2026-10-13:
+// - City of Gold Coast suburbs sit in 4207-4230 (Wikipedia "List of Gold
+//   Coast suburbs"). 4207 is shared with Logan (Beenleigh, Eagleby) and is
+//   kept because it borders the northern Gold Coast sites.
+// - Tweed Shire is 2484-2490 (NSW Electoral Commission, Tweed council
+//   localities): 2484 Murwillumbah/Uki/Tyalgum, 2485 Tweed Heads, 2486
+//   Banora Point/Terranora, 2487 Kingscliff, 2488 Cabarita, 2489 Pottsville,
+//   2490 Tumbulgum.
+// Left out on purpose (Blake, 2026-10-13): 2483 (mostly Byron Shire) and the
+// 4270-4275 hinterland (mostly Scenic Rim).
 const APPLICANT_POSTCODES = [
   ...Array.from({ length: 24 }, (_, i) => String(4207 + i)), // Gold Coast 4207-4230
-  ...Array.from({ length: 6 }, (_, i) => String(2485 + i)), // Tweed 2485-2490
+  ...Array.from({ length: 7 }, (_, i) => String(2484 + i)), // Tweed Shire 2484-2490
 ];
 
 // Under 1 year of experience is a hard floor on both tracks (PRD D18).

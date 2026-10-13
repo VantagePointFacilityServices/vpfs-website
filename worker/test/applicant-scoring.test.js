@@ -9,19 +9,20 @@ import {
 
 describe("checkApplicantAreaDisqualifier", () => {
   it("passes Gold Coast and Tweed postcodes, including ones outside SERVICE_POSTCODES", () => {
-    for (const postcode of ["4211", "4217", "4225", "4230", "2485", "2490"]) {
+    for (const postcode of ["4207", "4211", "4217", "4225", "4230", "2484", "2485", "2490"]) {
       expect(checkApplicantAreaDisqualifier({ postcode })).toEqual({ disqualified: false, reason: null });
     }
   });
 
   it("flags a postcode outside the applicant area", () => {
-    for (const postcode of ["9999", "4000", "4206", "4231", "2484", "2491"]) {
+    // 2483 is mostly Byron Shire; 4270-4275 is mostly Scenic Rim (Blake, 2026-10-13).
+    for (const postcode of ["9999", "4000", "4206", "4231", "2483", "2491", "4270", "4272", "4275"]) {
       expect(checkApplicantAreaDisqualifier({ postcode })).toEqual({
         disqualified: true,
         reason: "unsuccessful-out-of-area",
       });
     }
-    expect(APPLICANT_POSTCODES).toHaveLength(30);
+    expect(APPLICANT_POSTCODES).toHaveLength(31);
   });
 
   it("does not disqualify on a missing postcode", () => {

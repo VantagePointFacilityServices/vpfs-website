@@ -99,6 +99,10 @@ export function initApply(form) {
     buildStep2Payload: buildScreenPayload,
     isStep2Complete: isScreenComplete,
     handleStep2Result: handleScreenResult,
+    messages: {
+      bookIdle: "Book interview",
+      alreadyBooked: "You already have an interview booked for ",
+    },
   });
 }
 

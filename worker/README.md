@@ -9,10 +9,11 @@ embedded on this site (and on paid-traffic landing pages), and separately
 scores job applicants from a two-stage careers funnel. Seven endpoints —
 `/lead`, `/gate`, `/enrich`, `/confirm`, `/outcome` (leads) and `/apply`,
 `/apply-screen` (applicants) — write score/tier/DQ fields back to the GHL
-contact. Most are reached via GHL workflow webhooks, but `/lead` and
-`/gate` are also called directly by the public browser — the website's
-own two-step booking-gate JS — and `/gate` is additionally called live by
-the AI Receptionist mid-call, so every endpoint responds with CORS headers
+contact. Most lead endpoints are reached via GHL workflow webhooks, but
+the public browser calls `/lead`, `/gate`, `/slots` and `/book` (the
+website's two-step booking gate), `/apply` and `/apply-screen` (the
+applicant forms) and `/area-request` directly, and `/gate` is also called
+live by the AI Receptionist mid-call, so every endpoint responds with CORS headers
 restricted to an explicit origin allowlist (see `ALLOWED_ORIGINS` in
 `worker.js`) rather than trusting only server-to-server callers.
 
@@ -32,10 +33,15 @@ never cleared. No DQ fields exist yet at Step 1, so this endpoint never scores
 anything. GHL follow-up workflows for website leads trigger on
 **Contact Tag → Tag Added: `website-lead`**, not an Inbound Webhook.
 
-`/apply` (Stage 1, `careers.html`'s short capture form) only checks the
-service-area postcode gate and, if cleared, hands off to a mandatory Stage 2
-GHL Survey; `/apply-screen` (Stage 2) is what actually runs the remaining
-hard disqualifiers, calculates the fit score, and sets `applicant_tier`.
+`/apply` (Step 1 of the applicant forms — name/email/phone/postcode plus
+`engagement_track`) upserts the contact in the **people** GHL sub-account
+(`GHL_PEOPLE_LOCATION_ID` / `GHL_PEOPLE_API_KEY`; 503 if either is unset),
+tags it `applicant-employee` or `applicant-subcontractor`, and returns its
+`contact_id`. It scores nothing. `/apply-screen` (Step 2, the dialog) runs
+the per-track disqualifiers, including the `APPLICANT_POSTCODES` area check,
+calculates the fit score, sets `applicant_tier` and returns `book`,
+`shortlist` or `unsuccessful`; only `book` carries a booking token for the
+track's interview calendar via `/slots` and `/book`. See `docs/WORKER.md` §5.
 
 Field structure, scoring rules, and DQ/nurture routing are documented in the
 vpos repo: `commercial/docs/lead-scoring-and-two-stage-gate-form.md` (leads)

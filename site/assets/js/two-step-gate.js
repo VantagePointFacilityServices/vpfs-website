@@ -1,23 +1,3 @@
-// Vantage Point Facility Services — two-step booking gate
-//
-// Step 1: name/email/phone/postcode -> POST /lead -> creates
-// the GHL contact and reveals the Step 2 DQ questions. Step 2: facility
-// type/budget/frequency -> POST /gate (the same DQ scoring the AI
-// Receptionist already calls live on the phone). A qualifying tier returns
-// a signed booking_token; the site posts it to POST /slots and draws the
-// open walkthrough days/times in the built-in #walkthrough-picker (no GHL
-// widget, no injected <script> tags). A nurture tier, a missing token, a
-// /slots failure or zero open days shows the no-calendar "we'll be in
-// touch" message instead. Postcode is only asked once, in Step 1, but
-// /gate's DQ check still needs it — buildGatePayload() reads it back out
-// of the (by then hidden, but still populated) Step 1 field rather than
-// asking again.
-//
-// Shared between the homepage hero form and contact.html's form — see
-// data-conversion-page on each <form class="assessment-form"> for which page a
-// submission came from. See docs/ARCHITECTURE.md for how this fits into
-// the rest of the site/Worker/GHL flow.
-
 // Vantage Point Facility Services — shared two-step gate
 //
 // Mechanics for a "Step 1 creates the contact, a modal dialog asks the
@@ -41,7 +21,9 @@
 //                                        setLoading, showError, revealResult,
 //                                        loadPicker }
 //   messages        optional overrides: generic, turnstilePending, validation,
-//                   addressRequired, slotTaken
+//                   addressRequired, slotTaken, bookIdle (the Book button
+//                   before a time is picked), alreadyBooked (prefix before
+//                   the existing booking's time)
 //
 // booking-gate.js is today's configuration of this module.
 
@@ -52,6 +34,8 @@ var DEFAULT_MESSAGES = {
   validation: "Please fill in every field so we can check availability.",
   addressRequired: "Please enter the site address for the walkthrough.",
   slotTaken: "That time was just taken — please pick another.",
+  bookIdle: "Book walkthrough",
+  alreadyBooked: "You already have a walkthrough booked for ",
 };
 
 // Config lives per form; step2/picker elements find theirs via closest("form").
@@ -62,7 +46,7 @@ function cfgOf(el) {
 }
 
 function msg(cfg, key) {
-  return (cfg.messages && cfg.messages[key]) || DEFAULT_MESSAGES[key];
+  return (cfg && cfg.messages && cfg.messages[key]) || DEFAULT_MESSAGES[key];
 }
 
 function url(cfg, endpoint) {
@@ -486,7 +470,7 @@ export function drawPicker(picker) {
     bookBtn.disabled = !state.startTime || Boolean(state.booking);
     bookBtn.textContent = state.startTime
       ? "Book " + formatDay(state.date, { weekday: "short", day: "numeric", month: "short" }) + ", " + formatTime(state.startTime, state.timezone)
-      : "Book walkthrough";
+      : msg(cfgOf(picker), "bookIdle");
   }
 }
 
@@ -513,7 +497,9 @@ function handleBook(picker, bookBtn) {
   state.booking = true;
   setLoading(bookBtn, true);
 
-  postJson(url(cfg, cfg.bookEndpoint), { booking_token: step2.dataset.bookingToken, start_time: startTime, site_address: siteAddress })
+  var payload = { booking_token: step2.dataset.bookingToken, start_time: startTime };
+  if (addressInput) payload.site_address = siteAddress;
+  postJson(url(cfg, cfg.bookEndpoint), payload)
     .then(function (data) {
       state.booking = false;
       var when = formatWhen(data && data.start_time ? data.start_time : startTime, state.timezone);
@@ -524,7 +510,7 @@ function handleBook(picker, bookBtn) {
       var code = err && err.data && err.data.error;
       if (err && err.status === 409 && code === "already_booked") {
         var t = err.data.start_time || startTime;
-        showConfirmation(step2, "You already have a walkthrough booked for " + formatWhen(t, state.timezone) + ".");
+        showConfirmation(step2, msg(cfg, "alreadyBooked") + formatWhen(t, state.timezone) + ".");
         return;
       }
       if (err && err.status === 409 && code === "slot_unavailable") {

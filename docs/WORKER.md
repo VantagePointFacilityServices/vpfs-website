@@ -755,7 +755,7 @@ All rules live at the top of `worker/worker.js` under `CONFIG`:
 | To change… | Edit |
 |---|---|
 | Service-area postcodes (leads) | `SERVICE_POSTCODES` |
-| Applicant postcodes (Gold Coast 4207-4230, Tweed 2485-2490; verify against Australia Post) | `APPLICANT_POSTCODES` |
+| Applicant postcodes (Gold Coast 4207-4230, Tweed Shire 2484-2490; sources in the comment above the list) | `APPLICANT_POSTCODES` |
 | Open the employee interview intake (`"true"`; otherwise qualifying employees are shortlisted) | `EMPLOYEE_INTAKE_OPEN` in `wrangler.toml` |
 | Minimum monthly budget (under → nurture) | `MIN_MONTHLY_SPEND` |
 | Priority budget (at or over → Priority) | `PRIORITY_MONTHLY_SPEND` |

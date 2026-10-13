@@ -30,7 +30,16 @@ function mount(track = "employee") {
           <div class="booking-result">
             <div id="no-calendar-message"></div><div id="shortlist-message"></div>
             <div id="unsuccessful-message"></div><div id="unsuccessful-no-abn-message"></div>
-            <div id="walkthrough-picker"></div>
+            <div id="walkthrough-picker">
+              <span class="picker-week-label"></span>
+              <button type="button" class="picker-prev-week">Prev</button>
+              <button type="button" class="picker-next-week">Next</button>
+              <div class="picker-days" role="radiogroup"></div>
+              <div class="picker-times" role="radiogroup"></div>
+              <div class="booking-error"></div>
+              <button type="button" class="picker-book" disabled>Book</button>
+            </div>
+            <div id="booking-confirmed"></div>
           </div>
         </div>
       </dialog>
@@ -191,5 +200,63 @@ describe("applicant Step 2 (apply.js)", () => {
       expect(form.querySelector(".step2-submit").disabled).toBe(false);
       expect(shown(form)).toEqual([]);
     }
+  });
+});
+
+describe("applicant interview booking (apply.js)", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  const T = "2026-03-04T13:30:00+10:00";
+  const json = (body, status = 200) => Promise.resolve({ ok: status < 400, status, json: () => Promise.resolve(body) });
+
+  // Step 1 -> Step 2 "book" -> /slots with one open time; returns the picker.
+  async function openInterviewPicker(bookReply) {
+    const fetchMock = vi.fn((url) => {
+      if (url.endsWith("/apply")) return json({ contact_id: "c1" });
+      if (url.endsWith("/apply-screen")) return json({ result: "book", booking_token: "tok" });
+      if (url.endsWith("/slots")) return json({ timezone: "Australia/Brisbane", days: [{ date: "2026-03-04", slots: [T] }] });
+      return bookReply();
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const form = mount("subcontractor");
+    initApply(form);
+    submit(form);
+    await flush();
+    form.querySelector(".step2-submit").click();
+    await flush();
+    await flush();
+    const step2 = form.querySelector(".booking-step-2");
+    return { form, step2, fetchMock, book: step2.querySelector(".picker-book") };
+  }
+
+  it("labels the idle button for an interview, not a walkthrough", async () => {
+    const { book } = await openInterviewPicker(() => json({}));
+    expect(book.textContent).toBe("Book interview");
+  });
+
+  it("books with only the token and start time, then confirms the interview", async () => {
+    const { step2, fetchMock, book } = await openInterviewPicker(() => json({ booked: true, start_time: T }));
+    step2.querySelector('.picker-day[data-date="2026-03-04"]').click();
+    step2.querySelector(`.picker-time[data-start="${T}"]`).click();
+    book.click();
+    await flush();
+    const bookCall = fetchMock.mock.calls.find(([u]) => u.endsWith("/book"));
+    expect(JSON.parse(bookCall[1].body)).toEqual({ booking_token: "tok", start_time: T });
+    const confirmed = step2.querySelector("#booking-confirmed");
+    expect(confirmed.classList.contains("show")).toBe(true);
+    expect(confirmed.textContent).toMatch(/booked for .*4 Mar.*1:30/i);
+  });
+
+  it("already_booked says interview, not walkthrough", async () => {
+    const { step2, book } = await openInterviewPicker(() =>
+      json({ error: "already_booked", start_time: "2026-03-10T09:00:00+10:00" }, 409)
+    );
+    step2.querySelector('.picker-day[data-date="2026-03-04"]').click();
+    step2.querySelector(`.picker-time[data-start="${T}"]`).click();
+    book.click();
+    await flush();
+    const text = step2.querySelector("#booking-confirmed").textContent;
+    expect(text).toMatch(/You already have an interview booked for .*10 Mar/i);
+    expect(text).not.toMatch(/walkthrough/i);
   });
 });
