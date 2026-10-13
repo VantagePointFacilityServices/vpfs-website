@@ -31,11 +31,22 @@ describe.each(["careers.html", "subcontractor.html"])("%s in contact mode", (pag
     expect(form.closest('[data-intake-only="form"]')).not.toBeNull();
   });
 
-  it("shows an email and phone block inside the #apply target", () => {
+  it("shows the careers@ email block inside the #apply target", () => {
     const block = doc.querySelector('#apply [data-intake-only="contact"]');
     expect(block).not.toBeNull();
-    expect(block.querySelector('a[href="mailto:booking@vantagepointfacilityservices.com.au"]')).not.toBeNull();
-    expect(block.querySelector('a[href="tel:0756512257"]')).not.toBeNull();
+    expect(block.querySelector('a[href="mailto:careers@vantagepointfacilityservices.com.au"]')).not.toBeNull();
+  });
+
+  it("offers only the application and careers@: no phone number and no booking@ anywhere", () => {
+    const html = readFileSync(resolve(SITE_DIR, page), "utf8");
+    expect(html).not.toMatch(/tel:|07 5651 2257|0756512257/);
+    expect(html).not.toContain("booking@");
+    expect(doc.querySelectorAll('a[href="mailto:careers@vantagepointfacilityservices.com.au"]').length).toBeGreaterThan(1);
+  });
+
+  it("points form-mode applicants with questions to careers@", () => {
+    const note = doc.querySelector('[data-intake-only="form"] a[href="mailto:careers@vantagepointfacilityservices.com.au"]');
+    expect(note).not.toBeNull();
   });
 
   it("marks every on-the-spot promise as form-only", () => {
