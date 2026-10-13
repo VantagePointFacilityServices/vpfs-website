@@ -7,17 +7,27 @@ const doc = new DOMParser().parseFromString(html, "text/html");
 const text = doc.body.textContent.replace(/\s+/g, " ");
 
 describe("careers.html talent pool: copy", () => {
+  it("calls the role cleaning technician and drops the old award-pay headline", () => {
+    expect(text).not.toMatch(/\bcleaners?\b/i);
+    expect(text).not.toContain("Award pay from");
+    expect(doc.querySelector('meta[name="description"]').getAttribute("content")).toContain("Above-award pay for good technicians");
+    expect(html).not.toMatch(/\bcleaners?\b/i);
+  });
+
   it("renders hero, requirements, pay, bonuses, ladder, process and cross-link", () => {
-    expect(doc.querySelector("h1").textContent).toBe("For cleaners who take pride in the detail.");
+    expect(doc.querySelector("h1").textContent).toBe("For cleaning technicians who take pride in the detail.");
     for (const s of [
       "Join the team as we grow",
       "What we ask of you",
+      "Above-award pay for good technicians",
+      "we pay good cleaning technicians above it",
       "$27.08 an hour",
       "$33.85 an hour",
       "Paid weekly",
       "Quarterly quality bonuses",
       "Build a career in cleaning, not just a shift.",
-      "Senior Cleaner.",
+      "Cleaning Technician.",
+      "Senior Cleaning Technician.",
       "two consecutive quarters at the standard",
       "Site Lead / Trainer.",
       "Cleaning Supervisor.",
