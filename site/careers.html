@@ -23,7 +23,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
-<body>
+<!-- Applicant intake switch: "contact" shows the email/phone blocks until the GHL people sub-account is live; set to "form" to switch the application form back on. -->
+<body data-applicant-intake="contact">
 
 <!-- ============ HEADER ============ -->
 <header class="site-header">
@@ -82,10 +83,16 @@
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Written scope for every site</span></li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>A real career path</span></li>
         </ul>
-        <p class="hero-response">Answer a few quick questions and you&rsquo;ll know straight away if you&rsquo;re on our shortlist. We&rsquo;ll invite you to a group interview when our first employee intake opens.</p>
+        <p class="hero-response" data-intake-only="contact">Email or call us to join our shortlist. We&rsquo;ll invite you to a group interview when our first employee intake opens.</p>
+        <p class="hero-response" data-intake-only="form">Answer a few quick questions and you&rsquo;ll know straight away if you&rsquo;re on our shortlist. We&rsquo;ll invite you to a group interview when our first employee intake opens.</p>
       </div>
       <div class="assessment-form" id="apply">
-        <form class="contact-form" data-apply data-engagement-track="employee">
+        <div class="contact-form" data-intake-only="contact">
+          <h3 class="mt-0">Join our shortlist</h3>
+          <p>Email <a href="mailto:booking@vantagepointfacilityservices.com.au">booking@vantagepointfacilityservices.com.au</a> with your name, phone and suburb, or call <a href="tel:0756512257">07 5651 2257</a>.</p>
+          <p class="form-note" style="text-align:left;">Have your own ABN? <a href="subcontractor.html">Subcontract with us &rarr;</a></p>
+        </div>
+        <form class="contact-form" data-apply data-engagement-track="employee" data-intake-only="form">
           <div class="form-fields">
             <h3 class="mt-0">Join our shortlist</h3>
             <div class="booking-error" role="alert"></div>
@@ -302,7 +309,7 @@
         </div>
         <div class="process-step">
           <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></div>
-          <div><h4>2. A few quick questions</h4><p>About your experience and availability. You&rsquo;ll see the result straight away.</p></div>
+          <div><h4>2. A few quick questions</h4><p data-intake-only="form">About your experience and availability. You&rsquo;ll see the result straight away.</p><p data-intake-only="contact">About your experience and availability, by phone or email.</p></div>
         </div>
         <div class="process-step">
           <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></div>

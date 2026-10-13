@@ -980,3 +980,8 @@ html:has(.booking-dialog[open]){ overflow:hidden; } /* stop the page scrolling b
 .hero-response{ margin-top:var(--space-4); }
 .step2-question{ border:0; padding:0; margin:0 0 var(--space-4); }
 .step2-question legend{ font-weight:600; margin-bottom:var(--space-2); padding:0; }
+
+/* Applicant intake switch (careers.html, subcontractor.html): <body data-applicant-intake>
+   is "contact" until the GHL people sub-account is live, then "form". */
+body[data-applicant-intake="contact"] [data-intake-only="form"],
+body[data-applicant-intake="form"] [data-intake-only="contact"]{ display:none !important; }

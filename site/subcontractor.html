@@ -50,7 +50,8 @@
 }
 </script>
 </head>
-<body>
+<!-- Applicant intake switch: "contact" shows the email/phone blocks until the GHL people sub-account is live; set to "form" to switch the application form back on. -->
+<body data-applicant-intake="contact">
 
 <!-- ============ HEADER ============ -->
 <header class="site-header">
@@ -110,8 +111,14 @@
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>No chasing clients for payment</span></li>
         </ul>
       </div>
+      <div id="apply">
+      <div class="assessment-form contact-form" data-intake-only="contact">
+        <h3 class="mt-0">Apply to subcontract</h3>
+        <p>Email <a href="mailto:booking@vantagepointfacilityservices.com.au">booking@vantagepointfacilityservices.com.au</a> with your name, phone, suburb and ABN, or call <a href="tel:0756512257">07 5651 2257</a>. We&rsquo;ll book your group interview call with you.</p>
+        <p class="form-note" style="text-align:left;">Prefer to be employed? <a href="careers.html">Join the team &rarr;</a></p>
+      </div>
       <!-- Applicant flow: Step 1 posts to /apply by script (assets/js/apply.js); method="post" is only the no-script fallback. -->
-      <form class="assessment-form" id="apply" method="post" data-apply data-engagement-track="subcontractor">
+      <form class="assessment-form" method="post" data-apply data-engagement-track="subcontractor" data-intake-only="form">
         <div class="form-fields contact-form">
           <h3 class="mt-0">Apply to subcontract</h3>
           <p class="small">Answer a few quick questions and book your group interview call on the spot.</p>
@@ -276,6 +283,7 @@
           <button type="button" class="btn btn-primary booking-resume-btn">Continue</button>
         </div>
       </form>
+      </div>
     </div>
   </div>
 </section>
@@ -367,11 +375,11 @@
         </div>
         <div class="process-step">
           <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></div>
-          <div><h4>2. A few quick questions</h4><p>About your business and experience. You&rsquo;ll see the result straight away.</p></div>
+          <div><h4>2. A few quick questions</h4><p data-intake-only="form">About your business and experience. You&rsquo;ll see the result straight away.</p><p data-intake-only="contact">About your business and experience, by phone or email.</p></div>
         </div>
         <div class="process-step">
           <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></div>
-          <div><h4>3. Book your group interview call</h4><p>Pick a time that suits you, right on the page.</p></div>
+          <div><h4>3. Book your group interview call</h4><p data-intake-only="form">Pick a time that suits you, right on the page.</p><p data-intake-only="contact">We&rsquo;ll book a time that suits you.</p></div>
         </div>
         <div class="process-step">
           <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></div>
