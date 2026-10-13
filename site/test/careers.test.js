@@ -117,3 +117,48 @@ describe("careers.html display fixes", () => {
     expect(a.innerHTML).toContain("careers@<wbr>");
   });
 });
+
+describe("careers.html approved copy", () => {
+  const heroChecks = Array.from(doc.querySelectorAll(".hero-inner .hero-checks li")).map((li) => li.textContent.trim());
+
+  it("mentions weekly pay and the supplied kit in the hero checks", () => {
+    expect(heroChecks.some((c) => /weekly/i.test(c))).toBe(true);
+    expect(heroChecks).toContain("Uniform, PPE and equipment supplied");
+    expect(heroChecks).not.toContain("Written scope for every site");
+    expect(heroChecks.length).toBe(4);
+  });
+
+  it("lists the three D1 benefits", () => {
+    const h = doc.querySelector("#benefits");
+    expect(h).not.toBeNull();
+    const t = h.textContent.replace(/\s+/g, " ");
+    expect(t).toContain("What comes with the job");
+    expect(t).toContain("Uniform and PPE issued at induction");
+    expect(t).toContain("Equipment and chemicals supplied");
+    expect(t).toContain("The same sites, a small team");
+    expect(t).toContain("Wherever possible");
+  });
+
+  it("has a What the work looks like section with the weekend and public-holiday line", () => {
+    const sec = doc.querySelector("#the-work");
+    expect(sec).not.toBeNull();
+    expect(sec.querySelector("h2").textContent).toBe("What the work looks like");
+    const t = sec.textContent.replace(/\s+/g, " ");
+    expect(t).toContain("Our first intake is likely to be weekend and public-holiday casual shifts.");
+    expect(t).toContain("Sign in on Connecteam when you arrive.");
+    expect(sec.querySelectorAll("ol li").length).toBe(4);
+    expect(text.indexOf("What we ask of you")).toBeLessThan(text.indexOf("What the work looks like"));
+  });
+
+  it("uses the approved meta description on all three tags", () => {
+    const d = "Above-award pay for good technicians, paid weekly, with uniform, PPE and equipment supplied. Casual commercial cleaning on the Gold Coast. Join our shortlist.";
+    expect(doc.querySelector('meta[name="description"]').getAttribute("content")).toBe(d);
+    expect(doc.querySelector('meta[property="og:description"]').getAttribute("content")).toBe(d);
+    expect(doc.querySelector('meta[name="twitter:description"]').getAttribute("content")).toBe(d);
+  });
+
+  it("carries the lengthened process lines", () => {
+    expect(text).toContain("You’ll have the pay and the work in front of you before you decide.");
+    expect(text).toContain("with someone on site to show you the scope, and you’re paid for it.");
+  });
+});
