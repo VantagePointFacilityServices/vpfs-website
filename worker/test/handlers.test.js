@@ -1349,6 +1349,38 @@ describe("POST /apply-screen (Step 2 per-track screening)", () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
+  it("saves the subcontractor's answers to GHL under their own keys", async () => {
+    await screen(subcontractor);
+    expect(putFields()).toMatchObject({
+      cleaning_experience: "5_plus_years",
+      right_to_work: "yes",
+      police_check_status: "willing_no_current_check",
+      blue_card_status: "not_applicable",
+      availability: "flexible",
+      start_availability: "immediately",
+      reliable_transport: "yes",
+      physical_capability: "yes",
+      passion_rating: "genuinely_passionate",
+      has_own_insurance_and_abn: "yes",
+      own_equipment: "yes",
+      works_for_other_clients: "yes",
+    });
+  });
+
+  it("saves the employee's answers without the subcontractor-only keys", async () => {
+    await screen(employee);
+    const fields = putFields();
+    expect(fields).toMatchObject({ cleaning_experience: "3_plus_years", passion_rating: "genuinely_passionate" });
+    for (const key of ["has_own_insurance_and_abn", "own_equipment", "works_for_other_clients"]) {
+      expect(fields).not.toHaveProperty(key);
+    }
+  });
+
+  it("still saves the answers when the applicant is disqualified", async () => {
+    await screen({ ...subcontractor, own_equipment: "no" });
+    expect(putFields()).toMatchObject({ applicant_tier: "unsuccessful", own_equipment: "no" });
+  });
+
   it("every write uses the people credentials, never the commercial pair", async () => {
     await screen(employee);
     expect(global.fetch.mock.calls.length).toBeGreaterThan(1);

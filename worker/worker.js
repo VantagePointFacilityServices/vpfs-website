@@ -1353,12 +1353,20 @@ async function handleApplyScreen(rawPayload, env) {
   else if (track === "employee" && env.EMPLOYEE_INTAKE_OPEN !== "true") result = "shortlist";
   else result = "book";
 
+  // The applicant's own answers, saved under the keys they arrived with so the
+  // HR Lead can read them in GHL before the interview. Postcode is already
+  // saved by /apply; subcontractor-only questions are only sent on that track.
+  const answerKeys = COMMON_SCREEN_FIELDS.filter((k) => k !== "postcode")
+    .concat(track === "subcontractor" ? SUBCONTRACTOR_SCREEN_FIELDS : []);
+  const answers = Object.fromEntries(answerKeys.map((k) => [k, String(payload[k]).toLowerCase()]));
+
   const blueCardEligible = f.blueCardStatus === "current_blue_card_held" || f.blueCardStatus === "willing_to_obtain";
   const subcontractorReady = f.hasOwnInsuranceAndAbn === "yes";
 
   const write = await writeBackToGHL(
     contactId,
     {
+      ...answers,
       applicant_score: score,
       applicant_tier: tier,
       applicant_dq_flag: dq.disqualified ? dq.reason : "none",
@@ -1366,7 +1374,6 @@ async function handleApplyScreen(rawPayload, env) {
       applicant_stage: result === "unsuccessful" ? "unsuccessful" : result === "shortlist" ? "shortlisted" : "screened",
       applicant_blue_card_eligible: blueCardEligible,
       applicant_subcontractor_ready: subcontractorReady,
-      start_availability: f.startAvailability,
     },
     penv
   );

@@ -156,7 +156,7 @@ with exactly these keys:
 | Read/written by `/enrich` | `size_sqm`, `headcount`, `floor_count`, `lifts_present`, `bathroom_count`, `kitchen_count`, `breakroom_count`, `meeting_room_count`, `special_requests`, `supplies_provided`, `equipment_needed`, `contract_renewal_date`, `contract_renewal_months_out` |
 | Read/written by `/confirm` | `budget_flexible`, `flexible_budget_amount`, `frequency_flexible`, `flexible_frequency`, `monthly_budget`, `cleaning_frequency`, `facility_type` |
 | Read/written by `/outcome` | `outcome_type`, `reschedule_attempts`, `loss_reason`, `noshow_attempts`, `lost_at_proposal_date` |
-| Applicants | `applicant_stage`, `applicant_tier`, `applicant_score`, `applicant_dq_flag`, `applicant_captured_at`, `applicant_screened_at`, `applicant_blue_card_eligible`, `applicant_subcontractor_ready`, plus the survey fields listed in [section 5](#5-the-job-applicant-journey) |
+| Applicants (**people** sub-account, not this one) | `engagement_track`, `postcode`, `lead_channel`, `utm_*`, `applicant_stage`, `applicant_tier`, `applicant_score`, `applicant_dq_flag`, `applicant_captured_at`, `applicant_screened_at`, `applicant_blue_card_eligible`, `applicant_subcontractor_ready`, plus the Step 2 answers listed in [section 5](#5-the-job-applicant-journey). Full build steps: vpos `people/integrations/gohighlevel/people-subaccount-build-guide.md` |
 
 Plus the tag, which already exists in the sub-account:
 
@@ -176,9 +176,9 @@ Also required:
   the new-lead alert / follow-up. (Not an Inbound Webhook trigger: that's a
   premium per-run trigger with a public URL, and it can't hand a contact ID
   back to the website.)
-- **Workflows with a Webhook action** pointing at `/enrich`, `/confirm`,
-  `/outcome`, `/apply` and `/apply-screen` (see section 4 and 5 for when each
-  should fire). Each webhook must send the contact's ID as `contact_id` and
+- **Workflows with a Webhook action** pointing at `/enrich`, `/confirm`
+  and `/outcome` (see section 4 for when each should fire). `/apply` and
+  `/apply-screen` are called by the browser and need no webhook. Each webhook must send the contact's ID as `contact_id` and
   the relevant fields under `customFields`.
 
 ---
@@ -462,42 +462,48 @@ other `outcome_type` is rejected with a 400.
 
 ## 5. The job-applicant journey
 
-Separate from leads: the careers funnel scores cleaners who apply. Step 1
-(`/apply`) is called by the browser (`site/assets/js/apply.js`, on a form marked
-`data-apply` with `data-engagement-track`) and creates the applicant in the
-**people** GHL sub-account; `peopleEnv(env)` swaps `GHL_PEOPLE_API_KEY` /
-`GHL_PEOPLE_LOCATION_ID` in for the commercial pair so the same GHL helpers
-are reused. A successful Step 1 hides the Step 1 fields and opens the Step 2
-dialog. `/apply-screen` is still the older GHL-workflow contract and is
-reworked separately; the flowchart below shows that older flow, and its
-`/apply` postcode check has moved to Step 2.
+Separate from leads, and written to a different GHL sub-account: the
+**people** sub-account (`GHL_PEOPLE_LOCATION_ID` / `GHL_PEOPLE_API_KEY`,
+swapped in by `peopleEnv(env)` so the same GHL helpers are reused). Both
+applicant pages — `careers.html` (employee track) and `subcontractor.html`
+(subcontractor track) — use the same two-step pattern as the homepage
+booking gate (`site/assets/js/apply.js` on top of `two-step-gate.js`).
 
 ```mermaid
 flowchart TD
-    A["Applicant — careers Stage 1<br/>name, phone, email, postcode"] --> AP["POST /apply"]
-    AP --> PC{"Lives in a<br/>service-area postcode?"}
-    PC -- no --> U1["applicant_tier: unsuccessful<br/>unsuccessful-out-of-area<br/>(never sees the survey)"]
-    PC -- yes --> SS["applicant_stage: screening_survey_sent<br/>→ GHL sends Stage 2 survey"]
-
-    SS --> SV["Applicant returns<br/>screening survey"] --> AS["POST /apply-screen"]
-    AS --> H{"Hard gates:<br/>under 1 year experience?<br/>no right to work?<br/>won't do police check?"}
-    H -- any yes --> U2["applicant_tier: unsuccessful<br/>(score still recorded)"]
-    H -- all clear --> S["Fit score 0–100"]
-    S --> ST{"Score?"}
-    ST -- "70+" --> P["Priority pipeline"]
-    ST -- "30–69" --> SD["Standard pipeline"]
-    ST -- "under 30" --> U3["Unsuccessful pipeline"]
+    A["Step 1 form<br/>name, email, phone, postcode<br/>+ engagement_track"] --> AP["POST /apply<br/>(browser)"]
+    AP --> C["Contact upserted in the people sub-account<br/>tag applicant-employee / applicant-subcontractor"]
+    C --> D["Step 2 dialog: the track's questions"] --> AS["POST /apply-screen<br/>(browser)"]
+    AS --> H{"Any per-track<br/>disqualifier, or score < 30?"}
+    H -- yes --> U["result: unsuccessful<br/>tag applicant-unsuccessful → nurture"]
+    H -- no --> E{"Employee track and<br/>EMPLOYEE_INTAKE_OPEN off?"}
+    E -- yes --> S["result: shortlist<br/>tag applicant-shortlist"]
+    E -- no --> B["result: book + booking token<br/>(aud applicant, track)"]
+    B --> SL["POST /slots → the track's interview calendar"] --> BK["POST /book<br/>tag applicant-interview-booked"]
 ```
 
-**Fit score:** experience 1–3 years 25 / 3+ years 40; availability
-business hours 10 / after hours 20 / flexible 25; reliable transport 15;
-physically capable 10; attitude "take pride" 5 / "genuinely passionate" 10.
+**Disqualifiers** (PRD D18): under 1 year of commercial experience, no right
+to work, not willing to get a police check, postcode outside
+`APPLICANT_POSTCODES` (Gold Coast 4207–4230, Tweed Shire 2484–2490). The
+subcontractor track adds no ABN + insurance, no own equipment and no own
+transport.
 
-**Also recorded, never scored:** Blue Card eligibility
-(`applicant_blue_card_eligible`), own insurance + ABN
-(`applicant_subcontractor_ready`), document uploads (police check, Blue
-Card, insurance certificate) and start availability.
+**Fit score:** experience (employee 1–3 yrs 25 / 3+ yrs 40; subcontractor
+1–3 yrs 25 / 3–5 yrs 32 / 5+ yrs 40); availability business hours 10 /
+after hours 20 / flexible 25 / weekends only 5; transport 15 (employee) or
+works for other clients 15 (subcontractor); physically capable 10; passion
+"take pride" 5 / "genuinely passionate" 10. Priority ≥ 70, Standard 30–69.
 
+**Saved to GHL by `/apply-screen`:** the result fields (`applicant_score`,
+`applicant_tier`, `applicant_dq_flag`, `applicant_stage`,
+`applicant_screened_at`, `applicant_blue_card_eligible`,
+`applicant_subcontractor_ready`) and every answer under its own key:
+`cleaning_experience`, `right_to_work`, `police_check_status`,
+`blue_card_status`, `availability`, `start_availability`,
+`reliable_transport`, `physical_capability`, `passion_rating`, plus on the
+subcontractor track `has_own_insurance_and_abn`, `own_equipment`,
+`works_for_other_clients`. No documents are uploaded in the application;
+they are collected after the interview by a GHL form (PRD D21).
 
 ---
 
@@ -595,7 +601,7 @@ To finish step 3:
 | `/confirm` | `dq_flag` (confirmed nurture), or `lead_score`, `lead_tier`, `dq_flag: none` plus the flexed `monthly_budget` / `cleaning_frequency` |
 | `/outcome` | `lead_tier: nurture`, `dq_flag`, `noshow_attempts` or `lost_at_proposal_date` |
 | `/apply` | (people sub-account) `engagement_track`, `postcode`, `applicant_stage: started`, `applicant_captured_at`, `utm_*` / `lead_channel` if sent |
-| `/apply-screen` | `applicant_score`, `applicant_tier`, `applicant_dq_flag`, `applicant_screened_at`, eligibility flags, document links, `start_availability` |
+| `/apply-screen` | (people sub-account) `applicant_score`, `applicant_tier`, `applicant_dq_flag`, `applicant_stage`, `applicant_screened_at`, `applicant_blue_card_eligible`, `applicant_subcontractor_ready`, and every Step 2 answer under its own key (section 5); tag `applicant-unsuccessful` or `applicant-shortlist` |
 
 **Tier values:** `priority`, `standard`, `standard-flagged`, `nurture`
 (leads); `priority`, `standard`, `unsuccessful`, `pending` (applicants).
