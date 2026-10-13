@@ -156,7 +156,7 @@ with exactly these keys:
 | Read/written by `/enrich` | `size_sqm`, `headcount`, `floor_count`, `lifts_present`, `bathroom_count`, `kitchen_count`, `breakroom_count`, `meeting_room_count`, `special_requests`, `supplies_provided`, `equipment_needed`, `contract_renewal_date`, `contract_renewal_months_out` |
 | Read/written by `/confirm` | `budget_flexible`, `flexible_budget_amount`, `frequency_flexible`, `flexible_frequency`, `monthly_budget`, `cleaning_frequency`, `facility_type` |
 | Read/written by `/outcome` | `outcome_type`, `reschedule_attempts`, `loss_reason`, `noshow_attempts`, `lost_at_proposal_date` |
-| Applicants (**people** sub-account, not this one) | `engagement_track`, `postcode`, `lead_channel`, `utm_*`, `applicant_stage`, `applicant_tier`, `applicant_score`, `applicant_dq_flag`, `applicant_captured_at`, `applicant_screened_at`, `applicant_blue_card_eligible`, `applicant_subcontractor_ready`, plus the Step 2 answers listed in [section 5](#5-the-job-applicant-journey). Full build steps: vpos `people/integrations/gohighlevel/people-subaccount-build-guide.md` |
+| Applicants (**people** sub-account, not this one) | `engagement_track`, `postcode`, `lead_channel`, `utm_*`, `applicant_stage`, `applicant_tier`, `applicant_score`, `applicant_dq_flag`, `applicant_captured_at`, `applicant_screened_at`, `applicant_blue_card_eligible`, `applicant_subcontractor_ready`, plus the Step 2 answers listed in [section 5](#5-the-job-applicant-journey). Full build steps: vpos `commercial/integrations/gohighlevel/pipelines/recruitment/people-subaccount-build-guide.md` |
 
 Plus the tag, which already exists in the sub-account:
 
