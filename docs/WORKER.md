@@ -108,8 +108,8 @@ There are **two ways in**:
 | `/enrich` | GHL workflow | Booked lead returns the optional facility-detail survey | Saves facility detail; can bump Standard → Priority |
 | `/confirm` | GHL workflow | Disqualified lead answers "is your budget/frequency flexible?" | Re-qualifies them if their flexed answer clears the minimum |
 | `/outcome` | GHL workflow | Walkthrough no-show, or proposal marked Lost | Moves them to the right nurture segment |
-| `/apply` | GHL workflow | Job applicant submits the careers Stage 1 form | Checks they live in the service area |
-| `/apply-screen` | GHL workflow | Applicant returns the Stage 2 screening survey | Checks eligibility, scores fit, sets applicant tier |
+| `/apply` | Website (careers and subcontractor pages, Step 1) | Applicant submits first name, last name, email, phone, postcode and `engagement_track` (`employee` or `subcontractor`) | Creates or updates the contact in the **people** sub-account (via `peopleEnv`), writes `engagement_track`, `postcode`, `applicant_stage: "started"`, `applicant_captured_at`, tags `applicant-employee` / `applicant-subcontractor` (+ `turnstile-unverified`), returns `{ contact_id }`. Honeypot filled → `200 {ok:true}`, nothing created; Turnstile rejected → `403`; missing email/phone/postcode or bad track → `400`; `GHL_PEOPLE_API_KEY` or `GHL_PEOPLE_LOCATION_ID` unset → `503` (never falls back to the commercial account); upsert failure → `502` |
+| `/apply-screen` | Browser (Step 2 dialog) | Applicant answers the track's screening questions | Per-track DQs and fit score; returns `result` book / shortlist / unsuccessful; writes to the people sub-account |
 
 ---
 
@@ -134,7 +134,11 @@ There are **two ways in**:
 | `BOOKING_TOKEN_SECRET` | **Secret** | Key used to sign the `booking_token` returned by `/gate`. If unset, `/gate` simply omits the token. | `cd worker && npx wrangler secret put BOOKING_TOKEN_SECRET` |
 | `CALENDAR_PRIORITY_ID` | Plain setting | GHL calendar id for Priority leads (`Ugunj3x67DQlmRm2aL2h`). | `[vars]` in `worker/wrangler.toml` |
 | `CALENDAR_STANDARD_ID` | Plain setting | GHL calendar id for Standard / standard-flagged leads (`FMEE7r6jwySahTZ90S0C`). | `[vars]` in `worker/wrangler.toml` |
+| `CALENDAR_INTERVIEW_EMPLOYEE_ID` | Plain setting | People sub-account group interview calendar for the employee track. Blank → applicants see the "we'll be in touch" fallback. | `[vars]` in `worker/wrangler.toml` |
+| `CALENDAR_INTERVIEW_SUBCONTRACTOR_ID` | Plain setting | As above, for the subcontractor track. | `[vars]` in `worker/wrangler.toml` |
 | `BOOKING_TIMEZONE` | Plain setting | Time zone for booking slots (`Australia/Brisbane`). | `[vars]` in `worker/wrangler.toml` |
+| `GHL_PEOPLE_LOCATION_ID` | Plain setting | The people (recruiting) GHL sub-account ID, used by `/apply`. Placeholder in `wrangler.toml` until the sub-account exists; `/apply` returns 503 while it is empty. | `[vars]` in `worker/wrangler.toml` |
+| `GHL_PEOPLE_API_KEY` | **Secret** | API token for the people sub-account. `/apply` returns 503 if unset. | `cd worker && npx wrangler secret put GHL_PEOPLE_API_KEY` |
 | `GHL_LOCATION_ID` | Plain setting | The GHL sub-account ID (`i1xCcUSRa8PDofaJ1Oyz`). Required when creating contacts. Not secret — it appears in GHL's public webhook URLs. | `[vars]` in `worker/wrangler.toml`, deployed with the code |
 | `CLOUDFLARE_WORKER_API_TOKEN` | GitHub repo secret | Lets GitHub Actions deploy the Worker. Scoped to `Account: Workers Scripts: Edit` only. | GitHub → Settings → Secrets and variables → Actions |
 
@@ -152,7 +156,7 @@ with exactly these keys:
 | Read/written by `/enrich` | `size_sqm`, `headcount`, `floor_count`, `lifts_present`, `bathroom_count`, `kitchen_count`, `breakroom_count`, `meeting_room_count`, `special_requests`, `supplies_provided`, `equipment_needed`, `contract_renewal_date`, `contract_renewal_months_out` |
 | Read/written by `/confirm` | `budget_flexible`, `flexible_budget_amount`, `frequency_flexible`, `flexible_frequency`, `monthly_budget`, `cleaning_frequency`, `facility_type` |
 | Read/written by `/outcome` | `outcome_type`, `reschedule_attempts`, `loss_reason`, `noshow_attempts`, `lost_at_proposal_date` |
-| Applicants | `applicant_stage`, `applicant_tier`, `applicant_score`, `applicant_dq_flag`, `applicant_captured_at`, `applicant_screened_at`, `applicant_blue_card_eligible`, `applicant_subcontractor_ready`, plus the survey fields listed in [section 5](#5-the-job-applicant-journey) |
+| Applicants (**people** sub-account, not this one) | `engagement_track`, `postcode`, `lead_channel`, `utm_*`, `applicant_stage`, `applicant_tier`, `applicant_score`, `applicant_dq_flag`, `applicant_captured_at`, `applicant_screened_at`, `applicant_blue_card_eligible`, `applicant_subcontractor_ready`, plus the Step 2 answers listed in [section 5](#5-the-job-applicant-journey). Full build steps: vpos `commercial/integrations/gohighlevel/pipelines/recruitment/people-subaccount-build-guide.md` |
 
 Plus the tag, which already exists in the sub-account:
 
@@ -172,9 +176,9 @@ Also required:
   the new-lead alert / follow-up. (Not an Inbound Webhook trigger: that's a
   premium per-run trigger with a public URL, and it can't hand a contact ID
   back to the website.)
-- **Workflows with a Webhook action** pointing at `/enrich`, `/confirm`,
-  `/outcome`, `/apply` and `/apply-screen` (see section 4 and 5 for when each
-  should fire). Each webhook must send the contact's ID as `contact_id` and
+- **Workflows with a Webhook action** pointing at `/enrich`, `/confirm`
+  and `/outcome` (see section 4 for when each should fire). `/apply` and
+  `/apply-screen` are called by the browser and need no webhook. Each webhook must send the contact's ID as `contact_id` and
   the relevant fields under `customFields`.
 
 ---
@@ -458,37 +462,48 @@ other `outcome_type` is rejected with a 400.
 
 ## 5. The job-applicant journey
 
-Separate from leads: the careers funnel scores cleaners who apply. Both
-endpoints are called by GHL workflows, not the browser.
+Separate from leads, and written to a different GHL sub-account: the
+**people** sub-account (`GHL_PEOPLE_LOCATION_ID` / `GHL_PEOPLE_API_KEY`,
+swapped in by `peopleEnv(env)` so the same GHL helpers are reused). Both
+applicant pages — `careers.html` (employee track) and `subcontractor.html`
+(subcontractor track) — use the same two-step pattern as the homepage
+booking gate (`site/assets/js/apply.js` on top of `two-step-gate.js`).
 
 ```mermaid
 flowchart TD
-    A["Applicant — careers Stage 1<br/>name, phone, email, postcode"] --> AP["POST /apply"]
-    AP --> PC{"Lives in a<br/>service-area postcode?"}
-    PC -- no --> U1["applicant_tier: unsuccessful<br/>unsuccessful-out-of-area<br/>(never sees the survey)"]
-    PC -- yes --> SS["applicant_stage: screening_survey_sent<br/>→ GHL sends Stage 2 survey"]
-
-    SS --> SV["Applicant returns<br/>screening survey"] --> AS["POST /apply-screen"]
-    AS --> H{"Hard gates:<br/>under 1 year experience?<br/>no right to work?<br/>won't do police check?"}
-    H -- any yes --> U2["applicant_tier: unsuccessful<br/>(score still recorded)"]
-    H -- all clear --> S["Fit score 0–100"]
-    S --> ST{"Score?"}
-    ST -- "70+" --> P["Priority pipeline"]
-    ST -- "30–69" --> SD["Standard pipeline"]
-    ST -- "under 30" --> U3["Unsuccessful pipeline"]
+    A["Step 1 form<br/>name, email, phone, postcode<br/>+ engagement_track"] --> AP["POST /apply<br/>(browser)"]
+    AP --> C["Contact upserted in the people sub-account<br/>tag applicant-employee / applicant-subcontractor"]
+    C --> D["Step 2 dialog: the track's questions"] --> AS["POST /apply-screen<br/>(browser)"]
+    AS --> H{"Any per-track<br/>disqualifier, or score < 30?"}
+    H -- yes --> U["result: unsuccessful<br/>tag applicant-unsuccessful → nurture"]
+    H -- no --> E{"Employee track and<br/>EMPLOYEE_INTAKE_OPEN off?"}
+    E -- yes --> S["result: shortlist<br/>tag applicant-shortlist"]
+    E -- no --> B["result: book + booking token<br/>(aud applicant, track)"]
+    B --> SL["POST /slots → the track's interview calendar"] --> BK["POST /book<br/>tag applicant-interview-booked"]
 ```
 
-**Fit score:** experience 1–3 years 25 / 3+ years 40; availability
-business hours 10 / after hours 20 / flexible 25; reliable transport 15;
-physically capable 10; attitude "take pride" 5 / "genuinely passionate" 10.
+**Disqualifiers** (PRD D18): under 1 year of commercial experience, no right
+to work, not willing to get a police check, postcode outside
+`APPLICANT_POSTCODES` (Gold Coast 4207–4230, Tweed Shire 2484–2490). The
+subcontractor track adds no ABN + insurance, no own equipment and no own
+transport.
 
-**Also recorded, never scored:** Blue Card eligibility
-(`applicant_blue_card_eligible`), own insurance + ABN
-(`applicant_subcontractor_ready`), document uploads (police check, Blue
-Card, insurance certificate) and start availability.
+**Fit score:** experience (employee 1–3 yrs 25 / 3+ yrs 40; subcontractor
+1–3 yrs 25 / 3–5 yrs 32 / 5+ yrs 40); availability business hours 10 /
+after hours 20 / flexible 25 / weekends only 5; transport 15 (employee) or
+works for other clients 15 (subcontractor); physically capable 10; passion
+"take pride" 5 / "genuinely passionate" 10. Priority ≥ 70, Standard 30–69.
 
-> ⚠️ See [Known gaps](#13-known-gaps): the careers page form is not
-> currently connected to anything.
+**Saved to GHL by `/apply-screen`:** the result fields (`applicant_score`,
+`applicant_tier`, `applicant_dq_flag`, `applicant_stage`,
+`applicant_screened_at`, `applicant_blue_card_eligible`,
+`applicant_subcontractor_ready`) and every answer under its own key:
+`cleaning_experience`, `right_to_work`, `police_check_status`,
+`blue_card_status`, `availability`, `start_availability`,
+`reliable_transport`, `physical_capability`, `passion_rating`, plus on the
+subcontractor track `has_own_insurance_and_abn`, `own_equipment`,
+`works_for_other_clients`. No documents are uploaded in the application;
+they are collected after the interview by a GHL form (PRD D21).
 
 ---
 
@@ -557,7 +572,7 @@ went wrong.
 `0x4AAAAAAFKpftSypIZ3KEQk` on every booking form (and the area form), and Cloudflare
 accepts it on the live domain. `wrangler secret list` shows only `GHL_API_KEY` and
 `BOOKING_TOKEN_SECRET`, so `/lead` and `/area-request` currently rely on the honeypot
-alone. The careers form doesn't post to the Worker, so enforcing the check doesn't affect it.
+alone. The applicant Step 1 form (`/apply`) sends a Turnstile token too, so it is covered by the same check.
 
 To finish step 3:
 
@@ -585,8 +600,8 @@ To finish step 3:
 | `/enrich` | the facility detail fields, `contract_renewal_months_out`, and `lead_tier: priority` if bumped |
 | `/confirm` | `dq_flag` (confirmed nurture), or `lead_score`, `lead_tier`, `dq_flag: none` plus the flexed `monthly_budget` / `cleaning_frequency` |
 | `/outcome` | `lead_tier: nurture`, `dq_flag`, `noshow_attempts` or `lost_at_proposal_date` |
-| `/apply` | `postcode`, `applicant_stage` or `applicant_tier`, `applicant_dq_flag`, `applicant_captured_at` |
-| `/apply-screen` | `applicant_score`, `applicant_tier`, `applicant_dq_flag`, `applicant_screened_at`, eligibility flags, document links, `start_availability` |
+| `/apply` | (people sub-account) `engagement_track`, `postcode`, `applicant_stage: started`, `applicant_captured_at`, `utm_*` / `lead_channel` if sent |
+| `/apply-screen` | (people sub-account) `applicant_score`, `applicant_tier`, `applicant_dq_flag`, `applicant_stage`, `applicant_screened_at`, `applicant_blue_card_eligible`, `applicant_subcontractor_ready`, and every Step 2 answer under its own key (section 5); tag `applicant-unsuccessful` or `applicant-shortlist` |
 
 **Tier values:** `priority`, `standard`, `standard-flagged`, `nurture`
 (leads); `priority`, `standard`, `unsuccessful`, `pending` (applicants).
@@ -745,7 +760,9 @@ All rules live at the top of `worker/worker.js` under `CONFIG`:
 
 | To change… | Edit |
 |---|---|
-| Service-area postcodes (leads **and** applicants) | `SERVICE_POSTCODES` |
+| Service-area postcodes (leads) | `SERVICE_POSTCODES` |
+| Applicant postcodes (Gold Coast 4207-4230, Tweed Shire 2484-2490; sources in the comment above the list) | `APPLICANT_POSTCODES` |
+| Open the employee interview intake (`"true"`; otherwise qualifying employees are shortlisted) | `EMPLOYEE_INTAKE_OPEN` in `wrangler.toml` |
 | Minimum monthly budget (under → nurture) | `MIN_MONTHLY_SPEND` |
 | Priority budget (at or over → Priority) | `PRIORITY_MONTHLY_SPEND` |
 | Frequency options and their cleans per week | `FREQUENCY_TO_WEEKLY` — plus the radio buttons in `site/index.html` and `site/contact.html` |
@@ -762,11 +779,6 @@ section 9. Rule changes should also be reflected in the vpos scoring docs.
 
 ## 13. Known gaps
 
-- **The careers form isn't connected.** `site/careers.html` has a plain
-  `<form>` with no `action` and no script attached, so submitting it just
-  reloads the page — no applicant reaches GHL or `/apply`. It needs either
-  a GHL form embed (with a workflow webhooking `/apply`) or its own
-  browser-side script like `booking-gate.js`.
 - **Only four service-area postcodes** (4211, 4212, 4226, 4227). Many Gold
   Coast leads will be flagged `out-of-area` (they still get a calendar)
   until this list is extended.

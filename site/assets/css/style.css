@@ -973,3 +973,15 @@ html:has(.booking-dialog[open]){ overflow:hidden; } /* stop the page scrolling b
 .legal-wrap table{ width:100%; border-collapse:collapse; font-size:.92rem; }
 .legal-wrap th, .legal-wrap td{ text-align:left; vertical-align:top; padding:10px 12px; border-bottom:1px solid var(--border, #d9dee5); }
 @media (max-width:720px){ .legal-section{ padding:40px 0 56px; } }
+
+/* Careers talent-pool page */
+.career-ladder{ margin:var(--space-4) 0; padding-left:var(--space-5); display:grid; gap:var(--space-3); }
+.careers-list{ margin:var(--space-3) 0; }
+.hero-response{ margin-top:var(--space-4); }
+.step2-question{ border:0; padding:0; margin:0 0 var(--space-4); }
+.step2-question legend{ font-weight:600; margin-bottom:var(--space-2); padding:0; }
+
+/* Applicant intake switch (careers.html, subcontractor.html): <body data-applicant-intake>
+   is "contact" until the GHL people sub-account is live, then "form". */
+body[data-applicant-intake="contact"] [data-intake-only="form"],
+body[data-applicant-intake="form"] [data-intake-only="contact"]{ display:none !important; }

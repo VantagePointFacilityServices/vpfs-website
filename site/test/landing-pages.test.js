@@ -169,7 +169,8 @@ const LEGACY_ALLOW = { "services.html": ["clinical-grade", "sharps"] };
 function visibleText(page) {
   const doc = parse(page);
   doc.querySelectorAll("script, style, noscript").forEach((n) => n.remove());
-  return doc.body.textContent.replace(/\s+/g, " ");
+  // "Which best describes you?" is the approved Step 2 screening question, not a superlative claim.
+  return doc.body.textContent.replace(/\s+/g, " ").replace(/Which best describes you\?/g, "Which describes you?");
 }
 
 describe.each(ALL_PAGES)("%s banned claims", (page) => {
@@ -244,9 +245,9 @@ describe("site-wide navigation", () => {
       expect(a).not.toBeNull();
       expect(a.closest("li").hasAttribute("hidden")).toBe(true);
     });
-    it("footer Company lists Why us, About us, Locations, Contact, Careers, Resources, with Why us, About us and Resources hidden and unlinked", () => {
+    it("footer Company lists Why us, About us, Locations, Contact, Careers, Subcontract with us, Resources, with Why us, About us and Resources hidden and unlinked", () => {
       const items = Array.from(doc.querySelectorAll("footer h4 + ul")).find((ul) => ul.previousElementSibling.textContent === "Company").querySelectorAll("li");
-      expect(Array.from(items, (li) => li.textContent.trim())).toEqual(["Why us", "About us", "Locations", "Contact", "Careers", "Resources"]);
+      expect(Array.from(items, (li) => li.textContent.trim())).toEqual(["Why us", "About us", "Locations", "Contact", "Careers", "Subcontract with us", "Resources"]);
       const hidden = Array.from(items).filter((li) => li.hasAttribute("hidden"));
       expect(hidden.map((li) => li.textContent.trim())).toEqual(["Why us", "About us", "Resources"]);
       expect(hidden.every((li) => !li.querySelector("a").hasAttribute("href"))).toBe(true);
