@@ -992,3 +992,6 @@ html:has(.booking-dialog[open]){ overflow:hidden; } /* stop the page scrolling b
    is "contact" until the GHL people sub-account is live, then "form". */
 body[data-applicant-intake="contact"] [data-intake-only="form"],
 body[data-applicant-intake="form"] [data-intake-only="contact"]{ display:none !important; }
+
+/* Long email addresses must wrap rather than force sideways scroll on phones */
+a[href^="mailto:"]{ overflow-wrap:anywhere; }

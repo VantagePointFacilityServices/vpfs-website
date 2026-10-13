@@ -101,3 +101,19 @@ describe("careers.html talent pool: form", () => {
     for (const a of anchors) expect(a.getAttribute("href")).toBe("#apply");
   });
 });
+
+describe("careers.html display fixes", () => {
+  it("makes the requirements list readable and the hero eyebrow light", () => {
+    expect(doc.querySelector(".careers-list").classList.contains("on-light")).toBe(true);
+    expect(doc.querySelector(".hero-inner .eyebrow").classList.contains("on-inverse")).toBe(true);
+  });
+
+  it("says Email us, not Email or call", () => {
+    expect(text).not.toContain("Email or call");
+  });
+
+  it("lets the hero email break after the @", () => {
+    const a = doc.querySelector('.hero-inner a[href^="mailto:"], .hero-grid a[href^="mailto:"]');
+    expect(a.innerHTML).toContain("careers@<wbr>");
+  });
+});
