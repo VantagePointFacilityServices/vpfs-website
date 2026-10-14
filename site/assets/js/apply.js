@@ -12,7 +12,7 @@
 // conversion page: applicants are not marketing leads.
 
 import { readAttribution, sessionStore } from "./utm.js";
-import { initTwoStepGate } from "./two-step-gate.js";
+import { initTwoStepGate, fieldGetter } from "./two-step-gate.js";
 
 var WORKER_BASE = "https://worker.vantagepointfacilityservices.com.au";
 
@@ -39,7 +39,7 @@ function buildApplyPayload(form, helpers) {
 // read back from the (hidden but populated) Step 1 field, as the booking
 // gate does. The subcontractor-only questions are sent only on that track.
 var COMMON_ANSWERS = [
-  "cleaning_experience", "right_to_work", "police_check_status", "blue_card_status",
+  "cleaning_experience", "residential_experience", "right_to_work", "police_check_status", "blue_card_status",
   "availability", "start_availability", "reliable_transport", "physical_capability",
   "passion_rating",
 ];
@@ -90,6 +90,68 @@ function handleScreenResult(data, ctx) {
   }
 }
 
+// ---- Embedded experience survey -------------------------------------------
+// Shown under the shortlist, no-calendar and booking-confirmed panels when
+// form[data-enrich-survey-url] is set. Nothing is inserted (iframe or GHL's
+// form_embed.js) until a qualifying panel is revealed.
+var EMBED_SCRIPT = "https://link.msgsndr.com/js/form_embed.js";
+var SURVEY_PANELS = ["shortlist-message", "no-calendar-message", "booking-confirmed"];
+
+function surveyUrl(form) {
+  return (form.getAttribute("data-enrich-survey-url") || "").trim();
+}
+
+function loadEmbedScript() {
+  if (document.querySelector('script[src="' + EMBED_SCRIPT + '"]')) return;
+  var s = document.createElement("script");
+  s.src = EMBED_SCRIPT;
+  s.async = true;
+  document.body.appendChild(s);
+}
+
+function showSurvey(target, form) {
+  var base = surveyUrl(form);
+  if (!base || SURVEY_PANELS.indexOf(target.id) === -1 || target.querySelector(".enrich-cta")) return;
+  var get = fieldGetter(form);
+  var src = base + "?email=" + encodeURIComponent(get("email")) + "&phone=" + encodeURIComponent(get("phone"));
+
+  var box = document.createElement("div");
+  box.className = "enrich-cta";
+  var h = document.createElement("h3");
+  h.textContent = "Add your experience";
+  var p = document.createElement("p");
+  p.className = "small";
+  p.textContent = "about 3 minutes, helps us prepare for your interview";
+  var frame = document.createElement("iframe");
+  frame.src = src;
+  frame.title = "Experience survey";
+  frame.className = "enrich-frame";
+  var actions = document.createElement("div");
+  actions.className = "enrich-actions";
+  var skip = document.createElement("button");
+  skip.type = "button";
+  skip.className = "btn btn-secondary enrich-skip";
+  skip.textContent = "Skip for now";
+  skip.addEventListener("click", function () {
+    var dialog = form.querySelector(".booking-dialog");
+    if (dialog) dialog.close();
+  });
+  var link = document.createElement("a");
+  link.href = src;
+  link.target = "_blank";
+  link.rel = "noopener";
+  link.className = "small enrich-newtab";
+  link.textContent = "Open in a new tab";
+  actions.appendChild(skip);
+  actions.appendChild(link);
+  box.appendChild(h);
+  box.appendChild(p);
+  box.appendChild(frame);
+  box.appendChild(actions);
+  target.appendChild(box);
+  loadEmbedScript();
+}
+
 export function initApply(form) {
   initTwoStepGate(form, {
     workerBase: WORKER_BASE,
@@ -99,6 +161,7 @@ export function initApply(form) {
     buildStep2Payload: buildScreenPayload,
     isStep2Complete: isScreenComplete,
     handleStep2Result: handleScreenResult,
+    onResultRevealed: showSurvey,
     messages: {
       bookIdle: "Book interview",
       alreadyBooked: "You already have an interview booked for ",

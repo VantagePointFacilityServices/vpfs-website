@@ -482,13 +482,13 @@ flowchart TD
     B --> SL["POST /slots → the track's interview calendar"] --> BK["POST /book<br/>tag applicant-interview-booked"]
 ```
 
-**Disqualifiers** (PRD D18): under 1 year of commercial experience, no right
+**Disqualifiers** (PRD D18): under 1 year of experience in both commercial and residential cleaning, no right
 to work, not willing to get a police check, postcode outside
 `APPLICANT_POSTCODES` (Gold Coast 4207–4230, Tweed Shire 2484–2490). The
 subcontractor track adds no ABN + insurance, no own equipment and no own
 transport.
 
-**Fit score:** experience (employee 1–3 yrs 25 / 3+ yrs 40; subcontractor
+**Fit score:** experience is the higher of the commercial and residential points (residential: employee 1–3 yrs 15 / 3+ yrs 25; subcontractor 15 / 20 / 25); commercial (employee 1–3 yrs 25 / 3+ yrs 40; subcontractor
 1–3 yrs 25 / 3–5 yrs 32 / 5+ yrs 40); availability business hours 10 /
 after hours 20 / flexible 25 / weekends only 5; transport 15 (employee) or
 works for other clients 15 (subcontractor); physically capable 10; passion
@@ -498,7 +498,7 @@ works for other clients 15 (subcontractor); physically capable 10; passion
 `applicant_tier`, `applicant_dq_flag`, `applicant_stage`,
 `applicant_screened_at`, `applicant_blue_card_eligible`,
 `applicant_subcontractor_ready`) and every answer under its own key:
-`cleaning_experience`, `right_to_work`, `police_check_status`,
+`cleaning_experience`, `residential_experience`, `right_to_work`, `police_check_status`,
 `blue_card_status`, `availability`, `start_availability`,
 `reliable_transport`, `physical_capability`, `passion_rating`, plus on the
 subcontractor track `has_own_insurance_and_abn`, `own_equipment`,

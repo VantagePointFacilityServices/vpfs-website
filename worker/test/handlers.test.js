@@ -1106,6 +1106,7 @@ describe("POST /apply (Step 1 — applicant capture, people sub-account)", () =>
     expect(fields.postcode).toBe("4211");
     expect(fields.applicant_stage).toBe("started");
     expect(fields.applicant_captured_at).toBeTruthy();
+    expect(fields.applicant_completion_pct).toBe("33");
 
     const [tagUrl, tagOpts] = global.fetch.mock.calls[1];
     expect(tagUrl).toBe("https://services.leadconnectorhq.com/contacts/app-1/tags");
@@ -1221,6 +1222,7 @@ describe("POST /apply-screen (Step 2 per-track screening)", () => {
     engagement_track: "employee",
     postcode: "4211",
     cleaning_experience: "3_plus_years",
+    residential_experience: "3_plus_years",
     right_to_work: "yes",
     police_check_status: "willing_no_current_check",
     blue_card_status: "not_applicable",
@@ -1235,6 +1237,7 @@ describe("POST /apply-screen (Step 2 per-track screening)", () => {
     contact_id: "s1",
     engagement_track: "subcontractor",
     cleaning_experience: "5_plus_years",
+    residential_experience: "5_plus_years",
     has_own_insurance_and_abn: "yes",
     own_equipment: "yes",
     works_for_other_clients: "yes",
@@ -1258,6 +1261,7 @@ describe("POST /apply-screen (Step 2 per-track screening)", () => {
     expect(json.booking_token).toBeTruthy();
     expect(tagsSent()).toEqual([]);
     expect(putFields().applicant_tier).toBe("priority");
+    expect(putFields().applicant_completion_pct).toBe("67");
   });
 
   it("book: always for a subcontractor, even with EMPLOYEE_INTAKE_OPEN off", async () => {
@@ -1286,6 +1290,7 @@ describe("POST /apply-screen (Step 2 per-track screening)", () => {
     const { json } = await screen({
       ...employee,
       cleaning_experience: "1_to_3_years",
+      residential_experience: "none",
       availability: "weekends_only",
       reliable_transport: "no",
       physical_capability: "no",
@@ -1297,8 +1302,8 @@ describe("POST /apply-screen (Step 2 per-track screening)", () => {
 
   // One case per D18 disqualifier row, per track.
   const common = [
-    ["experience under 1 year", { cleaning_experience: "under_1_year" }, "unsuccessful-insufficient-experience"],
-    ["no experience", { cleaning_experience: "none" }, "unsuccessful-insufficient-experience"],
+    ["experience under 1 year", { cleaning_experience: "under_1_year", residential_experience: "under_1_year" }, "unsuccessful-insufficient-experience"],
+    ["no experience", { cleaning_experience: "none", residential_experience: "none" }, "unsuccessful-insufficient-experience"],
     ["no right to work", { right_to_work: "no" }, "unsuccessful-no-right-to-work"],
     ["police check not willing", { police_check_status: "not_willing" }, "unsuccessful-no-police-check"],
     ["out of area", { postcode: "9999" }, "unsuccessful-out-of-area"],
@@ -1343,6 +1348,18 @@ describe("POST /apply-screen (Step 2 per-track screening)", () => {
     expect((await screen({ ...employee, contact_id: "" })).res.status).toBe(400);
   });
 
+  it("residential_experience: missing or off-track -> 400; saved lower-cased; counts towards the minimum", async () => {
+    const { residential_experience, ...noRes } = employee;
+    expect((await screen(noRes)).res.status).toBe(400);
+    expect((await screen({ ...employee, residential_experience: "5_plus_years" })).res.status).toBe(400);
+    expect((await screen({ ...subcontractor, residential_experience: "3_plus_years" })).res.status).toBe(400);
+    const { json } = await screen({
+      ...employee, cleaning_experience: "under_1_year", residential_experience: "1_TO_3_YEARS",
+    });
+    expect(json.result).not.toBe("unsuccessful");
+    expect(putFields().residential_experience).toBe("1_to_3_years");
+  });
+
   it("503 and no GHL call when the people credentials are missing", async () => {
     const { res } = await screen(employee, { GHL_API_KEY: "k", GHL_LOCATION_ID: "l" });
     expect(res.status).toBe(503);
@@ -1374,6 +1391,14 @@ describe("POST /apply-screen (Step 2 per-track screening)", () => {
     for (const key of ["has_own_insurance_and_abn", "own_equipment", "works_for_other_clients"]) {
       expect(fields).not.toHaveProperty(key);
     }
+  });
+
+  it("shortlist writes completion 67 and unsuccessful writes 100", async () => {
+    await screen(employee);
+    expect(putFields().applicant_completion_pct).toBe("67");
+    global.fetch.mockClear();
+    await screen({ ...subcontractor, own_equipment: "no" });
+    expect(putFields().applicant_completion_pct).toBe("100");
   });
 
   it("still saves the answers when the applicant is disqualified", async () => {

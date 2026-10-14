@@ -68,6 +68,46 @@ describe("checkApplicantDisqualifiers", () => {
   });
 });
 
+describe("residential experience", () => {
+  const base = {
+    experience: "under_1_year",
+    residentialExperience: "1_to_3_years",
+    rightToWork: "yes",
+    policeCheckStatus: "willing_no_current_check",
+    postcode: "4211",
+  };
+
+  it("commercial under 1 year + residential 1-3 years is not disqualified", () => {
+    expect(checkApplicantDisqualifiers("employee", base).disqualified).toBe(false);
+  });
+
+  it.each([
+    ["none", "none"],
+    ["under_1_year", "none"],
+    ["none", "under_1_year"],
+    ["under_1_year", "under_1_year"],
+  ])("commercial %s + residential %s -> insufficient experience", (experience, residentialExperience) => {
+    expect(checkApplicantDisqualifiers("employee", { ...base, experience, residentialExperience }).reason).toBe(
+      "unsuccessful-insufficient-experience"
+    );
+  });
+
+  it("residential points: employee 15/25, subcontractor 15/20/25", () => {
+    const emp = (r) => applicantScore("employee", { residentialExperience: r });
+    expect([emp("under_1_year"), emp("1_to_3_years"), emp("3_plus_years")]).toEqual([0, 15, 25]);
+    const sub = (r) => applicantScore("subcontractor", { residentialExperience: r });
+    expect([sub("under_1_year"), sub("1_to_3_years"), sub("3_to_5_years"), sub("5_plus_years")]).toEqual([0, 15, 20, 25]);
+  });
+
+  it("experience scores the higher of commercial and residential; commercial 3+ still 40", () => {
+    expect(applicantScore("employee", { experience: "3_plus_years", residentialExperience: "none" })).toBe(40);
+    expect(applicantScore("employee", { experience: "1_to_3_years", residentialExperience: "3_plus_years" })).toBe(25);
+    expect(applicantScore("employee", { experience: "under_1_year", residentialExperience: "1_to_3_years" })).toBe(15);
+    expect(applicantScore("subcontractor", { experience: "5_plus_years", residentialExperience: "5_plus_years" })).toBe(40);
+    expect(applicantScore("subcontractor", { experience: "under_1_year", residentialExperience: "3_to_5_years" })).toBe(20);
+  });
+});
+
 describe("applicantScore", () => {
   const strong = {
     availability: "flexible",

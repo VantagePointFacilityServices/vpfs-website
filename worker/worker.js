@@ -74,7 +74,8 @@
  *                    updates the contact in the PEOPLE GHL sub-account
  *                    (never the commercial one — see peopleEnv), writes
  *                    engagement_track / postcode / applicant_stage:
- *                    "started" / applicant_captured_at, tags it
+ *                    "started" / applicant_completion_pct: 33 /
+ *                    applicant_captured_at, tags it
  *                    applicant-employee or applicant-subcontractor and
  *                    returns { contact_id } so the browser can open the
  *                    Step 2 dialog. Same Turnstile + honeypot handling
@@ -83,7 +84,9 @@
  *   POST /apply-screen — browser-called Step 2 of the applicant funnel.
  *                    Applies the per-track disqualifiers and fit score
  *                    (PRD D18), writes score/tier/dq flag/stage to the
- *                    contact in the people sub-account, and returns
+ *                    contact in the people sub-account, plus
+ *                    applicant_completion_pct (67 for book/shortlist,
+ *                    100 for unsuccessful), and returns
  *                    { tier, result: book | shortlist | unsuccessful,
  *                    dq_flag, booking_token? }. Employees get "shortlist"
  *                    while EMPLOYEE_INTAKE_OPEN is not "true".
@@ -175,6 +178,19 @@ const EXPERIENCE_SCORE = {
     "1_to_3_years": 25,
     "3_to_5_years": 32,
     "5_plus_years": 40,
+  },
+};
+
+// Residential experience points (PRD D2). Experience scores the higher of the
+// commercial and residential points.
+const RESIDENTIAL_EXPERIENCE_SCORE = {
+  employee: { none: 0, under_1_year: 0, "1_to_3_years": 15, "3_plus_years": 25 },
+  subcontractor: {
+    none: 0,
+    under_1_year: 0,
+    "1_to_3_years": 15,
+    "3_to_5_years": 20,
+    "5_plus_years": 25,
   },
 };
 
@@ -1266,6 +1282,7 @@ async function handleApply(rawPayload, env, request) {
   f.extraFields = {
     engagement_track: track,
     applicant_stage: "started",
+    applicant_completion_pct: 33,
     applicant_captured_at: new Date().toISOString(),
   };
 
@@ -1307,6 +1324,7 @@ const EXPERIENCE_OPTIONS = {
 const COMMON_SCREEN_FIELDS = [
   "postcode",
   "cleaning_experience",
+  "residential_experience",
   "right_to_work",
   "police_check_status",
   "blue_card_status",
@@ -1336,6 +1354,9 @@ async function handleApplyScreen(rawPayload, env) {
   }
   if (!EXPERIENCE_OPTIONS[track].includes(payload.cleaning_experience.toLowerCase())) {
     return new Response("Invalid cleaning_experience for this track", { status: 400 });
+  }
+  if (!EXPERIENCE_OPTIONS[track].includes(payload.residential_experience.toLowerCase())) {
+    return new Response("Invalid residential_experience for this track", { status: 400 });
   }
 
   if (!env.GHL_PEOPLE_API_KEY || !env.GHL_PEOPLE_LOCATION_ID) {
@@ -1371,6 +1392,7 @@ async function handleApplyScreen(rawPayload, env) {
       applicant_tier: tier,
       applicant_dq_flag: dq.disqualified ? dq.reason : "none",
       applicant_screened_at: new Date().toISOString(),
+      applicant_completion_pct: result === "unsuccessful" ? 100 : 67,
       applicant_stage: result === "unsuccessful" ? "unsuccessful" : result === "shortlist" ? "shortlisted" : "screened",
       applicant_blue_card_eligible: blueCardEligible,
       applicant_subcontractor_ready: subcontractorReady,
@@ -1399,6 +1421,7 @@ function extractApplicantScreenFields(payload) {
   return {
     postcode: typeof payload.postcode === "string" ? payload.postcode : "",
     experience: low(payload.cleaning_experience),
+    residentialExperience: low(payload.residential_experience),
     rightToWork: low(payload.right_to_work),
     policeCheckStatus: low(payload.police_check_status),
     blueCardStatus: low(payload.blue_card_status),
@@ -1416,7 +1439,9 @@ function extractApplicantScreenFields(payload) {
 // Hard gates (PRD D18), in the table's order. No flex path: a "no" here is
 // final unless the applicant's circumstances change and they re-apply.
 function checkApplicantDisqualifiers(track, f) {
-  if (MIN_EXPERIENCE_LEVELS.includes(f.experience)) {
+  // Residential experience counts towards the minimum: DQ only when both are under 1 year.
+  const underOne = (v) => !v || MIN_EXPERIENCE_LEVELS.includes(v);
+  if (underOne(f.experience) && underOne(f.residentialExperience)) {
     return { disqualified: true, reason: "unsuccessful-insufficient-experience" };
   }
   if (f.rightToWork === "no") {
@@ -1448,7 +1473,10 @@ function checkApplicantDisqualifiers(track, f) {
 function applicantScore(track, f) {
   let score = 0;
 
-  score += (EXPERIENCE_SCORE[track] || {})[f.experience] ?? 0;
+  score += Math.max(
+    (EXPERIENCE_SCORE[track] || {})[f.experience] ?? 0,
+    (RESIDENTIAL_EXPERIENCE_SCORE[track] || {})[f.residentialExperience] ?? 0
+  );
   score += AVAILABILITY_SCORE[f.availability] ?? 0;
   score += PASSION_SCORE[f.passion] ?? 0;
   if (track === "subcontractor") {

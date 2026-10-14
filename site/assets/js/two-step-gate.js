@@ -20,6 +20,8 @@
 //                                      { form, step2, errorBox, submitBtn,
 //                                        setLoading, showError, revealResult,
 //                                        loadPicker }
+//   onResultRevealed(target, form)   optional; called after revealResult shows
+//                                      a panel (target is that panel)
 //   messages        optional overrides: generic, turnstilePending, validation,
 //                   addressRequired, slotTaken, bookIdle (the Book button
 //                   before a time is picked), alreadyBooked (prefix before
@@ -265,6 +267,8 @@ function revealResult(step2, selector) {
   // so keyboard and screen-reader users land on the result.
   target.setAttribute("tabindex", "-1");
   target.focus();
+  var cfg = cfgOf(step2);
+  if (cfg && cfg.onResultRevealed) cfg.onResultRevealed(target, step2.closest("form"));
   return target;
 }
 
@@ -535,8 +539,10 @@ function formatWhen(iso, timezone) {
 }
 
 function showConfirmation(step2, text) {
-  var panel = revealResult(step2, "#booking-confirmed");
-  if (panel) panel.textContent = text;
+  // Text first: revealResult's hook may append to the panel.
+  var existing = step2.querySelector("#booking-confirmed");
+  if (existing) existing.textContent = text;
+  revealResult(step2, "#booking-confirmed");
 }
 
 // The chosen time was taken: re-fetch /slots, drop the choice, and stay on
