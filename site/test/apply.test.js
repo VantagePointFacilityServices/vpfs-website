@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { initApply } from "../assets/js/apply.js";
 
 const ANSWERS = [
-  ["cleaning_experience", "1_to_3_years"], ["right_to_work", "yes"], ["police_check_status", "current_check_held"],
+  ["cleaning_experience", "1_to_3_years"], ["residential_experience", "1_to_3_years"], ["right_to_work", "yes"], ["police_check_status", "current_check_held"],
   ["blue_card_status", "not_applicable"], ["availability", "flexible"], ["start_availability", "immediately"],
   ["reliable_transport", "yes"], ["physical_capability", "yes"], ["passion_rating", "take_pride"],
 ];
@@ -143,6 +143,7 @@ describe("applicant Step 2 (apply.js)", () => {
     const body = JSON.parse(init.body);
     expect(body).toMatchObject({
       contact_id: "c1", engagement_track: "employee", postcode: "4211", cleaning_experience: "1_to_3_years",
+      residential_experience: "1_to_3_years",
     });
     expect(body.own_equipment).toBeUndefined();
   });
@@ -162,6 +163,14 @@ describe("applicant Step 2 (apply.js)", () => {
     const box = form.querySelector(".booking-step-2-questions .booking-error");
     expect(box.classList.contains("show")).toBe(true);
     expect(box.textContent).not.toBe("");
+  });
+
+  it.each(["employee", "subcontractor"])("is incomplete and sends nothing when residential_experience is missing (%s)", async (track) => {
+    const { form, fetchMock } = await runStep2(track, ok({}), {
+      edit: (f) => { f.querySelectorAll('[name="residential_experience"]').forEach((e) => { e.checked = false; e.value = ""; }); },
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(form.querySelector(".booking-step-2-questions .booking-error").classList.contains("show")).toBe(true);
   });
 
   it.each([

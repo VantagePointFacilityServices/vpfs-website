@@ -998,3 +998,9 @@ body[data-applicant-intake="form"] [data-intake-only="contact"]{ display:none !i
 
 /* Long email addresses must wrap rather than force sideways scroll on phones */
 a[href^="mailto:"]{ overflow-wrap:anywhere; }
+
+/* Embedded experience survey (applicant result panels) */
+.enrich-cta{ margin-top:var(--space-4); text-align:left; max-width:100%; }
+.enrich-cta h3{ margin-bottom:var(--space-1); }
+.enrich-frame{ display:block; width:100%; max-width:100%; min-height:480px; border:0; margin:var(--space-3) 0; }
+.enrich-actions{ display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:center; }

@@ -76,11 +76,11 @@ describe("careers.html talent pool: form", () => {
     expect(doc.querySelector('script[src="assets/js/apply.js"]')).not.toBeNull();
   });
 
-  it("has the Step 1 fields and the nine employee screening questions", () => {
+  it("has the Step 1 fields and the ten employee screening questions", () => {
     for (const n of ["first_name", "last_name", "email", "phone", "postcode"]) {
       expect(form.querySelector(`.form-fields [name="${n}"]`)).not.toBeNull();
     }
-    for (const n of ["cleaning_experience", "right_to_work", "police_check_status", "blue_card_status",
+    for (const n of ["cleaning_experience", "residential_experience", "right_to_work", "police_check_status", "blue_card_status",
       "availability", "start_availability", "reliable_transport", "physical_capability", "passion_rating"]) {
       expect(form.querySelectorAll(`.booking-step-2 [name="${n}"]`).length).toBeGreaterThan(1);
     }

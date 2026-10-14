@@ -116,7 +116,7 @@
         <p class="form-note" style="text-align:left;">Prefer to be employed? <a href="careers.html">Join the team &rarr;</a></p>
       </div>
       <!-- Applicant flow: Step 1 posts to /apply by script (assets/js/apply.js); method="post" is only the no-script fallback. -->
-      <form class="assessment-form" method="post" data-apply data-engagement-track="subcontractor" data-intake-only="form">
+      <form class="assessment-form" method="post" data-apply data-enrich-survey-url="" data-engagement-track="subcontractor" data-intake-only="form">
         <div class="form-fields contact-form">
           <h3 class="mt-0">Apply to subcontract</h3>
           <p class="small">Answer a few quick questions and book your group interview call on the spot.</p>
@@ -158,6 +158,16 @@
                 <label class="radio-option"><input type="radio" name="cleaning_experience" value="1_to_3_years">1 to 3 years</label>
                 <label class="radio-option"><input type="radio" name="cleaning_experience" value="3_to_5_years">3 to 5 years</label>
                 <label class="radio-option"><input type="radio" name="cleaning_experience" value="5_plus_years">More than 5 years</label>
+              </div>
+            </fieldset>
+            <fieldset class="apply-question">
+              <legend>How much residential cleaning experience do you have?</legend>
+              <div class="radio-row">
+                <label class="radio-option"><input type="radio" name="residential_experience" value="none">No experience</label>
+                <label class="radio-option"><input type="radio" name="residential_experience" value="under_1_year">Under 1 year</label>
+                <label class="radio-option"><input type="radio" name="residential_experience" value="1_to_3_years">1 to 3 years</label>
+                <label class="radio-option"><input type="radio" name="residential_experience" value="3_to_5_years">3 to 5 years</label>
+                <label class="radio-option"><input type="radio" name="residential_experience" value="5_plus_years">More than 5 years</label>
               </div>
             </fieldset>
             <fieldset class="apply-question">
