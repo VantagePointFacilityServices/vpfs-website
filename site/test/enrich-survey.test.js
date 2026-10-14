@@ -113,8 +113,10 @@ describe("embedded experience survey", () => {
     );
   });
 
-  it("subcontractor.html carries an empty data-enrich-survey-url until its survey is built", () => {
+  it("subcontractor.html embeds the subcontractor experience survey", () => {
     const html = readFileSync(resolve(__dirname, "..", "subcontractor.html"), "utf8");
-    expect(html).toMatch(/<form[^>]*data-apply[^>]*data-enrich-survey-url=""/);
+    expect(html).toMatch(
+      /<form[^>]*data-apply[^>]*data-enrich-survey-url="https:\/\/api\.leadconnectorhq\.com\/widget\/survey\/IlXvQJyxOJH2JnmfqsmD"/
+    );
   });
 });
