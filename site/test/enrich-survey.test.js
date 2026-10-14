@@ -82,9 +82,14 @@ describe("embedded experience survey", () => {
     expect(scripts().length).toBe(1);
   });
 
-  it("loads the script once across two reveals", async () => {
-    await run(URL0, { result: "shortlist" });
-    await run(URL0, { result: "shortlist" });
+  it("loads the script once across two reveals in the same page", async () => {
+    const form = await run(URL0, { result: "shortlist" });
+    expect(scripts().length).toBe(1);
+    // Same document, no remount: a second qualifying result reveals a second survey panel.
+    vi.stubGlobal("fetch", vi.fn(() => json({ result: "book" })));
+    form.querySelector(".step2-submit").click();
+    await flush(); await flush();
+    expect(form.querySelector("#no-calendar-message .enrich-cta")).not.toBeNull();
     expect(scripts().length).toBe(1);
   });
 
