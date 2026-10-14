@@ -2,10 +2,11 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 
-// Until the GHL people sub-account exists, both applicant pages run in
-// "contact" mode: the forms stay in the markup but are switched off, and an
-// email/phone block takes their place. Flipping <body data-applicant-intake>
-// to "form" restores the forms (one line per page).
+// Each applicant page runs in "contact" mode until its track is live in the
+// GHL people sub-account: the form stays in the markup but is switched off,
+// and an email block takes its place. Flipping <body data-applicant-intake>
+// to "form" restores the form (one line per page). Careers (employee) is
+// live; subcontractor waits for its experience survey.
 const SITE_DIR = resolve(__dirname, "..");
 const css = readFileSync(resolve(SITE_DIR, "assets/css/style.css"), "utf8");
 const parse = (page) => new DOMParser().parseFromString(readFileSync(resolve(SITE_DIR, page), "utf8"), "text/html");
@@ -18,11 +19,14 @@ describe("applicant intake switch CSS", () => {
   });
 });
 
-describe.each(["careers.html", "subcontractor.html"])("%s in contact mode", (page) => {
+describe.each([
+  ["careers.html", "form"],
+  ["subcontractor.html", "contact"],
+])("%s intake switch", (page, mode) => {
   const doc = parse(page);
 
-  it("is switched to contact mode", () => {
-    expect(doc.body.dataset.applicantIntake).toBe("contact");
+  it(`is switched to ${mode} mode`, () => {
+    expect(doc.body.dataset.applicantIntake).toBe(mode);
   });
 
   it("keeps the application form in the page, marked form-only", () => {
