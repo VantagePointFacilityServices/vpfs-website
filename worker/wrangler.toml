@@ -14,11 +14,11 @@ compatibility_date = "2024-09-23"
 # Not a secret: it also appears in the sub-account's public webhook URLs.
 GHL_LOCATION_ID = "i1xCcUSRa8PDofaJ1Oyz"
 
-# The people (recruiting) GHL sub-account /apply writes to. Empty until the
-# sub-account is built: /apply returns 503 while this or the
-# GHL_PEOPLE_API_KEY secret is missing, and never uses the pair above.
+# The people (recruiting) GHL sub-account /apply writes to. /apply returns
+# 503 if this or the GHL_PEOPLE_API_KEY secret is missing, and never uses
+# the pair above.
 # Secret: wrangler secret put GHL_PEOPLE_API_KEY
-GHL_PEOPLE_LOCATION_ID = ""
+GHL_PEOPLE_LOCATION_ID = "DqHM7ASMNC4TzLr8kia4"
 
 # While "false", a qualifying employee applicant is shortlisted (no
 # interview calendar); subcontractors always book. Set "true" to open intake.
@@ -27,10 +27,11 @@ EMPLOYEE_INTAKE_OPEN = "false"
 # GHL calendars the website booking flow reads/books against (not secret).
 CALENDAR_PRIORITY_ID = "Ugunj3x67DQlmRm2aL2h"
 CALENDAR_STANDARD_ID = "FMEE7r6jwySahTZ90S0C"
-# Group/class interview calendars in the PEOPLE sub-account (set at go-live;
-# blank → applicants see the "we'll be in touch" fallback).
-CALENDAR_INTERVIEW_EMPLOYEE_ID = ""
-CALENDAR_INTERVIEW_SUBCONTRACTOR_ID = ""
+# Group/class interview calendars in the PEOPLE sub-account (blank →
+# applicants see the "we'll be in touch" fallback). The employee one is only
+# offered once EMPLOYEE_INTAKE_OPEN is "true".
+CALENDAR_INTERVIEW_EMPLOYEE_ID = "yhSvwfjksy7UlEWYW94A"
+CALENDAR_INTERVIEW_SUBCONTRACTOR_ID = "CJrzOKAkqowJzzzlkh5w"
 BOOKING_TIMEZONE = "Australia/Brisbane"
 
 # Cloudflare provisions and manages the DNS record for this automatically
