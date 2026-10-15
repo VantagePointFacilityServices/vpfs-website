@@ -28,6 +28,13 @@ describe.each([
     expect(doc.body.dataset.applicantIntake).toBe(mode);
   });
 
+  it("gives the \"pick up where you left off\" card the form's grey card background", () => {
+    // .booking-resume overlays the form once the popup is closed; without
+    // .contact-form it is transparent over the form-fields card.
+    const resume = doc.querySelector("form[data-apply] .booking-resume");
+    expect(resume.classList.contains("contact-form")).toBe(true);
+  });
+
   it("keeps the application form in the page, marked form-only", () => {
     const form = doc.querySelector("form[data-apply]");
     expect(form).not.toBeNull();
