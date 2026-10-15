@@ -47,9 +47,9 @@ describe.each([
     expect(doc.querySelectorAll('a[href="mailto:careers@vantagepointfacilityservices.com.au"]').length).toBeGreaterThan(1);
   });
 
-  it("points form-mode applicants with questions to careers@", () => {
-    const note = doc.querySelector('[data-intake-only="form"] a[href="mailto:careers@vantagepointfacilityservices.com.au"]');
-    expect(note).not.toBeNull();
+  it("has no \"Questions? Email careers@\" note under the application form", () => {
+    const form = doc.querySelector("form[data-apply]");
+    expect(form.textContent).not.toMatch(/Questions\? Email/);
   });
 
   it("marks every on-the-spot promise as form-only", () => {
