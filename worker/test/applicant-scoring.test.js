@@ -4,11 +4,11 @@ import {
   checkApplicantDisqualifiers,
   applicantScore,
   applicantTierFromScore,
-  APPLICANT_POSTCODES,
+  LAUNCH_AREA_POSTCODES,
 } from "../worker.js";
 
 describe("checkApplicantAreaDisqualifier", () => {
-  it("passes Gold Coast and Tweed postcodes, including ones outside SERVICE_POSTCODES", () => {
+  it("passes Gold Coast and Tweed postcodes", () => {
     for (const postcode of ["4207", "4211", "4217", "4225", "4230", "2484", "2485", "2490"]) {
       expect(checkApplicantAreaDisqualifier({ postcode })).toEqual({ disqualified: false, reason: null });
     }
@@ -22,7 +22,7 @@ describe("checkApplicantAreaDisqualifier", () => {
         reason: "unsuccessful-out-of-area",
       });
     }
-    expect(APPLICANT_POSTCODES).toHaveLength(31);
+    expect(LAUNCH_AREA_POSTCODES).toHaveLength(31);
   });
 
   it("does not disqualify on a missing postcode", () => {

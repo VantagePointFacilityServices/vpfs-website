@@ -103,7 +103,6 @@
 const MIN_MONTHLY_SPEND = 2500; // under this -> nurture-budget
 const PRIORITY_MONTHLY_SPEND = 5000; // at or over this -> always Priority (see calculateGateScore)
 const MIN_WEEKLY_CLEANS = 3; // hard floor — anything under this is DQ'd
-const SERVICE_POSTCODES = ["4227", "4226", "4211", "4212"]; // Gold Coast coverage zone — extend as needed
 const CAPABLE_FACILITY_TYPES = ["office", "strata", "construction"]; // subcontractor bench currently supports these
 // add "education", "medical" once Blue Card / clinical-cert bench is ready
 
@@ -146,12 +145,11 @@ const FREQUENCY_TO_WEEKLY = {
   fortnightly: 0.5,
 };
 
-// ---- CAREERS APPLICATION SCORING CONFIG --------------------------------
-// Applicants are checked against APPLICANT_POSTCODES, deliberately wider
-// than the lead gate's SERVICE_POSTCODES (recruit where the sites are, PRD
-// D8). The check happens at Step 2 (/apply-screen), as /gate does for leads.
+// ---- LAUNCH AREA ---------------------------------------------------
+// One postcode list for both the lead gate (/gate) and applicant screening
+// (/apply-screen): the launch-area decision, vpos Vol 1 §2.7b.
 //
-// Gold Coast and Tweed Shire (PRD D8), checked 2026-10-13:
+// Gold Coast and Tweed Shire, checked 2026-10-13:
 // - City of Gold Coast suburbs sit in 4207-4230 (Wikipedia "List of Gold
 //   Coast suburbs"). 4207 is shared with Logan (Beenleigh, Eagleby) and is
 //   kept because it borders the northern Gold Coast sites.
@@ -161,7 +159,7 @@ const FREQUENCY_TO_WEEKLY = {
 //   2490 Tumbulgum.
 // Left out on purpose (Blake, 2026-10-13): 2483 (mostly Byron Shire) and the
 // 4270-4275 hinterland (mostly Scenic Rim).
-const APPLICANT_POSTCODES = [
+const LAUNCH_AREA_POSTCODES = [
   ...Array.from({ length: 24 }, (_, i) => String(4207 + i)), // Gold Coast 4207-4230
   ...Array.from({ length: 7 }, (_, i) => String(2484 + i)), // Tweed Shire 2484-2490
 ];
@@ -913,7 +911,7 @@ function leadFlags(f) {
 
   if (f.facilityType && !CAPABLE_FACILITY_TYPES.includes(f.facilityType)) flags.push("capability-gap");
 
-  if (f.postcode && !SERVICE_POSTCODES.includes(f.postcode)) flags.push("out-of-area");
+  if (f.postcode && !LAUNCH_AREA_POSTCODES.includes(f.postcode)) flags.push("out-of-area");
 
   return flags;
 }
@@ -1292,11 +1290,11 @@ async function handleApply(rawPayload, env, request) {
   return jsonResponse({ contact_id: result.contactId });
 }
 
-// Out-of-area DQ, checked against APPLICANT_POSTCODES (not the lead gate's
-// SERVICE_POSTCODES). A missing postcode is rejected as incomplete by
+// Out-of-area DQ, checked against LAUNCH_AREA_POSTCODES (launch-area decision,
+// vpos Vol 1 §2.7b), the same list the lead gate uses. A missing postcode is rejected as incomplete by
 // /apply-screen before this runs, so it is not a DQ here.
 function checkApplicantAreaDisqualifier(f) {
-  if (f.postcode && !APPLICANT_POSTCODES.includes(f.postcode)) {
+  if (f.postcode && !LAUNCH_AREA_POSTCODES.includes(f.postcode)) {
     return { disqualified: true, reason: "unsuccessful-out-of-area" };
   }
 
@@ -1608,6 +1606,6 @@ export {
   checkApplicantAreaDisqualifier,
   checkApplicantDisqualifiers,
   applicantScore,
-  APPLICANT_POSTCODES,
+  LAUNCH_AREA_POSTCODES,
   applicantTierFromScore,
 };

@@ -1,7 +1,7 @@
 ---
 title: Commercial Cleaning Resources for Gold Coast Businesses
 nav_title: Resources
-description: Practical guides on commercial cleaning, eco-friendly products, healthy workplaces and hiring a cleaner, written for Gold Coast and Brisbane facility managers.
+description: Practical guides on commercial cleaning, eco-friendly products, healthy workplaces and hiring a cleaner, written for Gold Coast and Tweed facility managers.
 status: published
 published: 2026-10-06
 updated: 2026-10-06
@@ -17,6 +17,6 @@ Every topic has an overview page that covers the whole subject, then deeper guid
 
 ## Who writes these
 
-The guides are written and reviewed by the team that runs Vantage Point Facility Services, from what we see cleaning commercial buildings on the Gold Coast and in Brisbane. Where a rule, standard or statistic matters, we cite the regulator or standards body so you can check it yourself. If you spot something out of date, tell us and we will fix it.
+The guides are written and reviewed by the team that runs Vantage Point Facility Services, from what we see cleaning commercial buildings on the Gold Coast and the Tweed. Where a rule, standard or statistic matters, we cite the regulator or standards body so you can check it yourself. If you spot something out of date, tell us and we will fix it.
 
 For a quote based on your actual building, [book a free walkthrough](/contact.html) or see [our commercial cleaning services](/services.html).

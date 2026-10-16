@@ -38,7 +38,7 @@ anything. GHL follow-up workflows for website leads trigger on
 (`GHL_PEOPLE_LOCATION_ID` / `GHL_PEOPLE_API_KEY`; 503 if either is unset),
 tags it `applicant-employee` or `applicant-subcontractor`, and returns its
 `contact_id`. It scores nothing. `/apply-screen` (Step 2, the dialog) runs
-the per-track disqualifiers, including the `APPLICANT_POSTCODES` area check,
+the per-track disqualifiers, including the `LAUNCH_AREA_POSTCODES` area check,
 calculates the fit score, sets `applicant_tier` and returns `book`,
 `shortlist` or `unsuccessful`; only `book` carries a booking token for the
 track's interview calendar via `/slots` and `/book`. See `docs/WORKER.md` §5.

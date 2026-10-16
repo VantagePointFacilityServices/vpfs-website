@@ -69,14 +69,14 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   // Locations hero: the h1 names the region picked from the Locations dropdown
-  // (locations.html#brisbane etc.); no hash or an unknown one falls back to the
+  // (locations.html#northern-rivers etc.); no hash or an unknown one falls back to the
   // data-location-h1 default (Gold Coast). The region names come from each
   // group's heading, so adding a region needs no change here.
   var locationH1 = document.querySelector('[data-location-h1]');
   if (locationH1) {
     var applyLocation = function () {
       var group = document.getElementById(window.location.hash.slice(1));
-      if (!group || !group.classList.contains('region-group')) {
+      if (!group || !group.classList.contains('region-group') || group.hidden) {
         group = document.getElementById(locationH1.getAttribute('data-location-h1'));
       }
       var title = group && group.querySelector('.region-group-title');
