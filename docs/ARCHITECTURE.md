@@ -39,7 +39,7 @@ flowchart TD
     GHP -- "qualified: POST /slots with booking_token" --> W
     W -- "GET free-slots on the tier's calendar\n(Priority / Standard), returns open days+times" --> GHL["GoHighLevel"]
     W -- "open days and times, or 'we'll be in touch'\nmessage (nurture / no slots)" --> GHP
-    GHP -. "careers.html form — NOT connected yet\n(see docs/WORKER.md Known gaps)" .-> GHL
+    GHP -. "career.html form — NOT connected yet\n(see docs/WORKER.md Known gaps)" .-> GHL
     GHL -- "webhook on booking/outcome/application" --> W
     W -- "writes applicant_tier / applicant_dq_flag / applicant_score" --> GHL
 ```
@@ -47,7 +47,7 @@ flowchart TD
 `/lead`, `/gate` and `/slots` are called directly by the browser (not via a GHL-hosted
 embedded form) — see [`WORKER.md`](WORKER.md) for the full end-to-end Worker
 guide, and `worker/README.md` and `assets/js/booking-gate.js` for
-the two-step gate this implements. `careers.html`'s application form is
+the two-step gate this implements. `career.html`'s application form is
 **not connected to anything yet** — a plain `<form>` with no action or
 script (see `WORKER.md` → Known gaps).
 

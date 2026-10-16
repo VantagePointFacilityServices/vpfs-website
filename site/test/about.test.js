@@ -89,7 +89,7 @@ describe("about.html lower half", () => {
 
   it("keeps the Local families text out of the photo placeholder", () => {
     const slot = doc.querySelector(".people-section .image-slot");
-    expect(slot.querySelector("h2, a[href='careers.html']")).toBeNull();
+    expect(slot.querySelector("h2, a[href='career.html']")).toBeNull();
   });
 
   it("lays the single Our standard image in one column, not half of a two-column grid", () => {
@@ -110,7 +110,7 @@ describe("about.html lower half", () => {
 
   it("local families links careers and mentions award rates", () => {
     const s = section("Local families");
-    expect(s.querySelector('a[href="careers.html"]')).not.toBeNull();
+    expect(s.querySelector('a[href="career.html"]')).not.toBeNull();
     expect(s.textContent).toMatch(/award rates/i);
   });
 

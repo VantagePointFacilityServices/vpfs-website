@@ -465,7 +465,7 @@ other `outcome_type` is rejected with a 400.
 Separate from leads, and written to a different GHL sub-account: the
 **people** sub-account (`GHL_PEOPLE_LOCATION_ID` / `GHL_PEOPLE_API_KEY`,
 swapped in by `peopleEnv(env)` so the same GHL helpers are reused). Both
-applicant pages — `careers.html` (employee track) and `subcontractor.html`
+applicant pages — `career.html` (employee track) and `subcontractor.html`
 (subcontractor track) — use the same two-step pattern as the homepage
 booking gate (`site/assets/js/apply.js` on top of `two-step-gate.js`).
 

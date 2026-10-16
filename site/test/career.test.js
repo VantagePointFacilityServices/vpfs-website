@@ -2,11 +2,11 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 
-const html = readFileSync(resolve(__dirname, "..", "careers.html"), "utf8");
+const html = readFileSync(resolve(__dirname, "..", "career.html"), "utf8");
 const doc = new DOMParser().parseFromString(html, "text/html");
 const text = doc.body.textContent.replace(/\s+/g, " ");
 
-describe("careers.html talent pool: copy", () => {
+describe("career.html talent pool: copy", () => {
   it("calls the role cleaning technician and drops the old award-pay headline", () => {
     expect(text).not.toMatch(/\bcleaners?\b/i);
     expect(text).not.toContain("Award pay from");
@@ -67,7 +67,7 @@ describe("careers.html talent pool: copy", () => {
   });
 });
 
-describe("careers.html talent pool: form", () => {
+describe("career.html talent pool: form", () => {
   const form = doc.querySelector("form[data-apply]");
 
   it("is the applicant form on the employee track", () => {
@@ -106,7 +106,7 @@ describe("careers.html talent pool: form", () => {
   });
 });
 
-describe("careers.html display fixes", () => {
+describe("career.html display fixes", () => {
   it("makes the requirements list readable and the hero eyebrow light", () => {
     expect(doc.querySelector(".careers-list").classList.contains("on-light")).toBe(true);
     expect(doc.querySelector(".hero-inner .eyebrow").classList.contains("on-inverse")).toBe(true);
@@ -122,7 +122,7 @@ describe("careers.html display fixes", () => {
   });
 });
 
-describe("careers.html approved copy", () => {
+describe("career.html approved copy", () => {
   const heroChecks = Array.from(doc.querySelectorAll(".hero-inner .hero-checks li")).map((li) => li.textContent.trim());
 
   it("mentions weekly pay and the supplied kit in the hero checks", () => {
@@ -167,7 +167,7 @@ describe("careers.html approved copy", () => {
   });
 });
 
-describe("careers.html section backgrounds", () => {
+describe("career.html section backgrounds", () => {
   it("alternates white and wash between the hero and the final call to action", () => {
     const sections = [...doc.querySelectorAll("body > section, main > section")].filter(
       (s) => !s.hidden && !s.classList.contains("hero-inverse") && !s.classList.contains("final-cta")
@@ -178,5 +178,20 @@ describe("careers.html section backgrounds", () => {
       expect(isWash(s), `#${s.id || i + 1} repeats its neighbour's background`).not.toBe(isWash(sections[i]));
     });
     expect(isWash(sections[sections.length - 1])).toBe(true);
+  });
+});
+
+describe("careers.html redirect stub", () => {
+  const stub = readFileSync(resolve(__dirname, "..", "careers.html"), "utf8");
+  const stubDoc = new DOMParser().parseFromString(stub, "text/html");
+
+  it("sends old /careers.html links to /career.html, keeping the query string and hash", () => {
+    expect(stubDoc.querySelector("script").textContent).toContain('location.replace("/career.html" + location.search + location.hash)');
+    expect(stubDoc.querySelector('meta[http-equiv="refresh"]').getAttribute("content")).toBe("0; url=/career.html");
+  });
+
+  it("is noindex with a canonical pointing at /career.html", () => {
+    expect(stubDoc.querySelector('meta[name="robots"]').getAttribute("content")).toBe("noindex");
+    expect(stubDoc.querySelector('link[rel="canonical"]').getAttribute("href")).toBe("https://www.vantagepointfacilityservices.com.au/career.html");
   });
 });
