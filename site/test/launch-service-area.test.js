@@ -39,7 +39,8 @@ describe("launch service area: Gold Coast and the Tweed only", () => {
           if (!item.areaServed) continue;
           const served = [].concat(item.areaServed);
           expect(JSON.stringify(served), f).not.toMatch(REGIONS);
-          if (JSON.stringify(served).includes("Tweed")) expect(served.map((a) => a.name), f).toEqual(["Gold Coast", "Tweed Shire, NSW"]);
+          // The business-wide list lives on the LocalBusiness item; Service items list suburbs.
+          if (item["@type"] === "LocalBusiness") expect(served.map((a) => a.name), f).toEqual(["Gold Coast", "Tweed Shire, NSW"]);
         }
       });
     }

@@ -351,7 +351,7 @@ booking:
 |---|---|
 | `low-frequency` | Weekly or fortnightly (under 3 cleans a week) |
 | `capability-gap` | Education or medical — not serviced yet |
-| `out-of-area` | Postcode not in `SERVICE_POSTCODES` |
+| `out-of-area` | Postcode not in `LAUNCH_AREA_POSTCODES` |
 
 **The score** runs for every lead that isn't under the budget minimum:
 
@@ -388,7 +388,8 @@ Receptionist or a GHL survey sends it.
 budget is the only way into nurture. (The general *"Thanks — we'll be in
 touch"* panel remains as a fallback for any other nurture reason.)
 
-**Service-area postcodes** are currently only **4211, 4212, 4226, 4227**.
+**Service-area postcodes** are the launch area: **Gold Coast 4207–4230 and Tweed Shire
+2484–2490** (`LAUNCH_AREA_POSTCODES`, shared with applicant screening; vpos Vol 1 §2.7b).
 Any other postcode is flagged `out-of-area` (see [section 12](#12-changing-the-business-rules)).
 
 **`booking_token`.** For tiers `priority`, `standard` and `standard-flagged`
@@ -484,7 +485,7 @@ flowchart TD
 
 **Disqualifiers** (PRD D18): under 1 year of experience in both commercial and residential cleaning, no right
 to work, not willing to get a police check, postcode outside
-`APPLICANT_POSTCODES` (Gold Coast 4207–4230, Tweed Shire 2484–2490). The
+`LAUNCH_AREA_POSTCODES` (Gold Coast 4207–4230, Tweed Shire 2484–2490), the same list the lead gate uses. The
 subcontractor track adds no ABN + insurance, no own equipment and no own
 transport.
 
@@ -740,7 +741,7 @@ reports and so the same details can re-trigger Tag Added later.
 | `ghl_error` mentions `locationId` | `GHL_LOCATION_ID` wrong or missing | Check `worker/wrangler.toml`, redeploy |
 | Contact created but Channel / Postcode / UTMs blank | Custom field keys in GHL don't match | Create/rename fields to the keys in section 3 |
 | Contact created, no workflow run | Workflow not published, trigger not Tag Added `website-lead`, or contact already had the tag | Check the trigger; test with a fresh contact |
-| Every lead is flagged `out-of-area` | Postcode not in `SERVICE_POSTCODES` | Add it — see section 12 |
+| A lead you expected in-area is flagged `out-of-area` | Postcode not in `LAUNCH_AREA_POSTCODES` | Check it's in the launch area (vpos Vol 1 §2.7b); extend the list only when that region is activated — see section 12 |
 | `lead_flags` blank on contacts | No `lead_flags` custom field in GHL | Create it (single-line text) |
 | Browser console shows a CORS error | Site served from an address not in `ALLOWED_ORIGINS` (e.g. a preview URL) | Add that origin in `worker.js` |
 | Changes merged but not live | Tests failed in GitHub Actions, so deploy was skipped | Check the Actions tab for `deploy-worker.yml` |
@@ -754,8 +755,7 @@ All rules live at the top of `worker/worker.js` under `CONFIG`:
 
 | To change… | Edit |
 |---|---|
-| Service-area postcodes (leads) | `SERVICE_POSTCODES` |
-| Applicant postcodes (Gold Coast 4207-4230, Tweed Shire 2484-2490; sources in the comment above the list) | `APPLICANT_POSTCODES` |
+| Launch-area postcodes, used for both leads (`out-of-area` flag) and applicants (disqualifier) — Gold Coast 4207-4230, Tweed Shire 2484-2490; sources in the comment above the list. Extend only per vpos Vol 1 §2.7b | `LAUNCH_AREA_POSTCODES` |
 | Open the employee interview intake (`"true"`; otherwise qualifying employees are shortlisted) | `EMPLOYEE_INTAKE_OPEN` in `wrangler.toml` |
 | Minimum monthly budget (under → nurture) | `MIN_MONTHLY_SPEND` |
 | Priority budget (at or over → Priority) | `PRIORITY_MONTHLY_SPEND` |
@@ -773,9 +773,6 @@ section 9. Rule changes should also be reflected in the vpos scoring docs.
 
 ## 13. Known gaps
 
-- **Only four service-area postcodes** (4211, 4212, 4226, 4227). Many Gold
-  Coast leads will be flagged `out-of-area` (they still get a calendar)
-  until this list is extended.
 - **No authentication on endpoints** — see [Security](#security-honestly).
 - **Tag Added fires once per contact**, so a returning enquirer doesn't
   re-run the new-lead workflow.
