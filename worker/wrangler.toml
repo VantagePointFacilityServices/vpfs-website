@@ -22,7 +22,7 @@ GHL_PEOPLE_LOCATION_ID = "DqHM7ASMNC4TzLr8kia4"
 
 # While "false", a qualifying employee applicant is shortlisted (no
 # interview calendar); subcontractors always book. Set "true" to open intake.
-EMPLOYEE_INTAKE_OPEN = "false"
+EMPLOYEE_INTAKE_OPEN = "true"
 
 # GHL calendars the website booking flow reads/books against (not secret).
 CALENDAR_PRIORITY_ID = "Ugunj3x67DQlmRm2aL2h"
