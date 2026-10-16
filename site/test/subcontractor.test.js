@@ -144,11 +144,11 @@ describe("footer link", () => {
   });
   const pages = discoverPages().filter((f) => !isRedirect(readFileSync(resolve(SITE_DIR, f), "utf8")));
 
-  it.each(pages)("%s links Subcontractors right after Careers", (page) => {
+  it.each(pages)("%s links Subcontractor right after Career", (page) => {
     const d = new DOMParser().parseFromString(readFileSync(resolve(SITE_DIR, page), "utf8"), "text/html");
-    const careers = Array.from(d.querySelectorAll("footer li")).find((li) => li.textContent.trim() === "Careers");
+    const careers = Array.from(d.querySelectorAll("footer li")).find((li) => li.textContent.trim() === "Career");
     const next = careers.nextElementSibling;
-    expect(next.textContent.trim()).toBe("Subcontractors");
+    expect(next.textContent.trim()).toBe("Subcontractor");
     // Root pages link relatively; resources/ pages use a root-relative path.
     expect(["subcontractor.html", "/subcontractor.html"]).toContain(next.querySelector("a").getAttribute("href"));
   });

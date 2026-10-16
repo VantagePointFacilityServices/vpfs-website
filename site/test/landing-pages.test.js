@@ -245,9 +245,9 @@ describe("site-wide navigation", () => {
       expect(a).not.toBeNull();
       expect(a.closest("li").hasAttribute("hidden")).toBe(true);
     });
-    it("footer Company lists Why us, About us, Locations, Contact, Careers, Subcontractors, Resources, with Why us, About us and Resources hidden and unlinked", () => {
+    it("footer Company lists Why us, About us, Locations, Contact, Career, Subcontractor, Resources, with Why us, About us and Resources hidden and unlinked", () => {
       const items = Array.from(doc.querySelectorAll("footer h4 + ul")).find((ul) => ul.previousElementSibling.textContent === "Company").querySelectorAll("li");
-      expect(Array.from(items, (li) => li.textContent.trim())).toEqual(["Why us", "About us", "Locations", "Contact", "Careers", "Subcontractors", "Resources"]);
+      expect(Array.from(items, (li) => li.textContent.trim())).toEqual(["Why us", "About us", "Locations", "Contact", "Career", "Subcontractor", "Resources"]);
       const hidden = Array.from(items).filter((li) => li.hasAttribute("hidden"));
       expect(hidden.map((li) => li.textContent.trim())).toEqual(["Why us", "About us", "Resources"]);
       expect(hidden.every((li) => !li.querySelector("a").hasAttribute("href"))).toBe(true);
