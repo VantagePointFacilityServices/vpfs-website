@@ -38,7 +38,7 @@ describe("checkDisqualifiers", () => {
     ["fortnightly cleaning", { frequency: "fortnightly" }],
     ["a medical facility", { facilityType: "medical" }],
     ["an education facility", { facilityType: "education" }],
-    ["a postcode outside the core service area", { postcode: "4217" }],
+    ["a postcode outside the launch area", { postcode: "4000" }],
   ])("does not disqualify %s — budget alone decides", (_, override) => {
     const result = checkDisqualifiers({
       monthlyBudget: 3000,
@@ -62,7 +62,11 @@ describe("leadFlags", () => {
     [{ frequency: "weekly" }, ["low-frequency"]],
     [{ frequency: "fortnightly" }, ["low-frequency"]],
     [{ facilityType: "medical" }, ["capability-gap"]],
-    [{ postcode: "4217" }, ["out-of-area"]],
+    [{ postcode: "4000" }, ["out-of-area"]],
+    [{ postcode: "2485" }, []],
+    [{ postcode: "4217" }, []],
+    [{ postcode: "4556" }, ["out-of-area"]],
+    [{ postcode: "2481" }, ["out-of-area"]],
     [{ frequency: "weekly", facilityType: "education", postcode: "9999" }, ["low-frequency", "capability-gap", "out-of-area"]],
   ])("flags %j as %j for the team to review", (override, expected) => {
     expect(leadFlags({ ...clean, ...override })).toEqual(expected);

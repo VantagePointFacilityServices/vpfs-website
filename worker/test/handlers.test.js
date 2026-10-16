@@ -650,7 +650,7 @@ describe("POST /enrich", () => {
 
 describe("POST /gate — budget is the only thing that decides the calendar", () => {
   it.each([
-    ["an out-of-area postcode", { postcode: "4217" }, "out-of-area"],
+    ["an out-of-area postcode", { postcode: "4000" }, "out-of-area"],
     ["weekly cleaning", { cleaning_frequency: "weekly" }, "low-frequency"],
     ["a medical facility", { facility_type: "medical" }, "capability-gap"],
   ])("still gives %s a calendar, and records the concern in lead_flags", async (_, override, flag) => {
@@ -694,7 +694,7 @@ describe("POST /gate — budget is the only thing that decides the calendar", ()
     global.fetch = mockGhlOk();
     const req = makeRequest("/gate", {
       contact_id: "c-nurture",
-      customFields: { facility_type: "medical", monthly_budget: "1500", postcode: "4217", cleaning_frequency: "weekly" },
+      customFields: { facility_type: "medical", monthly_budget: "1500", postcode: "4000", cleaning_frequency: "weekly" },
     });
 
     const json = await (await worker.fetch(req, env)).json();
@@ -1341,7 +1341,7 @@ describe("POST /apply-screen (Step 2 per-track screening)", () => {
     expect(putFields().applicant_score).toBe("85");
   });
 
-  it("out-of-area uses APPLICANT_POSTCODES: a Tweed postcode passes, which the lead gate would reject", async () => {
+  it("out-of-area uses LAUNCH_AREA_POSTCODES: a Tweed postcode passes", async () => {
     const { json } = await screen({ ...employee, postcode: "2486" });
     expect(json.dq_flag).toBe("none");
   });

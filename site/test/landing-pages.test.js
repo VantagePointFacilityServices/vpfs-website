@@ -265,7 +265,7 @@ describe("site-wide navigation", () => {
     it("header Locations dropdown links the four region groups", () => {
       expect(hrefs(doc.querySelectorAll("#nav-locations a"))).toEqual(
         ["sunshine-coast", "brisbane", "gold-coast", "northern-rivers"].map((r) => "locations.html#" + r));
-      expect(doc.querySelector('#nav-locations a[href="locations.html#northern-rivers"]').textContent).toBe("Northern Rivers");
+      expect(doc.querySelector('#nav-locations a[href="locations.html#northern-rivers"]').textContent).toBe("Tweed");
     });
   });
   it("about.html is noindex and out of the sitemap until the page is complete", () => {
