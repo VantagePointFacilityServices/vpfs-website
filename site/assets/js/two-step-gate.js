@@ -22,6 +22,9 @@
 //                                        loadPicker }
 //   onResultRevealed(target, form)   optional; called after revealResult shows
 //                                      a panel (target is that panel)
+//   stepper         optional; true => the Step 2 questions show one at a time
+//                   (progress, Back/Next, auto-advance). Off by default, so the
+//                   commercial lead popup is unchanged. Needs fieldset.step2-question.
 //   messages        optional overrides: generic, turnstilePending, validation,
 //                   addressRequired, slotTaken, bookIdle (the Book button
 //                   before a time is picked), alreadyBooked (prefix before
@@ -61,6 +64,7 @@ export function initTwoStepGate(form, config) {
   initTurnstile(form);
   initStep1(form);
   initStep2(form);
+  if (configs.get(form).stepper) initStepper(form);
   initDialog(form);
 }
 
@@ -189,6 +193,115 @@ function openDialog(form) {
   var resume = form.querySelector(".booking-resume");
   if (resume) resume.classList.remove("show");
   dialog.showModal();
+  var stepper = steppers.get(form);
+  if (stepper) stepper.openAtFirstUnanswered();
+}
+
+// ---- Stepper — one screening question per screen (opt-in) -----------------
+// Enabled by config.stepper. Shows the fieldset.step2-question elements one at
+// a time with a progress bar, "N of M" text (an aria-live region), and
+// Back/Next. Picking an option with a mouse or touch advances; keyboard users
+// press Next so arrow keys can move between options. The existing
+// .step2-submit button becomes the last screen's "See my result". All answers
+// stay in the DOM, so Back keeps them and the submit payload is unchanged.
+
+var steppers = new WeakMap();
+
+function initStepper(form) {
+  var step2 = form.querySelector(".booking-step-2");
+  var holder = step2 && step2.querySelector(".booking-step-2-questions");
+  var dialog = form.querySelector(".booking-dialog");
+  var questions = holder ? Array.prototype.slice.call(holder.querySelectorAll("fieldset.step2-question, fieldset.apply-question")) : [];
+  var submitBtn = holder && holder.querySelector(".step2-submit");
+  if (!questions.length || !submitBtn || !dialog) return;
+
+  dialog.setAttribute("data-stepper", "");
+  var total = questions.length;
+  var current = 0;
+
+  function el(tag, cls, text) {
+    var n = document.createElement(tag);
+    n.className = cls;
+    if (text) n.textContent = text;
+    return n;
+  }
+
+  var progress = el("div", "stepper-progress");
+  var bar = el("div", "stepper-bar");
+  var fill = el("div", "stepper-bar-fill");
+  bar.setAttribute("aria-hidden", "true");
+  bar.appendChild(fill);
+  var count = el("p", "stepper-count small");
+  count.setAttribute("aria-live", "polite");
+  progress.appendChild(count);
+  progress.appendChild(bar);
+  questions[0].parentNode.insertBefore(progress, questions[0]);
+
+  var nav = el("div", "stepper-nav");
+  var back = el("button", "btn btn-secondary stepper-back", "Back");
+  back.type = "button";
+  var next = el("button", "btn btn-primary stepper-next", "Next");
+  next.type = "button";
+  nav.appendChild(back);
+  nav.appendChild(next);
+  nav.appendChild(submitBtn);
+  questions[total - 1].parentNode.insertBefore(nav, questions[total - 1].nextSibling);
+
+  questions.forEach(function (q) {
+    var legend = q.querySelector("legend");
+    if (legend) legend.setAttribute("tabindex", "-1");
+  });
+
+  function answered(i) {
+    return Boolean(questions[i].querySelector("input:checked"));
+  }
+
+  function render(focus) {
+    questions.forEach(function (q, i) { q.hidden = i !== current; });
+    count.textContent = (current + 1) + " of " + total;
+    fill.style.width = ((current + 1) / total * 100) + "%";
+    var last = current === total - 1;
+    back.hidden = current === 0;
+    next.hidden = last;
+    submitBtn.hidden = !last;
+    next.disabled = !answered(current);
+    // A request in flight owns the submit button's disabled state.
+    if (last && !submitBtn.dataset.loading) submitBtn.disabled = !answered(current);
+    clearError(holder.querySelector(".booking-error"));
+    if (focus) {
+      var legend = questions[current].querySelector("legend");
+      if (legend) legend.focus();
+    }
+  }
+
+  function go(i) {
+    current = Math.max(0, Math.min(total - 1, i));
+    render(true);
+  }
+
+  next.addEventListener("click", function () {
+    if (!next.disabled) go(current + 1);
+  });
+  back.addEventListener("click", function () { go(current - 1); });
+
+  holder.addEventListener("change", function (e) {
+    if (e.target.type === "radio") render(false);
+  });
+  holder.addEventListener("click", function (e) {
+    // detail > 0 only for pointer clicks; a keyboard-driven radio click is 0.
+    if (e.detail > 0 && e.target.type === "radio" && e.target.checked && current < total - 1) {
+      go(current + 1);
+    }
+  });
+
+  steppers.set(form, {
+    openAtFirstUnanswered: function () {
+      var first = 0;
+      while (first < total - 1 && answered(first)) first++;
+      go(first);
+    },
+  });
+  render(false);
 }
 
 // ---- Step 2 — DQ questions -> /gate -> tier-based calendar branch ------
@@ -661,6 +774,8 @@ function postJson(url, payload) {
 function setLoading(btn, isLoading) {
   if (!btn) return;
   btn.disabled = isLoading;
+  if (isLoading) btn.dataset.loading = "1";
+  else delete btn.dataset.loading;
 }
 
 function showError(box, message) {

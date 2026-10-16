@@ -4,8 +4,8 @@ import { resolve } from "node:path";
 import { initApply } from "../assets/js/apply.js";
 
 const URL0 = "https://api.leadconnectorhq.com/widget/survey/abc";
-const ANSWERS = ["cleaning_experience", "residential_experience", "right_to_work", "police_check_status", "blue_card_status",
-  "availability", "start_availability", "reliable_transport", "physical_capability", "passion_rating"];
+const ANSWERS = ["cleaning_experience", "residential_experience", "right_to_work", "police_check_status",
+  "availability", "reliable_transport"];
 const T = "2026-03-04T13:30:00+10:00";
 const json = (body, status = 200) => Promise.resolve({ ok: status < 400, status, json: () => Promise.resolve(body) });
 const flush = () => new Promise((r) => setTimeout(r, 0));
@@ -66,30 +66,63 @@ describe("embedded experience survey", () => {
     ["shortlist", { result: "shortlist" }, "shortlist-message", false],
     ["no-calendar", { result: "book" }, "no-calendar-message", false],
     ["booking", { result: "book", booking_token: "tok" }, "booking-confirmed", true],
-  ])("renders the survey for %s", async (_n, screen, id, book) => {
+  ])("offers the survey for %s without loading it", async (_n, screen, id, book) => {
     const form = await run(URL0, screen, { book });
     const cta = form.querySelector(`#${id} .enrich-cta`);
     expect(cta).not.toBeNull();
-    const frame = cta.querySelector("iframe");
+    expect(cta.querySelectorAll("button").length).toBe(2);
+    expect(form.querySelector("iframe")).toBeNull();
+    expect(scripts().length).toBe(0);
+  });
+
+  it("opens the survey screen on 'Add your experience now'", async () => {
+    const form = await run(URL0, { result: "book", booking_token: "tok" }, { book: true });
+    const panel = form.querySelector("#booking-confirmed");
+    panel.querySelector(".enrich-now").click();
+    const frame = panel.querySelector("iframe");
     expect(frame.src).toBe(`${URL0}?email=sam%2Bx%40example.com&phone=0400%20000%20000`);
     expect(frame.title).toBeTruthy();
-    const a = cta.querySelector("a");
+    expect(panel.querySelector(".enrich-cta").closest("[hidden]")).not.toBeNull();
+    expect(panel.textContent).toMatch(/booked/i);
+    // every node other than the survey screen (incl. bare text) is hidden
+    Array.from(panel.childNodes).forEach((n) => {
+      if (n.nodeType === 1 && n.classList.contains("enrich-screen")) return;
+      expect(n.nodeType).toBe(1);
+      expect(n.hidden).toBe(true);
+    });
+    const a = panel.querySelector("a.enrich-newtab");
     expect(a.getAttribute("href")).toBe(frame.src);
     expect(a.target).toBe("_blank");
     expect(a.rel).toBe("noopener");
-    cta.querySelector(".enrich-skip").click();
-    expect(form.querySelector("dialog").close).toHaveBeenCalled();
     expect(scripts().length).toBe(1);
   });
 
-  it("loads the script once across two reveals in the same page", async () => {
+  it("moves focus to the survey screen's heading, since the pressed button is now hidden", async () => {
+    const form = await run(URL0, { result: "book", booking_token: "tok" }, { book: true });
+    const panel = form.querySelector("#booking-confirmed");
+    const now = panel.querySelector(".enrich-now");
+    now.focus();
+    now.click();
+    const heading = panel.querySelector(".enrich-screen h3");
+    expect(heading.getAttribute("tabindex")).toBe("-1");
+    expect(document.activeElement).toBe(heading);
+  });
+
+  it("closes the dialog on 'I'll do it later'", async () => {
     const form = await run(URL0, { result: "shortlist" });
-    expect(scripts().length).toBe(1);
-    // Same document, no remount: a second qualifying result reveals a second survey panel.
+    form.querySelector(".enrich-skip").click();
+    expect(form.querySelector("dialog").close).toHaveBeenCalled();
+    expect(form.querySelector("iframe")).toBeNull();
+    expect(scripts().length).toBe(0);
+  });
+
+  it("loads the script once when two panels open the survey", async () => {
+    const form = await run(URL0, { result: "shortlist" });
+    form.querySelector("#shortlist-message .enrich-now").click();
     vi.stubGlobal("fetch", vi.fn(() => json({ result: "book" })));
     form.querySelector(".step2-submit").click();
     await flush(); await flush();
-    expect(form.querySelector("#no-calendar-message .enrich-cta")).not.toBeNull();
+    form.querySelector("#no-calendar-message .enrich-now").click();
     expect(scripts().length).toBe(1);
   });
 

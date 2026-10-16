@@ -39,11 +39,10 @@ function buildApplyPayload(form, helpers) {
 // read back from the (hidden but populated) Step 1 field, as the booking
 // gate does. The subcontractor-only questions are sent only on that track.
 var COMMON_ANSWERS = [
-  "cleaning_experience", "residential_experience", "right_to_work", "police_check_status", "blue_card_status",
-  "availability", "start_availability", "reliable_transport", "physical_capability",
-  "passion_rating",
+  "cleaning_experience", "residential_experience", "right_to_work", "police_check_status",
+  "availability", "reliable_transport",
 ];
-var SUBCONTRACTOR_ANSWERS = ["has_own_insurance_and_abn", "own_equipment", "works_for_other_clients"];
+var SUBCONTRACTOR_ANSWERS = ["has_own_insurance_and_abn", "own_equipment"];
 
 function answersFor(track) {
   return track === "subcontractor" ? COMMON_ANSWERS.concat(SUBCONTRACTOR_ANSWERS) : COMMON_ANSWERS;
@@ -91,9 +90,9 @@ function handleScreenResult(data, ctx) {
 }
 
 // ---- Embedded experience survey -------------------------------------------
-// Shown under the shortlist, no-calendar and booking-confirmed panels when
-// form[data-enrich-survey-url] is set. Nothing is inserted (iframe or GHL's
-// form_embed.js) until a qualifying panel is revealed.
+// Offer (two buttons) under the shortlist, no-calendar and booking-confirmed
+// panels when form[data-enrich-survey-url] is set. The survey screen (iframe
+// and GHL's form_embed.js) is created only when the applicant opts in.
 var EMBED_SCRIPT = "https://link.msgsndr.com/js/form_embed.js";
 var SURVEY_PANELS = ["shortlist-message", "no-calendar-message", "booking-confirmed"];
 
@@ -109,47 +108,70 @@ function loadEmbedScript() {
   document.body.appendChild(s);
 }
 
+function el(tag, cls, text) {
+  var e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text) e.textContent = text;
+  return e;
+}
+
+function closeDialog(form) {
+  var dialog = form.querySelector(".booking-dialog");
+  if (dialog) dialog.close();
+}
+
+// The survey screen replaces the panel's content; iframe and form_embed.js
+// are created only here, when the applicant opts in.
+function openSurveyScreen(target, form, src) {
+  // Wrap everything (including bare text nodes, which .children skips) and hide it.
+  var prev = el("div", "enrich-prev");
+  while (target.firstChild) prev.appendChild(target.firstChild);
+  prev.hidden = true;
+  target.appendChild(prev);
+  var screen = el("div", "enrich-screen");
+  var heading = el("h3", "", "Add your experience");
+  heading.setAttribute("tabindex", "-1");
+  screen.appendChild(heading);
+  screen.appendChild(el("p", "small", "about 3 minutes, helps us prepare for your interview"));
+  var frame = el("iframe", "enrich-frame");
+  frame.src = src;
+  frame.title = "Experience survey";
+  var actions = el("div", "enrich-actions");
+  var link = el("a", "small enrich-newtab", "Open in a new tab");
+  link.href = src;
+  link.target = "_blank";
+  link.rel = "noopener";
+  var done = el("button", "btn btn-secondary enrich-skip", "Close");
+  done.type = "button";
+  done.addEventListener("click", function () { closeDialog(form); });
+  actions.appendChild(link);
+  actions.appendChild(done);
+  screen.appendChild(frame);
+  screen.appendChild(actions);
+  target.appendChild(screen);
+  // The button that had focus is now hidden — move focus to what replaced it.
+  heading.focus();
+  loadEmbedScript();
+}
+
 function showSurvey(target, form) {
   var base = surveyUrl(form);
   if (!base || SURVEY_PANELS.indexOf(target.id) === -1 || target.querySelector(".enrich-cta")) return;
   var get = fieldGetter(form);
   var src = base + "?email=" + encodeURIComponent(get("email")) + "&phone=" + encodeURIComponent(get("phone"));
 
-  var box = document.createElement("div");
-  box.className = "enrich-cta";
-  var h = document.createElement("h3");
-  h.textContent = "Add your experience";
-  var p = document.createElement("p");
-  p.className = "small";
-  p.textContent = "about 3 minutes, helps us prepare for your interview";
-  var frame = document.createElement("iframe");
-  frame.src = src;
-  frame.title = "Experience survey";
-  frame.className = "enrich-frame";
-  var actions = document.createElement("div");
-  actions.className = "enrich-actions";
-  var skip = document.createElement("button");
-  skip.type = "button";
-  skip.className = "btn btn-secondary enrich-skip";
-  skip.textContent = "Skip for now";
-  skip.addEventListener("click", function () {
-    var dialog = form.querySelector(".booking-dialog");
-    if (dialog) dialog.close();
-  });
-  var link = document.createElement("a");
-  link.href = src;
-  link.target = "_blank";
-  link.rel = "noopener";
-  link.className = "small enrich-newtab";
-  link.textContent = "Open in a new tab";
-  actions.appendChild(skip);
-  actions.appendChild(link);
-  box.appendChild(h);
-  box.appendChild(p);
-  box.appendChild(frame);
+  var box = el("div", "enrich-cta");
+  var actions = el("div", "enrich-actions");
+  var now = el("button", "btn btn-primary enrich-now", "Add your experience now (3 min)");
+  now.type = "button";
+  now.addEventListener("click", function () { openSurveyScreen(target, form, src); });
+  var later = el("button", "btn btn-secondary enrich-skip", "I\u2019ll do it later, text me the link");
+  later.type = "button";
+  later.addEventListener("click", function () { closeDialog(form); });
+  actions.appendChild(now);
+  actions.appendChild(later);
   box.appendChild(actions);
   target.appendChild(box);
-  loadEmbedScript();
 }
 
 export function initApply(form) {
@@ -162,6 +184,7 @@ export function initApply(form) {
     isStep2Complete: isScreenComplete,
     handleStep2Result: handleScreenResult,
     onResultRevealed: showSurvey,
+    stepper: true,
     messages: {
       bookIdle: "Book interview",
       alreadyBooked: "You already have an interview booked for ",

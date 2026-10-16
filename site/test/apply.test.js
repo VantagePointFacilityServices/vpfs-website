@@ -3,10 +3,9 @@ import { initApply } from "../assets/js/apply.js";
 
 const ANSWERS = [
   ["cleaning_experience", "1_to_3_years"], ["residential_experience", "1_to_3_years"], ["right_to_work", "yes"], ["police_check_status", "current_check_held"],
-  ["blue_card_status", "not_applicable"], ["availability", "flexible"], ["start_availability", "immediately"],
-  ["reliable_transport", "yes"], ["physical_capability", "yes"], ["passion_rating", "take_pride"],
+  ["availability", "flexible"], ["reliable_transport", "yes"],
 ];
-const SUB_ANSWERS = [["has_own_insurance_and_abn", "yes"], ["own_equipment", "yes"], ["works_for_other_clients", "no"]];
+const SUB_ANSWERS = [["has_own_insurance_and_abn", "yes"], ["own_equipment", "yes"]];
 
 function mount(track = "employee") {
   document.body.innerHTML = `
@@ -146,12 +145,24 @@ describe("applicant Step 2 (apply.js)", () => {
       residential_experience: "1_to_3_years",
     });
     expect(body.own_equipment).toBeUndefined();
+    expect(Object.keys(body).sort()).toEqual([
+      "availability", "cleaning_experience", "contact_id", "engagement_track", "police_check_status", "postcode",
+      "reliable_transport", "residential_experience", "right_to_work",
+    ]);
+  });
+
+  it("the subcontractor payload holds only the D2 answers", async () => {
+    const { fetchMock } = await runStep2("subcontractor", ok({ result: "shortlist" }));
+    expect(Object.keys(JSON.parse(fetchMock.mock.calls[1][1].body)).sort()).toEqual([
+      "availability", "cleaning_experience", "contact_id", "engagement_track", "has_own_insurance_and_abn", "own_equipment",
+      "police_check_status", "postcode", "reliable_transport", "residential_experience", "right_to_work",
+    ]);
   });
 
   it("sends the subcontractor-only answers on that track", async () => {
     const { fetchMock } = await runStep2("subcontractor", ok({ result: "shortlist" }));
     expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toMatchObject({
-      has_own_insurance_and_abn: "yes", own_equipment: "yes", works_for_other_clients: "no",
+      has_own_insurance_and_abn: "yes", own_equipment: "yes",
     });
   });
 

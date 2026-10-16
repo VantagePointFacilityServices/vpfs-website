@@ -55,7 +55,7 @@ describe("careers.html talent pool: copy", () => {
 
   it("uses the closed-intake form note and no collection notice", () => {
     expect(doc.querySelector(".form-privacy-notice")).toBeNull();
-    expect(text).toContain("Takes about 2 minutes: a few quick screening questions to join our shortlist.");
+    expect(text).toContain("Takes about 2 minutes: a few quick screening questions before a group interview.");
     expect(text).not.toContain("then book your interview");
   });
 
@@ -76,14 +76,18 @@ describe("careers.html talent pool: form", () => {
     expect(doc.querySelector('script[src="assets/js/apply.js"]')).not.toBeNull();
   });
 
-  it("has the Step 1 fields and the ten employee screening questions", () => {
+  it("has the Step 1 fields and the six employee screening questions", () => {
     for (const n of ["first_name", "last_name", "email", "phone", "postcode"]) {
       expect(form.querySelector(`.form-fields [name="${n}"]`)).not.toBeNull();
     }
-    for (const n of ["cleaning_experience", "residential_experience", "right_to_work", "police_check_status", "blue_card_status",
-      "availability", "start_availability", "reliable_transport", "physical_capability", "passion_rating"]) {
+    for (const n of ["cleaning_experience", "residential_experience", "right_to_work", "police_check_status",
+      "availability", "reliable_transport"]) {
       expect(form.querySelectorAll(`.booking-step-2 [name="${n}"]`).length).toBeGreaterThan(1);
     }
+    for (const n of ["blue_card_status", "start_availability", "physical_capability", "passion_rating", "works_for_other_clients"]) {
+      expect(form.querySelector(`[name="${n}"]`)).toBeNull();
+    }
+    expect(form.querySelectorAll(".booking-step-2-questions fieldset").length).toBe(6);
     expect(form.querySelector('[name="has_own_insurance_and_abn"]')).toBeNull();
     expect(form.querySelector('[name="marketing_consent"]')).toBeNull();
   });
@@ -95,8 +99,8 @@ describe("careers.html talent pool: form", () => {
     }
   });
 
-  it("points every join-our-shortlist button at the form", () => {
-    const anchors = Array.from(doc.querySelectorAll("a.btn")).filter((a) => a.textContent.trim() === "Join our shortlist");
+  it("points every apply-for-a-group-interview button at the form", () => {
+    const anchors = Array.from(doc.querySelectorAll("a.btn")).filter((a) => a.textContent.trim() === "Apply for a group interview");
     expect(anchors.length).toBeGreaterThanOrEqual(2);
     for (const a of anchors) expect(a.getAttribute("href")).toBe("#apply");
   });
@@ -144,14 +148,14 @@ describe("careers.html approved copy", () => {
     expect(sec).not.toBeNull();
     expect(sec.querySelector("h2").textContent).toBe("What the work looks like");
     const t = sec.textContent.replace(/\s+/g, " ");
-    expect(t).toContain("Our first intake is likely to be weekend and public-holiday casual shifts.");
+    expect(t).toContain("early mornings, evenings and nights, on weekdays and weekends.");
     expect(t).toContain("Sign in on Connecteam when you arrive.");
     expect(sec.querySelectorAll("ol li").length).toBe(4);
     expect(text.indexOf("What we ask of you")).toBeLessThan(text.indexOf("What the work looks like"));
   });
 
   it("uses the approved meta description on all three tags", () => {
-    const d = "Above-award pay for good technicians, paid weekly, with uniform, PPE and equipment supplied. Casual commercial cleaning on the Gold Coast. Join our shortlist.";
+    const d = "Above-award pay for good technicians, paid weekly, with uniform, PPE and equipment supplied. Casual commercial cleaning on the Gold Coast. Apply for a group interview.";
     expect(doc.querySelector('meta[name="description"]').getAttribute("content")).toBe(d);
     expect(doc.querySelector('meta[property="og:description"]').getAttribute("content")).toBe(d);
     expect(doc.querySelector('meta[name="twitter:description"]').getAttribute("content")).toBe(d);
