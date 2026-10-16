@@ -111,7 +111,7 @@ describe("about.html lower half", () => {
   it("local families links careers and mentions award rates", () => {
     const s = section("Local families");
     expect(s.querySelector('a[href="career.html"]')).not.toBeNull();
-    expect(s.textContent).toMatch(/award rates/i);
+    expect(s.textContent).toMatch(/award-equivalent rates/i);
   });
 
   it("Paperwork copy: $20M cover and certificate, no insurer, ABN or memberships", () => {
