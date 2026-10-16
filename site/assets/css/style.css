@@ -991,6 +991,34 @@ html:has(.booking-dialog[open]){ overflow:hidden; } /* stop the page scrolling b
 .step2-question{ border:0; padding:0; margin:0 0 var(--space-4); }
 .step2-question legend{ font-weight:600; margin-bottom:var(--space-2); padding:0; }
 
+/* Applicant screening stepper — one question per screen. Scoped to the applicant
+   popup (apply.js sets [data-stepper] on the dialog); the lead popup is untouched. */
+.booking-dialog[data-stepper] .booking-step-2-questions{ font-family:"Manrope", system-ui, sans-serif; }
+.booking-dialog[data-stepper] .stepper-progress{ margin:var(--space-4) 0 var(--space-5); }
+.booking-dialog[data-stepper] .stepper-count{ margin:0 0 var(--space-2); font-weight:700; color:var(--vp-navy); }
+.booking-dialog[data-stepper] .stepper-bar{ height:6px; border-radius:var(--radius-pill); background:var(--surface-wash); overflow:hidden; }
+.booking-dialog[data-stepper] .stepper-bar-fill{ height:100%; background:var(--vp-navy); border-radius:inherit; transition:width .25s ease; }
+.booking-dialog[data-stepper] .step2-question, .booking-dialog[data-stepper] .apply-question { min-width:0; margin:0 0 var(--space-5); animation:stepper-in .25s ease; }
+.booking-dialog[data-stepper] .step2-question[hidden], .booking-dialog[data-stepper] .apply-question[hidden] { display:none; }
+.booking-dialog[data-stepper] .step2-question legend, .booking-dialog[data-stepper] .apply-question legend { font-size:1.15rem; font-weight:700; color:var(--vp-navy); margin-bottom:var(--space-4); overflow-wrap:anywhere; }
+.booking-dialog[data-stepper] .step2-question legend:focus, .booking-dialog[data-stepper] .apply-question legend:focus { outline:none; }
+.booking-dialog[data-stepper] .radio-row{ flex-direction:column; flex-wrap:nowrap; gap:var(--space-3); margin-bottom:0; }
+.booking-dialog[data-stepper] .radio-option{ padding:14px 16px; border:2px solid var(--border, #d9dee5); border-radius:var(--radius-md, 12px); background:var(--surface-card); overflow-wrap:anywhere; }
+.booking-dialog[data-stepper] .radio-option:hover{ border-color:var(--vp-navy); }
+.booking-dialog[data-stepper] .radio-option:has(input:checked){ border-color:var(--vp-navy); background:var(--surface-wash); }
+.booking-dialog[data-stepper] .radio-option:has(input:focus-visible){ outline:3px solid var(--focus-ring); outline-offset:2px; }
+.booking-dialog[data-stepper] .stepper-nav{ display:flex; justify-content:space-between; gap:var(--space-3); }
+.booking-dialog[data-stepper] .stepper-nav .btn{ min-width:0; }
+.booking-dialog[data-stepper] .stepper-nav [hidden]{ display:none; }
+.booking-dialog[data-stepper] .stepper-nav .stepper-next,
+.booking-dialog[data-stepper] .stepper-nav .step2-submit{ margin-left:auto; }
+.booking-dialog[data-stepper] .stepper-nav .btn:disabled{ opacity:.5; cursor:not-allowed; }
+@keyframes stepper-in{ from{ opacity:0; transform:translateX(16px); } to{ opacity:1; transform:none; } }
+@media (prefers-reduced-motion:reduce){
+  .booking-dialog[data-stepper] .step2-question, .booking-dialog[data-stepper] .apply-question { animation:none; }
+  .booking-dialog[data-stepper] .stepper-bar-fill{ transition:none; }
+}
+
 /* Applicant intake switch (careers.html, subcontractor.html): <body data-applicant-intake>
    is "contact" until the GHL people sub-account is live, then "form". */
 body[data-applicant-intake="contact"] [data-intake-only="form"],
@@ -1004,3 +1032,5 @@ a[href^="mailto:"]{ overflow-wrap:anywhere; }
 .enrich-cta h3{ margin-bottom:var(--space-1); }
 .enrich-frame{ display:block; width:100%; max-width:100%; min-height:480px; border:0; margin:var(--space-3) 0; }
 .enrich-actions{ display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:center; }
+.enrich-cta .enrich-actions{ flex-direction:column; align-items:stretch; }
+.enrich-screen{ text-align:left; }

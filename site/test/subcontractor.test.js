@@ -90,14 +90,14 @@ describe("subcontractor.html form", () => {
     expect(form.querySelectorAll(".booking-step-2 [required]").length).toBe(0);
   });
 
-  it("asks the ten common and three subcontractor questions in the Step 2 dialog", () => {
+  it("asks the six common and two subcontractor questions in the Step 2 dialog", () => {
     const dialog = form.querySelector("dialog.booking-dialog");
     const names = [...new Set(Array.from(dialog.querySelectorAll(".booking-step-2-questions input[type=radio]"), (i) => i.name))];
     expect(names).toEqual([
-      "cleaning_experience", "residential_experience", "right_to_work", "police_check_status", "blue_card_status", "availability",
-      "start_availability", "reliable_transport", "physical_capability", "passion_rating",
-      "has_own_insurance_and_abn", "own_equipment", "works_for_other_clients",
+      "cleaning_experience", "residential_experience", "right_to_work", "police_check_status", "availability",
+      "reliable_transport", "has_own_insurance_and_abn", "own_equipment",
     ]);
+    expect(dialog.querySelectorAll(".booking-step-2-questions fieldset").length).toBe(8);
     const exp = Array.from(dialog.querySelectorAll('[name="cleaning_experience"]'), (i) => i.value);
     expect(exp).toEqual(["none", "under_1_year", "1_to_3_years", "3_to_5_years", "5_plus_years"]);
     const res = Array.from(dialog.querySelectorAll('[name="residential_experience"]'), (i) => i.value);
