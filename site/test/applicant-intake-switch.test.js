@@ -19,7 +19,7 @@ describe("applicant intake switch CSS", () => {
 });
 
 describe.each([
-  ["careers.html", "form"],
+  ["career.html", "form"],
   ["subcontractor.html", "form"],
 ])("%s intake switch", (page, mode) => {
   const doc = parse(page);

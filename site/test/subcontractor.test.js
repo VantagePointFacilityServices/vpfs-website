@@ -25,7 +25,7 @@ describe("subcontractor.html copy", () => {
     ]);
     const links = Array.from(doc.querySelectorAll("main a, section a")).filter((a) => /Join the team/.test(a.textContent));
     expect(links.length).toBeGreaterThanOrEqual(2);
-    expect(links.every((a) => a.getAttribute("href") === "careers.html")).toBe(true);
+    expect(links.every((a) => a.getAttribute("href") === "career.html")).toBe(true);
   });
 
   it("states no rates or payment terms and has a hidden contractor story and photo slot", () => {

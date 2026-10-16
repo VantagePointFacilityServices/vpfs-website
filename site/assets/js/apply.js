@@ -67,7 +67,7 @@ function isScreenComplete(payload) {
 
 // result: "book" -> the interview picker (no-calendar fallback when there is
 // no token or no open slot); "shortlist" and "unsuccessful" -> their message.
-// The no-ABN disqualifier gets its own message, which links to careers.html.
+// The no-ABN disqualifier gets its own message, which links to career.html.
 function handleScreenResult(data, ctx) {
   if (!data || !data.result) {
     ctx.setLoading(ctx.submitBtn, false);

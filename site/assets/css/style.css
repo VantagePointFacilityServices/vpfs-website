@@ -1019,7 +1019,7 @@ html:has(.booking-dialog[open]){ overflow:hidden; } /* stop the page scrolling b
   .booking-dialog[data-stepper] .stepper-bar-fill{ transition:none; }
 }
 
-/* Applicant intake switch (careers.html, subcontractor.html): <body data-applicant-intake>
+/* Applicant intake switch (career.html, subcontractor.html): <body data-applicant-intake>
    is "contact" until the GHL people sub-account is live, then "form". */
 body[data-applicant-intake="contact"] [data-intake-only="form"],
 body[data-applicant-intake="form"] [data-intake-only="contact"]{ display:none !important; }

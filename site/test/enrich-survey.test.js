@@ -139,8 +139,8 @@ describe("embedded experience survey", () => {
     expect(scripts().length).toBe(0);
   });
 
-  it("careers.html embeds the employee experience survey", () => {
-    const html = readFileSync(resolve(__dirname, "..", "careers.html"), "utf8");
+  it("career.html embeds the employee experience survey", () => {
+    const html = readFileSync(resolve(__dirname, "..", "career.html"), "utf8");
     expect(html).toMatch(
       /<form[^>]*data-apply[^>]*data-enrich-survey-url="https:\/\/api\.leadconnectorhq\.com\/widget\/survey\/6gOaBSjTzQ2jceJGvCbG"/
     );

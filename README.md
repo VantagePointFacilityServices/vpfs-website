@@ -31,7 +31,7 @@ docs/                                      cross-cutting docs — architecture, 
 site/                                      the website (plain HTML/CSS/JS, no build step)
   index.html, services.html, locations.html,
   why-us.html, about.html, contact.html,
-  careers.html                           the seven pages (see Page & section map below)
+  career.html                           the seven pages (see Page & section map below)
   privacy.html, terms.html               legal pages: privacy policy (with the collection notice) and website terms of use
   assets/css/style.css                   shared stylesheet (design tokens + components)
   assets/js/main.js                      nav toggle, carousel, tabs, FAQ, form handling
@@ -69,7 +69,7 @@ and how to dry-run/apply DNS changes) is in `docs/DEVELOPMENT.md`.
 ## Page & section map
 
 Five of the seven main pages come from the original design handoff (see Design reference
-below); `about.html` and `careers.html` were added after launch and follow the same
+below); `about.html` and `career.html` were added after launch and follow the same
 design system rather than a design-handoff screen, so no screenshots exist for either.
 
 | Page | Purpose | Sections |
@@ -80,7 +80,7 @@ design system rather than a design-handoff screen, so no screenshots exist for e
 | `why-us.html` | Comparison-shopping page — makes the case to pick Vantage Point over another cleaner. Service-level: what you get in the engagement. | Hero → What you get (differentiator cards) → How we get started → Check us before you meet us (sample report card, sample written scope, guarantee) → What happens on every clean → Straight answers → You'll always reach a real person → Reviews (hidden until genuine reviews exist) → Case studies (hidden until the first genuine entry) → Next step |
 | `about.html` | Trust-building page — who is actually behind the business. Company-level: why it exists and how it's staffed. Deliberately avoids repeating Why Us's service-level claims (see note below). | Hero (cross-links to Why Us) → Meet Blake Warton → Why we run on systems → What "done properly" means → In Blake's words → What we stand for (4 cards + vision line) → Good work for local families → Paperwork you can check → The people you'll deal with (hidden until a second real person joins) → Strata managers and real estate agents → Talk to the founder (final CTA) |
 | `contact.html` | Lead capture. | Contact form (service type, add-ons, message) → Phone/email/address details |
-| `careers.html` | Applicant capture — recruits commercial cleaners. | Hero (headline + application form with DQ questions) → Why cleaners choose us (4 cards) → How it works (4-step process) → Final CTA |
+| `career.html` | Applicant capture — recruits commercial cleaners. | Hero (headline + application form with DQ questions) → Why cleaners choose us (4 cards) → How it works (4-step process) → Final CTA |
 | `privacy.html` | Legal — privacy policy (interim v1.0, pending Lawpath review). Every form's short collection notice links to its `#collection-notice` section. | Collection notice (standard notice + purpose/consequence per form) → Policy sections 1–11 |
 | `terms.html` | Legal — website terms of use (interim v1.0, pending Lawpath review). | Terms sections → Service terms (`#service-terms`, placeholder until the standard service terms are published) |
 
@@ -110,7 +110,7 @@ summary: `docs/ARCHITECTURE.md`.
 
 ## Recruitment: the careers application gate
 
-`careers.html`'s application form is a single-stage equivalent of the lead
+`career.html`'s application form is a single-stage equivalent of the lead
 gate above, aimed at job applicants instead of clients — collects name,
 email, phone, plus a set of DQ questions (right to work, police-check
 consent, service-area postcode, experience, availability, transport,
