@@ -169,42 +169,34 @@ const APPLICANT_POSTCODES = [
 // Under 1 year of experience is a hard floor on both tracks (PRD D18).
 const MIN_EXPERIENCE_LEVELS = ["none", "under_1_year"]; // any of these -> hard DQ
 
-// Experience points (of 40) differ per track (PRD D18).
+// Experience points differ per track (PRD v3 D5). Employee: experience 55 +
+// availability 30 + transport 15. Subcontractor: experience 60 + availability 40.
 const EXPERIENCE_SCORE = {
-  employee: { none: 0, under_1_year: 0, "1_to_3_years": 25, "3_plus_years": 40 },
+  employee: { none: 0, under_1_year: 0, "1_to_3_years": 35, "3_plus_years": 55 },
   subcontractor: {
     none: 0,
     under_1_year: 0,
-    "1_to_3_years": 25,
-    "3_to_5_years": 32,
-    "5_plus_years": 40,
+    "1_to_3_years": 35,
+    "3_to_5_years": 48,
+    "5_plus_years": 60,
   },
 };
 
-// Residential experience points (PRD D2). Experience scores the higher of the
-// commercial and residential points.
+// Experience scores the higher of the commercial and residential points.
 const RESIDENTIAL_EXPERIENCE_SCORE = {
-  employee: { none: 0, under_1_year: 0, "1_to_3_years": 15, "3_plus_years": 25 },
+  employee: { none: 0, under_1_year: 0, "1_to_3_years": 20, "3_plus_years": 35 },
   subcontractor: {
     none: 0,
     under_1_year: 0,
-    "1_to_3_years": 15,
-    "3_to_5_years": 20,
-    "5_plus_years": 25,
+    "1_to_3_years": 20,
+    "3_to_5_years": 28,
+    "5_plus_years": 35,
   },
 };
 
 const AVAILABILITY_SCORE = {
-  weekends_only: 5,
-  business_hours: 10,
-  after_hours: 20,
-  flexible: 25,
-};
-
-const PASSION_SCORE = {
-  just_a_job: 0,
-  take_pride: 5,
-  genuinely_passionate: 10,
+  employee: { weekends_only: 5, business_hours: 10, after_hours: 25, flexible: 30 },
+  subcontractor: { weekends_only: 8, business_hours: 15, after_hours: 32, flexible: 40 },
 };
 
 // ---- ENTRY POINT ------------------------------------------------------
@@ -1327,14 +1319,10 @@ const COMMON_SCREEN_FIELDS = [
   "residential_experience",
   "right_to_work",
   "police_check_status",
-  "blue_card_status",
   "availability",
-  "start_availability",
   "reliable_transport",
-  "physical_capability",
-  "passion_rating",
 ];
-const SUBCONTRACTOR_SCREEN_FIELDS = ["has_own_insurance_and_abn", "own_equipment", "works_for_other_clients"];
+const SUBCONTRACTOR_SCREEN_FIELDS = ["has_own_insurance_and_abn", "own_equipment"];
 
 async function handleApplyScreen(rawPayload, env) {
   const payload = Object.fromEntries(
@@ -1381,7 +1369,6 @@ async function handleApplyScreen(rawPayload, env) {
     .concat(track === "subcontractor" ? SUBCONTRACTOR_SCREEN_FIELDS : []);
   const answers = Object.fromEntries(answerKeys.map((k) => [k, String(payload[k]).toLowerCase()]));
 
-  const blueCardEligible = f.blueCardStatus === "current_blue_card_held" || f.blueCardStatus === "willing_to_obtain";
   const subcontractorReady = f.hasOwnInsuranceAndAbn === "yes";
 
   const write = await writeBackToGHL(
@@ -1394,7 +1381,6 @@ async function handleApplyScreen(rawPayload, env) {
       applicant_screened_at: new Date().toISOString(),
       applicant_completion_pct: result === "unsuccessful" ? 100 : 67,
       applicant_stage: result === "unsuccessful" ? "unsuccessful" : result === "shortlist" ? "shortlisted" : "screened",
-      applicant_blue_card_eligible: blueCardEligible,
       applicant_subcontractor_ready: subcontractorReady,
     },
     penv
@@ -1424,15 +1410,10 @@ function extractApplicantScreenFields(payload) {
     residentialExperience: low(payload.residential_experience),
     rightToWork: low(payload.right_to_work),
     policeCheckStatus: low(payload.police_check_status),
-    blueCardStatus: low(payload.blue_card_status),
     hasOwnInsuranceAndAbn: low(payload.has_own_insurance_and_abn),
     ownEquipment: low(payload.own_equipment),
-    worksForOtherClients: low(payload.works_for_other_clients),
     availability: low(payload.availability),
-    startAvailability: low(payload.start_availability),
     reliableTransport: low(payload.reliable_transport),
-    physicalCapability: low(payload.physical_capability),
-    passion: low(payload.passion_rating),
   };
 }
 
@@ -1468,8 +1449,8 @@ function checkApplicantDisqualifiers(track, f) {
   return { disqualified: false, reason: null };
 }
 
-// Per-track fit score (PRD D18). Employee: transport scores 15. Subcontractor:
-// transport is a hard gate instead, and "works for other clients" scores 15.
+// Per-track fit score (PRD v3 D5). Employee: transport scores 15. Subcontractor:
+// transport is a hard gate instead, so it is not scored.
 function applicantScore(track, f) {
   let score = 0;
 
@@ -1477,14 +1458,8 @@ function applicantScore(track, f) {
     (EXPERIENCE_SCORE[track] || {})[f.experience] ?? 0,
     (RESIDENTIAL_EXPERIENCE_SCORE[track] || {})[f.residentialExperience] ?? 0
   );
-  score += AVAILABILITY_SCORE[f.availability] ?? 0;
-  score += PASSION_SCORE[f.passion] ?? 0;
-  if (track === "subcontractor") {
-    if (f.worksForOtherClients === "yes") score += 15;
-  } else if (f.reliableTransport === "yes") {
-    score += 15;
-  }
-  if (f.physicalCapability === "yes") score += 10;
+  score += (AVAILABILITY_SCORE[track] || {})[f.availability] ?? 0;
+  if (track !== "subcontractor" && f.reliableTransport === "yes") score += 15;
 
   return Math.min(score, 100);
 }

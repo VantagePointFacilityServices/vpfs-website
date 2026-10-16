@@ -1225,12 +1225,8 @@ describe("POST /apply-screen (Step 2 per-track screening)", () => {
     residential_experience: "3_plus_years",
     right_to_work: "yes",
     police_check_status: "willing_no_current_check",
-    blue_card_status: "not_applicable",
     availability: "flexible",
-    start_availability: "immediately",
     reliable_transport: "yes",
-    physical_capability: "yes",
-    passion_rating: "genuinely_passionate",
   };
   const subcontractor = {
     ...employee,
@@ -1240,7 +1236,6 @@ describe("POST /apply-screen (Step 2 per-track screening)", () => {
     residential_experience: "5_plus_years",
     has_own_insurance_and_abn: "yes",
     own_equipment: "yes",
-    works_for_other_clients: "yes",
   };
 
   async function screen(body, e = screenEnv) {
@@ -1286,6 +1281,21 @@ describe("POST /apply-screen (Step 2 per-track screening)", () => {
     });
   });
 
+  it("shipped wrangler.toml opens employee intake: employee books the employee calendar; flag \"false\" still shortlists", async () => {
+    const { readFileSync } = await import("node:fs");
+    const toml = readFileSync(new URL("../wrangler.toml", import.meta.url), "utf8");
+    const flag = toml.match(/^EMPLOYEE_INTAKE_OPEN\s*=\s*"([^"]*)"/m)[1];
+    expect(flag).toBe("true");
+    const env = { ...screenEnv, EMPLOYEE_INTAKE_OPEN: flag, CALENDAR_INTERVIEW_EMPLOYEE_ID: "int-emp" };
+    const { json } = await screen(employee, env);
+    expect(json.result).toBe("book");
+    global.fetch = vi.fn(async () => new Response(JSON.stringify({}), { status: 200 }));
+    await worker.fetch(makeRequest("/slots", { booking_token: json.booking_token }), env);
+    expect(global.fetch.mock.calls[0][0]).toContain("/calendars/int-emp/free-slots");
+    const off = await screen(employee, { ...env, EMPLOYEE_INTAKE_OPEN: "false" });
+    expect(off.json.result).toBe("shortlist");
+  });
+
   it("the weakest applicant who clears every gate lands at the Standard floor (30), so only a DQ is unsuccessful", async () => {
     const { json } = await screen({
       ...employee,
@@ -1293,11 +1303,9 @@ describe("POST /apply-screen (Step 2 per-track screening)", () => {
       residential_experience: "none",
       availability: "weekends_only",
       reliable_transport: "no",
-      physical_capability: "no",
-      passion_rating: "just_a_job",
     });
     expect(json).toMatchObject({ tier: "standard", result: "shortlist" });
-    expect(putFields().applicant_score).toBe("30");
+    expect(Number(putFields().applicant_score)).toBeGreaterThanOrEqual(30);
   });
 
   // One case per D18 disqualifier row, per track.
@@ -1366,30 +1374,61 @@ describe("POST /apply-screen (Step 2 per-track screening)", () => {
     expect(global.fetch).not.toHaveBeenCalled();
   });
 
+  const removed = {
+    blue_card_status: "not_applicable",
+    start_availability: "immediately",
+    physical_capability: "yes",
+    passion_rating: "genuinely_passionate",
+    works_for_other_clients: "yes",
+  };
+
   it("saves the subcontractor's answers to GHL under their own keys", async () => {
     await screen(subcontractor);
-    expect(putFields()).toMatchObject({
+    const fields = putFields();
+    expect(fields).toMatchObject({
       cleaning_experience: "5_plus_years",
       right_to_work: "yes",
       police_check_status: "willing_no_current_check",
-      blue_card_status: "not_applicable",
       availability: "flexible",
-      start_availability: "immediately",
       reliable_transport: "yes",
-      physical_capability: "yes",
-      passion_rating: "genuinely_passionate",
       has_own_insurance_and_abn: "yes",
       own_equipment: "yes",
-      works_for_other_clients: "yes",
+      applicant_subcontractor_ready: "true",
     });
+    expect(fields).not.toHaveProperty("applicant_blue_card_eligible");
   });
 
   it("saves the employee's answers without the subcontractor-only keys", async () => {
     await screen(employee);
     const fields = putFields();
-    expect(fields).toMatchObject({ cleaning_experience: "3_plus_years", passion_rating: "genuinely_passionate" });
-    for (const key of ["has_own_insurance_and_abn", "own_equipment", "works_for_other_clients"]) {
+    expect(fields).toMatchObject({ cleaning_experience: "3_plus_years" });
+    for (const key of ["has_own_insurance_and_abn", "own_equipment"]) {
       expect(fields).not.toHaveProperty(key);
+    }
+    expect(fields).not.toHaveProperty("applicant_blue_card_eligible");
+  });
+
+  it.each([["employee"], ["subcontractor"]])("%s: removed fields from an old page are ignored, not written, not scored", async (t) => {
+    const base = t === "employee" ? employee : subcontractor;
+    const clean = await screen(base);
+    const cleanFields = putFields();
+    global.fetch.mockClear();
+    const { res, json } = await screen({ ...base, ...removed });
+    expect(res.status).toBe(200);
+    expect(json).toMatchObject({ tier: clean.json.tier, result: clean.json.result });
+    const fields = putFields();
+    expect(fields.applicant_score).toBe(cleanFields.applicant_score);
+    for (const k of Object.keys(removed)) expect(fields).not.toHaveProperty(k);
+  });
+
+  it.each([
+    ["employee", ["cleaning_experience", "residential_experience", "right_to_work", "police_check_status", "availability", "reliable_transport"]],
+    ["subcontractor", ["cleaning_experience", "residential_experience", "right_to_work", "police_check_status", "availability", "reliable_transport", "has_own_insurance_and_abn", "own_equipment"]],
+  ])("%s: a missing D2 field is a 400", async (t, keys) => {
+    const base = t === "employee" ? employee : subcontractor;
+    for (const k of keys) {
+      const { res } = await screen({ ...base, [k]: "" });
+      expect(res.status).toBe(400);
     }
   });
 

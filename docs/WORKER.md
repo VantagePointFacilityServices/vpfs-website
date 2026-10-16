@@ -156,7 +156,7 @@ with exactly these keys:
 | Read/written by `/enrich` | `size_sqm`, `headcount`, `floor_count`, `lifts_present`, `bathroom_count`, `kitchen_count`, `breakroom_count`, `meeting_room_count`, `special_requests`, `supplies_provided`, `equipment_needed`, `contract_renewal_date`, `contract_renewal_months_out` |
 | Read/written by `/confirm` | `budget_flexible`, `flexible_budget_amount`, `frequency_flexible`, `flexible_frequency`, `monthly_budget`, `cleaning_frequency`, `facility_type` |
 | Read/written by `/outcome` | `outcome_type`, `reschedule_attempts`, `loss_reason`, `noshow_attempts`, `lost_at_proposal_date` |
-| Applicants (**people** sub-account, not this one) | `engagement_track`, `postcode`, `lead_channel`, `utm_*`, `applicant_stage`, `applicant_tier`, `applicant_score`, `applicant_dq_flag`, `applicant_captured_at`, `applicant_screened_at`, `applicant_blue_card_eligible`, `applicant_subcontractor_ready`, plus the Step 2 answers listed in [section 5](#5-the-job-applicant-journey). Full build steps: vpos `commercial/integrations/gohighlevel/pipelines/recruitment/people-subaccount-build-guide.md` |
+| Applicants (**people** sub-account, not this one) | `engagement_track`, `postcode`, `lead_channel`, `utm_*`, `applicant_stage`, `applicant_tier`, `applicant_score`, `applicant_dq_flag`, `applicant_captured_at`, `applicant_screened_at`, `applicant_subcontractor_ready`, plus the Step 2 answers listed in [section 5](#5-the-job-applicant-journey). Full build steps: vpos `commercial/integrations/gohighlevel/pipelines/recruitment/people-subaccount-build-guide.md` |
 
 Plus the tag, which already exists in the sub-account:
 
@@ -488,21 +488,15 @@ to work, not willing to get a police check, postcode outside
 subcontractor track adds no ABN + insurance, no own equipment and no own
 transport.
 
-**Fit score:** experience is the higher of the commercial and residential points (residential: employee 1–3 yrs 15 / 3+ yrs 25; subcontractor 15 / 20 / 25); commercial (employee 1–3 yrs 25 / 3+ yrs 40; subcontractor
-1–3 yrs 25 / 3–5 yrs 32 / 5+ yrs 40); availability business hours 10 /
-after hours 20 / flexible 25 / weekends only 5; transport 15 (employee) or
-works for other clients 15 (subcontractor); physically capable 10; passion
-"take pride" 5 / "genuinely passionate" 10. Priority ≥ 70, Standard 30–69.
+**Fit score** (PRD v3 D5): experience is the higher of the commercial and residential points. Employee: commercial 1–3 yrs 35 / 3+ yrs 55, residential 20 / 35; availability weekends 5 / business hours 10 / after hours 25 / flexible 30; own transport 15. Subcontractor: commercial 1–3 yrs 35 / 3–5 yrs 48 / 5+ yrs 60, residential 20 / 28 / 35; availability 8 / 15 / 32 / 40 (transport is a disqualifier, not scored). Priority ≥ 70, Standard 30–69.
 
 **Saved to GHL by `/apply-screen`:** the result fields (`applicant_score`,
 `applicant_tier`, `applicant_dq_flag`, `applicant_stage`,
-`applicant_screened_at`, `applicant_blue_card_eligible`,
+`applicant_screened_at`,
 `applicant_subcontractor_ready`) and every answer under its own key:
 `cleaning_experience`, `residential_experience`, `right_to_work`, `police_check_status`,
-`blue_card_status`, `availability`, `start_availability`,
-`reliable_transport`, `physical_capability`, `passion_rating`, plus on the
-subcontractor track `has_own_insurance_and_abn`, `own_equipment`,
-`works_for_other_clients`. No documents are uploaded in the application;
+`availability`, `reliable_transport`, plus on the
+subcontractor track `has_own_insurance_and_abn`, `own_equipment`. Removed fields (`blue_card_status`, `start_availability`, `passion_rating`, `physical_capability`, `works_for_other_clients`) are ignored if an old cached page still sends them. No documents are uploaded in the application;
 they are collected after the interview by a GHL form (PRD D21).
 
 ---
@@ -601,7 +595,7 @@ To finish step 3:
 | `/confirm` | `dq_flag` (confirmed nurture), or `lead_score`, `lead_tier`, `dq_flag: none` plus the flexed `monthly_budget` / `cleaning_frequency` |
 | `/outcome` | `lead_tier: nurture`, `dq_flag`, `noshow_attempts` or `lost_at_proposal_date` |
 | `/apply` | (people sub-account) `engagement_track`, `postcode`, `applicant_stage: started`, `applicant_captured_at`, `utm_*` / `lead_channel` if sent |
-| `/apply-screen` | (people sub-account) `applicant_score`, `applicant_tier`, `applicant_dq_flag`, `applicant_stage`, `applicant_screened_at`, `applicant_blue_card_eligible`, `applicant_subcontractor_ready`, and every Step 2 answer under its own key (section 5); tag `applicant-unsuccessful` or `applicant-shortlist` |
+| `/apply-screen` | (people sub-account) `applicant_score`, `applicant_tier`, `applicant_dq_flag`, `applicant_stage`, `applicant_screened_at`, `applicant_subcontractor_ready`, and every Step 2 answer under its own key (section 5); tag `applicant-unsuccessful` or `applicant-shortlist` |
 
 **Tier values:** `priority`, `standard`, `standard-flagged`, `nurture`
 (leads); `priority`, `standard`, `unsuccessful`, `pending` (applicants).
