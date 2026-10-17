@@ -31,6 +31,17 @@ function mountPage(page) {
 }
 
 describe.each(PAGES)("%s booking form", (page) => {
+  it("asks for a required business name between last name and email", () => {
+    const form = mountPage(page);
+    const field = form.querySelector('.form-fields [name="company_name"]');
+    expect(field).not.toBeNull();
+    expect(field.required).toBe(true);
+    expect(field.getAttribute("autocomplete")).toBe("organization");
+    const names = Array.from(form.querySelectorAll(".form-fields [name]"), (el) => el.name);
+    expect(names.indexOf("company_name")).toBe(names.indexOf("last_name") + 1);
+    expect(names.indexOf("email")).toBe(names.indexOf("company_name") + 1);
+  });
+
   it("has no natively-required fields in the hidden Step 2", () => {
     const form = mountPage(page);
     const required = form.querySelectorAll(".booking-step-2 [required]");
@@ -39,7 +50,7 @@ describe.each(PAGES)("%s booking form", (page) => {
 
   it("passes native validation once only the Step 1 fields are filled", () => {
     const form = mountPage(page);
-    const fill = { first_name: "Alex", email: "alex@example.com", phone: "0400000000", postcode: "4211" };
+    const fill = { first_name: "Alex", company_name: "Acme", email: "alex@example.com", phone: "0400000000", postcode: "4211" };
     for (const [name, value] of Object.entries(fill)) {
       form.querySelector(`.form-fields [name="${name}"]`).value = value;
     }
@@ -173,5 +184,22 @@ describe("landing page forms", () => {
     const form = mountPage(page);
     const opt = form.querySelector('select[name="facility_type"] option[value="construction"]');
     expect(opt.textContent.trim()).toBe("Warehouse / industrial");
+  });
+});
+
+// Every page carrying a data-conversion-page form (discovered, so a new page
+// is covered automatically) must ask for the business name.
+const CONVERSION_PAGES = readdirSync(SITE_DIR)
+  .filter((f) => f.endsWith(".html"))
+  .filter((f) => /data-conversion-page=/.test(readFileSync(resolve(SITE_DIR, f), "utf8")));
+
+describe.each(CONVERSION_PAGES)("%s conversion form business name", (page) => {
+  it("has a required company_name input with autocomplete=organization", () => {
+    mountPage(page);
+    const form = document.querySelector("form[data-conversion-page]");
+    const field = form.querySelector('[name="company_name"]');
+    expect(field).not.toBeNull();
+    expect(field.required).toBe(true);
+    expect(field.getAttribute("autocomplete")).toBe("organization");
   });
 });

@@ -300,6 +300,8 @@ async function route(request, env) {
 // contact and returns its id, which the browser then carries into the
 // Step 2 DQ questions and passes to /gate. See
 // commercial/docs/lead-scoring-and-two-stage-gate-form.md in the vpos repo.
+const MAX_COMPANY_NAME_LENGTH = 200;
+
 async function handleLead(payload, env, request) {
   const f = extractLeadFields(payload);
 
@@ -321,6 +323,13 @@ async function handleLead(payload, env, request) {
 
   if (!f.email || !f.phone) {
     return new Response("Missing required field: email and phone are required", { status: 400 });
+  }
+
+  if (f.companyName.length > MAX_COMPANY_NAME_LENGTH) {
+    return new Response(JSON.stringify({ error: "company_name_too_long" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   const result = await upsertContactInGHL(f, env);
@@ -405,6 +414,8 @@ function extractLeadFields(payload) {
   return {
     firstName: payload.first_name || "",
     lastName: payload.last_name || "",
+    // Optional on purpose: a visitor on a cached old page has no field.
+    companyName: typeof payload.company_name === "string" ? payload.company_name.trim() : "",
     email: payload.email || "",
     phone: payload.phone || "",
     // Captured in Step 1 now (see assets/js/booking-gate.js), but not a
@@ -1527,6 +1538,7 @@ async function upsertContactInGHL(f, env) {
       locationId: env.GHL_VPFS_LOCATION_ID,
       firstName: f.firstName,
       lastName: f.lastName,
+      ...(f.companyName ? { companyName: f.companyName } : {}),
       email: f.email,
       phone: f.phone,
       customFields,

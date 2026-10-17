@@ -100,7 +100,7 @@ There are **two ways in**:
 
 | Endpoint | Called by | When | What it does |
 |---|---|---|---|
-| `/lead` | Website (Step 1) | Visitor submits name/email/phone/postcode | Creates or matches the GHL contact, tags it `website-lead`, returns its ID |
+| `/lead` | Website (Step 1) | Visitor submits name/business name/email/phone/postcode | Creates or matches the GHL contact, tags it `website-lead`, returns its ID. `company_name` is trimmed and saved as the contact's built-in company field (`companyName`); blank/missing is omitted and the lead still succeeds (optional server-side so cached old pages work); over 200 characters → `400 { error: "company_name_too_long" }` before any GHL call |
 | `/area-request` | Website (Locations page) | Visitor submits the Request a new area form (name/email/phone/postcode) | Same honeypot and Turnstile checks as `/lead`; requires email, phone and postcode. Creates or matches the GHL contact with `postcode` and `conversion_page: website-locations-area-request`, tags it `new-area-request` (never `website-lead`, so the booking workflows don't start). `200 { ok: true }`; `400` missing field; `403` failed Turnstile; `502` GHL error. **The form's section is hidden** (PR #75) until a GHL workflow acts on the `new-area-request` tag; to restore it, drop `hidden` from `section.areas-cta` in `site/locations.html` and delete the stays-hidden test in `site/test/area-request.test.js` |
 | `/gate` | Website (Step 2), AI Receptionist | Visitor answers facility type / budget / frequency | Checks disqualifiers, scores, sets the tier, returns a signed `booking_token` for Priority / Standard leads |
 | `/slots` | Website (after Step 2) | Qualified visitor's Step 2 dialog opens the picker | Verifies the `booking_token`, reads GHL free slots (next 30 days, Brisbane time) from the calendar matching the token's tier, returns `{ timezone, window_days, days: [{ date, slots }] }`. 403 bad/expired token, 503 if `BOOKING_TOKEN_SECRET` unset, 502 `slots_unavailable` on a GHL error |
@@ -263,7 +263,7 @@ sequenceDiagram
     participant G as GHL API
 
     V->>B: submits Step 1
-    B->>W: POST /lead<br/>name, email, phone, postcode,<br/>conversion_page, UTMs, click ids, referrer_host,<br/>marketing_consent (bool), honeypot
+    B->>W: POST /lead<br/>name, company_name, email, phone, postcode,<br/>conversion_page, UTMs, click ids, referrer_host,<br/>marketing_consent (bool), honeypot
     alt honeypot field filled (a bot)
         W-->>B: {contact_id: null} — GHL never called
     else email or phone missing
@@ -592,7 +592,7 @@ To finish step 3:
 
 | Endpoint | Fields written |
 |---|---|
-| `/lead` | first/last name, email, phone, `postcode`, `conversion_page`, `lead_channel` (always), `utm_*` (only those present), `marketing_consent` = `Yes` + `marketing_consent_at` (ISO timestamp) **only when the payload has `marketing_consent: true`** (strict boolean; unticked/missing/`"on"`/`1` send neither, so earlier consent is never cleared; withdrawal is GHL unsubscribe / DND), tag `website-lead` (plus `turnstile-unverified` if Cloudflare couldn't be reached) |
+| `/lead` | first/last name, `companyName` (only when non-blank), email, phone, `postcode`, `conversion_page`, `lead_channel` (always), `utm_*` (only those present), `marketing_consent` = `Yes` + `marketing_consent_at` (ISO timestamp) **only when the payload has `marketing_consent: true`** (strict boolean; unticked/missing/`"on"`/`1` send neither, so earlier consent is never cleared; withdrawal is GHL unsubscribe / DND), tag `website-lead` (plus `turnstile-unverified` if Cloudflare couldn't be reached) |
 | `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `lead_flags`, `sla_flag`, `lead_captured_at`, the Step 2 answers `facility_type` / `monthly_budget` / `cleaning_frequency` (only those given — blanks never overwrite), `utm_*` if sent |
 | `/enrich` | the facility detail fields, `contract_renewal_months_out`, and `lead_tier: priority` if bumped |
 | `/confirm` | `dq_flag` (confirmed nurture), or `lead_score`, `lead_tier`, `dq_flag: none` plus the flexed `monthly_budget` / `cleaning_frequency` |
