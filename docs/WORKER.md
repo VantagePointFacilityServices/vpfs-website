@@ -108,7 +108,7 @@ There are **two ways in**:
 | `/enrich` | GHL workflow | Booked lead returns the optional facility-detail survey | Saves facility detail; can bump Standard → Priority |
 | `/confirm` | GHL workflow | Disqualified lead answers "is your budget/frequency flexible?" | Re-qualifies them if their flexed answer clears the minimum |
 | `/outcome` | GHL workflow | Walkthrough no-show, or proposal marked Lost | Moves them to the right nurture segment |
-| `/apply` | Website (careers and subcontractor pages, Step 1) | Applicant submits first name, last name, email, phone, postcode and `engagement_track` (`employee` or `subcontractor`) | Creates or updates the contact in the **people** sub-account (via `peopleEnv`), writes `engagement_track`, `postcode`, `applicant_stage: "started"`, `applicant_captured_at`, tags `applicant-employee` / `applicant-subcontractor` (+ `turnstile-unverified`), returns `{ contact_id }`. Honeypot filled → `200 {ok:true}`, nothing created; Turnstile rejected → `403`; missing email/phone/postcode or bad track → `400`; `GHL_PEOPLE_API_KEY` or `GHL_PEOPLE_LOCATION_ID` unset → `503` (never falls back to the commercial account); upsert failure → `502` |
+| `/apply` | Website (careers and subcontractor pages, Step 1) | Applicant submits first name, last name, email, phone, postcode and `engagement_track` (`employee` or `subcontractor`) | Creates or updates the contact in the **people** sub-account (via `peopleEnv`), writes `engagement_track`, `postcode`, `applicant_stage: "started"`, `applicant_captured_at`, tags `applicant-employee` / `applicant-subcontractor` (+ `turnstile-unverified`), returns `{ contact_id }`. Honeypot filled → `200 {ok:true}`, nothing created; Turnstile rejected → `403`; missing email/phone/postcode or bad track → `400`; `GHL_VPP_API_KEY` or `GHL_VPP_LOCATION_ID` unset → `503` (never falls back to the commercial account); upsert failure → `502` |
 | `/apply-screen` | Browser (Step 2 dialog) | Applicant answers the track's screening questions | Per-track DQs and fit score; returns `result` book / shortlist / unsuccessful; writes to the people sub-account |
 
 ---
@@ -130,17 +130,19 @@ There are **two ways in**:
 
 | Name | Kind | What it is | How to set it |
 |---|---|---|---|
-| `GHL_API_KEY` | **Secret** | GHL Private Integration Token for the sub-account. Needs scopes `contacts.write`, `contacts.readonly`, `calendars.readonly`, `calendars/events.readonly` and `calendars/events.write` (the three calendar scopes are used by `/slots` and `/book`). | `cd worker && npx wrangler secret put GHL_API_KEY` — write-only; Cloudflare never shows it again |
+| `GHL_VPFS_API_KEY` | **Secret** | GHL Private Integration Token "VPFS – Cloudflare Worker – Lead Gate & Booking", created inside the VPFS sub-account. Needs scopes `contacts.write`, `contacts.readonly`, `calendars.readonly`, `calendars/events.readonly` and `calendars/events.write` (the three calendar scopes are used by `/slots` and `/book`). | `cd worker && npx wrangler secret put GHL_VPFS_API_KEY` — write-only; Cloudflare never shows it again |
 | `BOOKING_TOKEN_SECRET` | **Secret** | Key used to sign the `booking_token` returned by `/gate`. If unset, `/gate` simply omits the token. | `cd worker && npx wrangler secret put BOOKING_TOKEN_SECRET` |
 | `CALENDAR_PRIORITY_ID` | Plain setting | GHL calendar id for Priority leads (`Ugunj3x67DQlmRm2aL2h`). | `[vars]` in `worker/wrangler.toml` |
 | `CALENDAR_STANDARD_ID` | Plain setting | GHL calendar id for Standard / standard-flagged leads (`FMEE7r6jwySahTZ90S0C`). | `[vars]` in `worker/wrangler.toml` |
 | `CALENDAR_INTERVIEW_EMPLOYEE_ID` | Plain setting | People sub-account group interview calendar for the employee track. Blank → applicants see the "we'll be in touch" fallback. | `[vars]` in `worker/wrangler.toml` |
 | `CALENDAR_INTERVIEW_SUBCONTRACTOR_ID` | Plain setting | As above, for the subcontractor track. | `[vars]` in `worker/wrangler.toml` |
 | `BOOKING_TIMEZONE` | Plain setting | Time zone for booking slots (`Australia/Brisbane`). | `[vars]` in `worker/wrangler.toml` |
-| `GHL_PEOPLE_LOCATION_ID` | Plain setting | The people (recruiting) GHL sub-account ID, used by `/apply`. Placeholder in `wrangler.toml` until the sub-account exists; `/apply` returns 503 while it is empty. | `[vars]` in `worker/wrangler.toml` |
-| `GHL_PEOPLE_API_KEY` | **Secret** | API token for the people sub-account. `/apply` returns 503 if unset. | `cd worker && npx wrangler secret put GHL_PEOPLE_API_KEY` |
-| `GHL_LOCATION_ID` | Plain setting | The GHL sub-account ID (`i1xCcUSRa8PDofaJ1Oyz`). Required when creating contacts. Not secret — it appears in GHL's public webhook URLs. | `[vars]` in `worker/wrangler.toml`, deployed with the code |
+| `GHL_VPP_LOCATION_ID` | Plain setting | The people (recruiting) GHL sub-account ID, used by `/apply`. Placeholder in `wrangler.toml` until the sub-account exists; `/apply` returns 503 while it is empty. | `[vars]` in `worker/wrangler.toml` |
+| `GHL_VPP_API_KEY` | **Secret** | GHL Private Integration Token "VPP – Cloudflare Worker – Applicants & Interviews", created inside the VPP (people) sub-account. Same five scopes as `GHL_VPFS_API_KEY` (contacts for `/apply`, calendars for interview booking). `/apply` returns 503 if unset. | `cd worker && npx wrangler secret put GHL_VPP_API_KEY` |
+| `GHL_VPFS_LOCATION_ID` | Plain setting | The GHL sub-account ID (`i1xCcUSRa8PDofaJ1Oyz`). Required when creating contacts. Not secret — it appears in GHL's public webhook URLs. | `[vars]` in `worker/wrangler.toml`, deployed with the code |
 | `CLOUDFLARE_WORKER_API_TOKEN` | GitHub repo secret | Lets GitHub Actions deploy the Worker. Scoped to `Account: Workers Scripts: Edit` only. | GitHub → Settings → Secrets and variables → Actions |
+
+Secret names carry the brand (`GHL_VPFS_*`, `GHL_VPP_*`; the VPC Worker uses `GHL_VPC_*`). They were `GHL_API_KEY` / `GHL_PEOPLE_API_KEY` before 2026-10-17. To rename without downtime: `wrangler secret put` the new names **before** the code that reads them deploys, check `/gate` and `/apply` live, then `wrangler secret delete` the old names.
 
 ### What must exist in GHL
 
@@ -464,7 +466,7 @@ other `outcome_type` is rejected with a 400.
 ## 5. The job-applicant journey
 
 Separate from leads, and written to a different GHL sub-account: the
-**people** sub-account (`GHL_PEOPLE_LOCATION_ID` / `GHL_PEOPLE_API_KEY`,
+**people** sub-account (`GHL_VPP_LOCATION_ID` / `GHL_VPP_API_KEY`,
 swapped in by `peopleEnv(env)` so the same GHL helpers are reused). Both
 applicant pages — `career.html` (employee track) and `subcontractor.html`
 (subcontractor track) — use the same two-step pattern as the homepage
@@ -530,7 +532,7 @@ flowchart TD
 
 The Worker makes exactly three kinds of GHL API call, all to
 `https://services.leadconnectorhq.com` with `Authorization: Bearer
-<GHL_API_KEY>` and `Version: 2021-07-28`:
+<GHL_VPFS_API_KEY>` and `Version: 2021-07-28`:
 
 | Call | Used by | Purpose |
 |---|---|---|
@@ -565,7 +567,7 @@ went wrong.
 
 **Status (2026-10-11):** steps 1 and 2 are done; step 3 is not. The live site key is
 `0x4AAAAAAFKpftSypIZ3KEQk` on every booking form (and the area form), and Cloudflare
-accepts it on the live domain. `wrangler secret list` shows only `GHL_API_KEY` and
+accepts it on the live domain. `wrangler secret list` shows only `GHL_VPFS_API_KEY` and
 `BOOKING_TOKEN_SECRET`, so `/lead` and `/area-request` currently rely on the honeypot
 alone. The applicant Step 1 form (`/apply`) sends a Turnstile token too, so it is covered by the same check.
 
@@ -615,7 +617,7 @@ up.
 ```mermaid
 flowchart LR
     A["1. GHL: create custom fields<br/>+ website-lead tag"] --> B["2. GHL: create Private<br/>Integration Token"]
-    B --> C["3. Cloudflare: store token<br/>wrangler secret put GHL_API_KEY"]
+    B --> C["3. Cloudflare: store token<br/>wrangler secret put GHL_VPFS_API_KEY"]
     C --> D["4. GitHub: add<br/>CLOUDFLARE_WORKER_API_TOKEN"]
     D --> E["5. Push to main<br/>→ tests → deploy"]
     E --> F["6. GHL: build workflows<br/>(tag trigger + webhooks)"]
@@ -633,7 +635,7 @@ flowchart LR
    `calendars/events.readonly` and `calendars/events.write` → copy the token (shown once;
    keep it in your password manager).
 3. **Store the token in Cloudflare.** From the repo:
-   `cd worker && npx wrangler secret put GHL_API_KEY`, then paste.
+   `cd worker && npx wrangler secret put GHL_VPFS_API_KEY`, then paste.
 4. **Let GitHub deploy.** Create a Cloudflare API token with only
    `Account: Workers Scripts: Edit`, and save it as the
    `CLOUDFLARE_WORKER_API_TOKEN` repo secret.
@@ -645,7 +647,7 @@ flowchart LR
      `contact_id` and the relevant `customFields`.
 7. **Verify** with [section 10](#10-testing-and-verifying).
 
-If the sub-account ever changes, update `GHL_LOCATION_ID` in
+If the sub-account ever changes, update `GHL_VPFS_LOCATION_ID` in
 `worker/wrangler.toml` **and** issue a new token from the new sub-account.
 
 ---
@@ -665,7 +667,7 @@ flowchart LR
 - Deploys are **automatic** on every push to `main` that touches
   `worker/**`, and **only** if every test passes and coverage stays at 95%
   or above.
-- Plain settings in `wrangler.toml` (like `GHL_LOCATION_ID`) ship with the
+- Plain settings in `wrangler.toml` (like `GHL_VPFS_LOCATION_ID`) ship with the
   deploy. **Secrets don't** — they're set once with `wrangler secret put`
   and persist across deploys.
 - The website deploys separately (`deploy-website.yml`). A change that
@@ -737,8 +739,8 @@ reports and so the same details can re-trigger Tag Added later.
 | Symptom | Likely cause | Fix |
 |---|---|---|
 | Visitor sees "Something went wrong" on Step 1 | GHL rejected the upsert | `curl` `/lead` as in section 10 and read `ghl_error` |
-| `ghl_error` mentions 401 / unauthorized | Token wrong, expired, or from another sub-account | New Private Integration Token → `wrangler secret put GHL_API_KEY` |
-| `ghl_error` mentions `locationId` | `GHL_LOCATION_ID` wrong or missing | Check `worker/wrangler.toml`, redeploy |
+| `ghl_error` mentions 401 / unauthorized | Token wrong, expired, or from another sub-account | New Private Integration Token → `wrangler secret put GHL_VPFS_API_KEY` |
+| `ghl_error` mentions `locationId` | `GHL_VPFS_LOCATION_ID` wrong or missing | Check `worker/wrangler.toml`, redeploy |
 | Contact created but Channel / Postcode / UTMs blank | Custom field keys in GHL don't match | Create/rename fields to the keys in section 3 |
 | Contact created, no workflow run | Workflow not published, trigger not Tag Added `website-lead`, or contact already had the tag | Check the trigger; test with a fresh contact |
 | A lead you expected in-area is flagged `out-of-area` | Postcode not in `LAUNCH_AREA_POSTCODES` | Check it's in the launch area (vpos Vol 1 §2.7b); extend the list only when that region is activated — see section 12 |
