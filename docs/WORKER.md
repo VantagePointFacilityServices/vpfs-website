@@ -565,24 +565,25 @@ went wrong.
    Until then the Worker skips the check. Do this *after* step 2 is live, or
    every `/lead` without a token gets rejected.
 
-**Status (2026-10-11):** steps 1 and 2 are done; step 3 is not. The live site key is
-`0x4AAAAAAFKpftSypIZ3KEQk` on every booking form (and the area form), and Cloudflare
-accepts it on the live domain. `wrangler secret list` shows only `GHL_VPFS_API_KEY` and
-`BOOKING_TOKEN_SECRET`, so `/lead` and `/area-request` currently rely on the honeypot
-alone. The applicant Step 1 form (`/apply`) sends a Turnstile token too, so it is covered by the same check.
+**Status (2026-10-17):** all three steps are done, and Turnstile is enforced. The
+live site key `0x4AAAAAAFKpftSypIZ3KEQk` is on every website form, and
+`TURNSTILE_SECRET_KEY` is set on the Worker. A `POST /lead` with no token or a fake
+token now gets a `403`, and a real booking from a browser on the live site reached
+GHL tagged `website-lead`. The same check covers `/area-request` and the applicant
+Step 1 form (`/apply`).
 
-To finish step 3:
+To replace or rotate the secret:
 
 1. Cloudflare dashboard → **Turnstile** → open the widget with site key
    `0x4AAAAAAFKpftSypIZ3KEQk` → copy its **Secret key**. It must be *that* widget's
    secret: any other secret fails every real token, and every booking gets a `403`.
 2. In your own terminal (the prompt hides the value; don't paste it into a chat or a
    command line that's logged): `cd worker && npx wrangler secret put TURNSTILE_SECRET_KEY`.
-3. `npx wrangler secret list` — `TURNSTILE_SECRET_KEY` is now listed.
-4. Check it's enforced: a `POST /lead` with no `turnstile_token` returns `403`
-   (before the secret it returns `400` for missing fields instead).
+3. `npx wrangler secret list` — `TURNSTILE_SECRET_KEY` is listed.
+4. Check it's enforced: a `POST /lead` with no `turnstile_token` returns `403`.
 5. Make one real booking from a normal browser on the live site and confirm the
-   contact reaches GHL tagged `website-lead`. If it doesn't, remove the secret
+   contact reaches GHL tagged `website-lead`, then delete the test contact. If the
+   booking fails, remove the secret
    (`npx wrangler secret delete TURNSTILE_SECRET_KEY`) to reopen the form while you
    check the widget and secret match.
 
