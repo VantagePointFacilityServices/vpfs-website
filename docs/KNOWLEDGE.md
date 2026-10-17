@@ -38,8 +38,9 @@ reads. Setup runbooks live elsewhere — this file points to them.
 
 - **Budget alone decides booking:** $5,000+/month → Priority calendar,
   $2,500–$4,999 → Standard, under $2,500 → nurture (budget message, no
-  calendar). Frequency, facility type and postcode are `lead_flags`
-  (`low-frequency`, `out-of-area`), never blockers.
+  calendar). Frequency and postcode are `lead_flags`
+  (`low-frequency`, `out-of-area`), never blockers; facility type only
+  affects the in-tier score.
 - **SLA flags:** Priority `call-within-5min`, Standard/standard-flagged
   `call-within-15min`, nurture `none` — GHL workflow 29 (vpos) escalates on
   exactly these strings.
