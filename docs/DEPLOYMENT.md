@@ -220,8 +220,8 @@ curl -I https://vantagepointfacilityservices.com/services.html
 
 The Worker (`worker.vantagepointfacilityservices.com.au`) deploys on its own
 from `.github/workflows/deploy-worker.yml` and needs its own tokens and
-secrets (a Cloudflare token scoped to Workers, the `GHL_API_KEY` secret,
-`GHL_LOCATION_ID`) plus GHL custom fields, a tag and workflows. Follow
+secrets (a Cloudflare token scoped to Workers, the `GHL_VPFS_API_KEY` secret,
+`GHL_VPFS_LOCATION_ID`) plus GHL custom fields, a tag and workflows. Follow
 [`WORKER.md`](WORKER.md) §8 "Setting it up from scratch", then its §10
 to verify.
 

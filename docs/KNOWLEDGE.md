@@ -27,12 +27,12 @@ reads. Setup runbooks live elsewhere — this file points to them.
 | DNS | Cloudflare, both zones; desired state in `dns/zones/*.yaml` |
 | Registrar | GoDaddy (nameservers only) |
 | Email | Google Workspace on both domains; GHL sends from `noreply.vantagepointfacilityservices.com.au` via Mailgun |
-| GHL sub-account (location) | `i1xCcUSRa8PDofaJ1Oyz` (`GHL_LOCATION_ID` in `worker/wrangler.toml`) |
+| GHL sub-account (location) | `i1xCcUSRa8PDofaJ1Oyz` (`GHL_VPFS_LOCATION_ID` in `worker/wrangler.toml`) |
 | Website-lead tag | `website-lead` (ID `AxqSvCibXVSHZd0ycUI4`) — the new-lead workflow triggers on Tag Added |
 | Calendars | Priority `Ugunj3x67DQlmRm2aL2h`, Standard `FMEE7r6jwySahTZ90S0C` (manual-only: `AD4RlvMCfaaaq4QpLPFu`) |
 | Phone | `07 5651 2257` published (voice); `0485 033 115` SMS-only, never published |
 | Business hours | Mon–Sun 7am–9pm (Australia/Brisbane) |
-| Secrets | `GHL_API_KEY` (Worker secret), `CLOUDFLARE_WORKER_API_TOKEN` and `CLOUDFLARE_API_TOKEN` (GitHub repo secrets) |
+| Secrets | `GHL_VPFS_API_KEY` (Worker secret), `CLOUDFLARE_WORKER_API_TOKEN` and `CLOUDFLARE_API_TOKEN` (GitHub repo secrets) |
 
 ## 2. Business rules the code encodes (as of 2026-09-29)
 
@@ -109,7 +109,7 @@ reads. Setup runbooks live elsewhere — this file points to them.
   Wrangler's custom domain). The sync script never prunes read-only
   records; don't add it to a zone file.
 - **Worker secrets are write-only.** `npx wrangler secret list` shows
-  names, never values. The name must be exactly `GHL_API_KEY` — a secret
+  names, never values. The name must be exactly `GHL_VPFS_API_KEY` — a secret
   saved as `GHL_API_KEY_CLOUDFLARE_WORKER` left the Worker sending
   `Bearer undefined` → `401 Invalid JWT` on every call.
 - A DNS backup before any live change: dump

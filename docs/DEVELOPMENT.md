@@ -84,7 +84,7 @@ Starts the Worker against a local `workerd` runtime at
 `worker/worker.js`. It doesn't need `CLOUDFLARE_API_TOKEN`
 to run locally — only `wrangler deploy` does. `writeBackToGHL` will still
 attempt a real call to the GHL API on each request, though, so a request
-without a working `GHL_API_KEY` set locally (`wrangler dev` reads
+without a working `GHL_VPFS_API_KEY` set locally (`wrangler dev` reads
 `.dev.vars` if present — git-ignored, never commit it) will return
 `ghl_update: { success: false, ... }` rather than failing the whole
 request; that's expected for local testing of the routing/scoring logic

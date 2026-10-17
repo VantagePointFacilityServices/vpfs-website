@@ -555,7 +555,7 @@ function bookingContext(claims, env) {
         : claims.track === "subcontractor"
           ? env.CALENDAR_INTERVIEW_SUBCONTRACTOR_ID
           : null;
-    if (!calendarId || !env.GHL_PEOPLE_API_KEY || !env.GHL_PEOPLE_LOCATION_ID) return null;
+    if (!calendarId || !env.GHL_VPP_API_KEY || !env.GHL_VPP_LOCATION_ID) return null;
     return { calendarId, genv: peopleEnv(env), applicant: true };
   }
   const calendarId = calendarIdForTier(claims.tier, env);
@@ -598,7 +598,7 @@ async function handleSlots(payload, env) {
     const res = await fetch(`${GHL_API_BASE}/calendars/${calendarId}/free-slots?${params}`, {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${genv.GHL_API_KEY}`,
+        Authorization: `Bearer ${genv.GHL_VPFS_API_KEY}`,
         Version: GHL_CALENDARS_API_VERSION,
       },
     });
@@ -681,7 +681,7 @@ async function handleBook(payload, env) {
   const { calendarId, genv } = bctx;
 
   const headers = {
-    Authorization: `Bearer ${genv.GHL_API_KEY}`,
+    Authorization: `Bearer ${genv.GHL_VPFS_API_KEY}`,
     Version: GHL_CALENDARS_API_VERSION,
     "Content-Type": "application/json",
   };
@@ -723,7 +723,7 @@ async function handleBook(payload, env) {
       headers,
       body: JSON.stringify({
         calendarId,
-        locationId: genv.GHL_LOCATION_ID,
+        locationId: genv.GHL_VPFS_LOCATION_ID,
         contactId: claims.cid,
         startTime: startRaw,
         endTime,
@@ -764,7 +764,7 @@ async function handleBook(payload, env) {
     const putRes = await fetch(`${GHL_API_BASE}/contacts/${encodeURIComponent(claims.cid)}`, {
       method: "PUT",
       headers: {
-        Authorization: `Bearer ${env.GHL_API_KEY}`,
+        Authorization: `Bearer ${env.GHL_VPFS_API_KEY}`,
         "Content-Type": "application/json",
         Version: GHL_API_VERSION,
       },
@@ -1227,10 +1227,10 @@ async function handleOutcome(contactId, payload, env) {
 const APPLICANT_TRACKS = ["employee", "subcontractor"];
 const APPLICANT_INTERVIEW_BOOKED_TAG = "applicant-interview-booked";
 
-// The GHL helpers read GHL_API_KEY / GHL_LOCATION_ID, so swapping in the
-// people pair reuses them unchanged for the people sub-account.
+// The GHL helpers read GHL_VPFS_API_KEY / GHL_VPFS_LOCATION_ID, so putting the
+// VPP (people) pair in those slots reuses them unchanged for the VPP sub-account.
 function peopleEnv(env) {
-  return { ...env, GHL_API_KEY: env.GHL_PEOPLE_API_KEY, GHL_LOCATION_ID: env.GHL_PEOPLE_LOCATION_ID };
+  return { ...env, GHL_VPFS_API_KEY: env.GHL_VPP_API_KEY, GHL_VPFS_LOCATION_ID: env.GHL_VPP_LOCATION_ID };
 }
 
 async function handleApply(rawPayload, env, request) {
@@ -1264,7 +1264,7 @@ async function handleApply(rawPayload, env, request) {
     return new Response("Invalid engagement_track", { status: 400 });
   }
 
-  if (!env.GHL_PEOPLE_API_KEY || !env.GHL_PEOPLE_LOCATION_ID) {
+  if (!env.GHL_VPP_API_KEY || !env.GHL_VPP_LOCATION_ID) {
     return new Response("Applicant intake is not configured", { status: 503 });
   }
   const penv = peopleEnv(env);
@@ -1345,7 +1345,7 @@ async function handleApplyScreen(rawPayload, env) {
     return new Response("Invalid residential_experience for this track", { status: 400 });
   }
 
-  if (!env.GHL_PEOPLE_API_KEY || !env.GHL_PEOPLE_LOCATION_ID) {
+  if (!env.GHL_VPP_API_KEY || !env.GHL_VPP_LOCATION_ID) {
     return new Response("Applicant intake is not configured", { status: 503 });
   }
   const penv = peopleEnv(env);
@@ -1519,12 +1519,12 @@ async function upsertContactInGHL(f, env) {
   const res = await fetch(url, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${env.GHL_API_KEY}`,
+      Authorization: `Bearer ${env.GHL_VPFS_API_KEY}`,
       "Content-Type": "application/json",
       Version: GHL_API_VERSION,
     },
     body: JSON.stringify({
-      locationId: env.GHL_LOCATION_ID,
+      locationId: env.GHL_VPFS_LOCATION_ID,
       firstName: f.firstName,
       lastName: f.lastName,
       email: f.email,
@@ -1550,7 +1550,7 @@ async function addTagsInGHL(contactId, tags, env) {
   const res = await fetch(url, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${env.GHL_API_KEY}`,
+      Authorization: `Bearer ${env.GHL_VPFS_API_KEY}`,
       "Content-Type": "application/json",
       Version: GHL_API_VERSION,
     },
@@ -1576,7 +1576,7 @@ async function writeBackToGHL(contactId, values, env) {
   const res = await fetch(url, {
     method: "PUT",
     headers: {
-      Authorization: `Bearer ${env.GHL_API_KEY}`,
+      Authorization: `Bearer ${env.GHL_VPFS_API_KEY}`,
       "Content-Type": "application/json",
       Version: GHL_API_VERSION,
     },

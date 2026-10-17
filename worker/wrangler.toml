@@ -2,8 +2,8 @@ name = "vpfs-lead-scoring-worker"
 main = "worker.js"
 compatibility_date = "2024-09-23"
 
-# GHL_API_KEY is a runtime secret, not set here:
-#   wrangler secret put GHL_API_KEY
+# GHL_VPFS_API_KEY is a runtime secret, not set here:
+#   wrangler secret put GHL_VPFS_API_KEY
 # So is TURNSTILE_SECRET_KEY (optional — /lead skips the bot check without it):
 #   wrangler secret put TURNSTILE_SECRET_KEY
 # BOOKING_TOKEN_SECRET is a secret too (signs /gate's booking_token):
@@ -12,13 +12,13 @@ compatibility_date = "2024-09-23"
 [vars]
 # The GHL sub-account contacts are created in — required by /contacts/upsert.
 # Not a secret: it also appears in the sub-account's public webhook URLs.
-GHL_LOCATION_ID = "i1xCcUSRa8PDofaJ1Oyz"
+GHL_VPFS_LOCATION_ID = "i1xCcUSRa8PDofaJ1Oyz"
 
 # The people (recruiting) GHL sub-account /apply writes to. /apply returns
-# 503 if this or the GHL_PEOPLE_API_KEY secret is missing, and never uses
+# 503 if this or the GHL_VPP_API_KEY secret is missing, and never uses
 # the pair above.
-# Secret: wrangler secret put GHL_PEOPLE_API_KEY
-GHL_PEOPLE_LOCATION_ID = "DqHM7ASMNC4TzLr8kia4"
+# Secret: wrangler secret put GHL_VPP_API_KEY
+GHL_VPP_LOCATION_ID = "DqHM7ASMNC4TzLr8kia4"
 
 # While "false", a qualifying employee applicant is shortlisted (no
 # interview calendar); subcontractors always book. Set "true" to open intake.

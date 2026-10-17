@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import worker, { signBookingToken, verifyBookingToken, calendarIdForTier } from "../worker.js";
 
-const env = { GHL_API_KEY: "test-key", GHL_LOCATION_ID: "loc-123" };
+const env = { GHL_VPFS_API_KEY: "test-key", GHL_VPFS_LOCATION_ID: "loc-123" };
 
 function makeRequest(path, body, { method = "POST", headers } = {}) {
   const init = { method };
@@ -1076,8 +1076,8 @@ describe("field defaults and alternate payload shapes", () => {
 describe("POST /apply (Step 1 — applicant capture, people sub-account)", () => {
   const peopleEnvVars = {
     ...env,
-    GHL_PEOPLE_API_KEY: "people-key",
-    GHL_PEOPLE_LOCATION_ID: "people-loc",
+    GHL_VPP_API_KEY: "people-key",
+    GHL_VPP_LOCATION_ID: "people-loc",
   };
   const body = {
     first_name: "Sam",
@@ -1146,7 +1146,7 @@ describe("POST /apply (Step 1 — applicant capture, people sub-account)", () =>
   });
 
   it("returns 503 and calls GHL not at all when the people credentials are missing", async () => {
-    for (const e of [env, { ...env, GHL_PEOPLE_API_KEY: "k" }, { ...env, GHL_PEOPLE_LOCATION_ID: "l" }]) {
+    for (const e of [env, { ...env, GHL_VPP_API_KEY: "k" }, { ...env, GHL_VPP_LOCATION_ID: "l" }]) {
       global.fetch = vi.fn();
       const res = await worker.fetch(makeRequest("/apply", body), e);
       expect(res.status).toBe(503);
@@ -1210,10 +1210,10 @@ describe("POST /apply (Step 1 — applicant capture, people sub-account)", () =>
 
 describe("POST /apply-screen (Step 2 per-track screening)", () => {
   const screenEnv = {
-    GHL_API_KEY: "commercial-key",
-    GHL_LOCATION_ID: "commercial-loc",
-    GHL_PEOPLE_API_KEY: "people-key",
-    GHL_PEOPLE_LOCATION_ID: "people-loc",
+    GHL_VPFS_API_KEY: "commercial-key",
+    GHL_VPFS_LOCATION_ID: "commercial-loc",
+    GHL_VPP_API_KEY: "people-key",
+    GHL_VPP_LOCATION_ID: "people-loc",
     BOOKING_TOKEN_SECRET: "s3cret",
   };
 
@@ -1369,7 +1369,7 @@ describe("POST /apply-screen (Step 2 per-track screening)", () => {
   });
 
   it("503 and no GHL call when the people credentials are missing", async () => {
-    const { res } = await screen(employee, { GHL_API_KEY: "k", GHL_LOCATION_ID: "l" });
+    const { res } = await screen(employee, { GHL_VPFS_API_KEY: "k", GHL_VPFS_LOCATION_ID: "l" });
     expect(res.status).toBe(503);
     expect(global.fetch).not.toHaveBeenCalled();
   });
@@ -1699,7 +1699,7 @@ describe("/book", () => {
     BOOKING_TOKEN_SECRET: "s3cret",
     CALENDAR_PRIORITY_ID: "CAL_P",
     CALENDAR_STANDARD_ID: "CAL_S",
-    GHL_LOCATION_ID: "LOC",
+    GHL_VPFS_LOCATION_ID: "LOC",
   };
   const NOW = new Date("2026-03-02T00:00:00Z").getTime();
   const START = "2026-03-05T09:00:00+10:00";
@@ -1949,10 +1949,10 @@ describe("POST /area-request", () => {
 
 describe("Step 3 — applicant interview booking (/slots, /book)", () => {
   const benv = {
-    GHL_API_KEY: "lead-key",
-    GHL_LOCATION_ID: "lead-loc",
-    GHL_PEOPLE_API_KEY: "people-key",
-    GHL_PEOPLE_LOCATION_ID: "people-loc",
+    GHL_VPFS_API_KEY: "lead-key",
+    GHL_VPFS_LOCATION_ID: "lead-loc",
+    GHL_VPP_API_KEY: "people-key",
+    GHL_VPP_LOCATION_ID: "people-loc",
     BOOKING_TOKEN_SECRET: "s3cret",
     CALENDAR_PRIORITY_ID: "lead-pri",
     CALENDAR_STANDARD_ID: "lead-std",
