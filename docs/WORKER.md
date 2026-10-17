@@ -107,7 +107,7 @@ There are **two ways in**:
 | `/book` | Website (picker) | Visitor clicks Book on a chosen time | Body `{ booking_token, start_time, site_address }`. Verifies the token, then checks `start_time` is within now → now + 30 days (the same window `/slots` offers). If the contact already has an upcoming, non-cancelled appointment it creates nothing. Otherwise reads the calendar's slot length (GHL does not work out `endTime`) and creates a confirmed "Walkthrough" appointment on the tier's calendar for the token's contact with `toNotify: true` and `address` set to the trimmed `site_address`, then saves it to the contact with `PUT /contacts/{cid}` `{ address1 }` (best effort: if that call fails the booking still returns 200, with `contact_address_saved: false` added). Responses: `200 { booked: true, start_time, end_time }`; `400` missing/invalid/past/beyond-30-day `start_time`, or a missing, blank or over-200-character `site_address` (checked before any GHL call); `403` bad/expired token; `409 { error: "already_booked", start_time }`; `409 { error: "slot_unavailable" }` (GHL refused the slot); `502 { error: "booking_failed" }` (other GHL failure); `503` if `BOOKING_TOKEN_SECRET` unset |
 | `/enrich` | GHL workflow | Booked lead returns the optional facility-detail survey | Saves facility detail; can bump Standard → Priority |
 | `/confirm` | GHL workflow | Disqualified lead answers "is your budget/frequency flexible?" | Re-qualifies them if their flexed answer clears the minimum |
-| `/outcome` | GHL workflow | Walkthrough no-show, or proposal marked Lost | Moves them to the right nurture segment |
+| `/outcome` | GHL workflow | Proposal marked Lost (no-show is retired — handled in GHL) | Moves them to the right nurture segment |
 | `/apply` | Website (careers and subcontractor pages, Step 1) | Applicant submits first name, last name, email, phone, postcode and `engagement_track` (`employee` or `subcontractor`) | Creates or updates the contact in the **people** sub-account (via `peopleEnv`), writes `engagement_track`, `postcode`, `applicant_stage: "started"`, `applicant_captured_at`, tags `applicant-employee` / `applicant-subcontractor` (+ `turnstile-unverified`), returns `{ contact_id }`. Honeypot filled → `200 {ok:true}`, nothing created; Turnstile rejected → `403`; missing email/phone/postcode or bad track → `400`; `GHL_VPP_API_KEY` or `GHL_VPP_LOCATION_ID` unset → `503` (never falls back to the commercial account); upsert failure → `502` |
 | `/apply-screen` | Browser (Step 2 dialog) | Applicant answers the track's screening questions | Per-track DQs and fit score; returns `result` book / shortlist / unsuccessful; writes to the people sub-account |
 
@@ -207,7 +207,8 @@ stateDiagram-v2
     Standard --> Walkthrough
     StandardFlagged --> Walkthrough
 
-    Walkthrough --> NurtureNoShow: /outcome — no_show
+    Walkthrough --> Walkthrough: no-show — GHL rebook SMS<br/>(stays in Sales Pipeline)
+    Walkthrough --> Qualifying: second consecutive no-show<br/>(GHL workflow 05)
     Walkthrough --> Proposal: attended
     Proposal --> Won
     Proposal --> NurtureLost: /outcome — lost_at_proposal
@@ -447,14 +448,21 @@ flowchart TD
     F2 -- no --> FR["Re-score with flexed frequency<br/>→ new tier, dq_flag: none"]
 ```
 
-### Stage 5 — `/outcome`: no-shows and lost proposals
+### Stage 5 — `/outcome`: lost proposals (no-shows stay in the pipeline)
 
-Fired by GHL pipeline-stage workflows, with `outcome_type` set by the
-workflow:
+**No-shows no longer go through `/outcome`.** Per GHL workflow 05 (no-show
+handling), a first no-show stays in the Sales Pipeline and the lead gets a
+rebook SMS; a second consecutive no-show moves the deal back to Qualifying
+(and overrides priority to cold). It is *not* demoted to nurture.
+`outcome_type: no_show` is retired: the Worker still accepts it, but GHL no
+longer calls it.
+
+`/outcome` is fired by the GHL pipeline-stage workflow for lost proposals,
+with `outcome_type` set by the workflow:
 
 | `outcome_type` | When | Writes |
 |---|---|---|
-| `no_show` | Walkthrough missed and reschedule attempts exhausted | `lead_tier: nurture`, `dq_flag: nurture-no-show`, `noshow_attempts` |
+| `no_show` *(retired — not called by GHL)* | Legacy: walkthrough missed and reschedule attempts exhausted | `lead_tier: nurture`, `dq_flag: nurture-no-show`, `noshow_attempts` |
 | `lost_at_proposal` | Proposal marked Lost after a real walkthrough | `lead_tier: nurture`, `dq_flag: nurture-lost-<reason>` (e.g. `nurture-lost-price`), `lost_at_proposal_date` |
 
 Each gets its own nurture segment — these leads already passed
