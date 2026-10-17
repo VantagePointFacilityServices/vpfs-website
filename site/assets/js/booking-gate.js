@@ -35,6 +35,7 @@ function buildLeadPayload(form, helpers) {
   return Object.assign({
     first_name: get("first_name"),
     last_name: get("last_name"),
+    company_name: get("company_name"),
     email: get("email"),
     phone: get("phone"),
     postcode: get("postcode"),

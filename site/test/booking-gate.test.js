@@ -8,6 +8,7 @@ function mountHomepageForm() {
         <div class="booking-error" role="alert"></div>
         <input name="first_name" value="Alex">
         <input name="last_name" value="Rowe">
+        <input name="company_name" value="Acme Pty Ltd">
         <input name="email" value="alex@example.com">
         <input name="phone" value="0400000000">
         <input name="postcode" value="4211">
@@ -121,6 +122,7 @@ describe("Step 1 submit", () => {
     const body = JSON.parse(options.body);
     expect(body.first_name).toBe("Alex");
     expect(body.last_name).toBe("Rowe");
+    expect(body.company_name).toBe("Acme Pty Ltd");
     expect(body.email).toBe("alex@example.com");
     expect(body.phone).toBe("0400000000");
     expect(body.postcode).toBe("4211");
