@@ -95,6 +95,36 @@ describe("POST /lead", () => {
     expect(sentBody.phone).toBe("0400000000");
   });
 
+  it("sends a trimmed company_name as companyName on the upsert", async () => {
+    global.fetch = mockLeadGhl("c-1");
+    await worker.fetch(
+      makeRequest("/lead", { email: "a@example.com", phone: "0400000000", company_name: "  Acme Pty Ltd  " }),
+      env
+    );
+    expect(upsertBody(global.fetch).companyName).toBe("Acme Pty Ltd");
+  });
+
+  it.each([undefined, "", "   "])("omits companyName and still succeeds when company_name is %j", async (name) => {
+    global.fetch = mockLeadGhl("c-2");
+    const res = await worker.fetch(
+      makeRequest("/lead", { email: "a@example.com", phone: "0400000000", company_name: name }),
+      env
+    );
+    expect((await res.json()).contact_id).toBe("c-2");
+    expect(upsertBody(global.fetch)).not.toHaveProperty("companyName");
+  });
+
+  it("rejects a 201-character company_name with 400 and no GHL call", async () => {
+    global.fetch = vi.fn();
+    const res = await worker.fetch(
+      makeRequest("/lead", { email: "a@example.com", phone: "0400000000", company_name: "a".repeat(201) }),
+      env
+    );
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("company_name_too_long");
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
   it("sends the sub-account's locationId on the upsert", async () => {
     global.fetch = mockLeadGhl("new-contact-1");
 
