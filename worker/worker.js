@@ -103,8 +103,6 @@
 const MIN_MONTHLY_SPEND = 2500; // under this -> nurture-budget
 const PRIORITY_MONTHLY_SPEND = 5000; // at or over this -> always Priority (see calculateGateScore)
 const MIN_WEEKLY_CLEANS = 3; // hard floor — anything under this is DQ'd
-const CAPABLE_FACILITY_TYPES = ["office", "strata", "construction"]; // subcontractor bench currently supports these
-// add "education", "medical" once Blue Card / clinical-cert bench is ready
 
 // A lead's EXISTING cleaning contract (with another provider) renewing
 // within this many months means they're actually free to switch soon —
@@ -920,8 +918,6 @@ function leadFlags(f) {
   const weeklyCleans = FREQUENCY_TO_WEEKLY[f.frequency] ?? 0;
   if (f.frequency && weeklyCleans < MIN_WEEKLY_CLEANS) flags.push("low-frequency");
 
-  if (f.facilityType && !CAPABLE_FACILITY_TYPES.includes(f.facilityType)) flags.push("capability-gap");
-
   if (f.postcode && !LAUNCH_AREA_POSTCODES.includes(f.postcode)) flags.push("out-of-area");
 
   return flags;
@@ -1045,7 +1041,7 @@ function monthsUntilContractRenewal(dateStr, now = new Date()) {
 //                           rate, or is that frequency fixed?"
 // If flexible on the relevant dimension and the flexed value clears
 // the minimum, re-run gate-style scoring and promote out of nurture.
-// Other DQ reasons (capability-gap, out-of-area) have no flex path —
+// Other DQ reasons (out-of-area) have no flex path —
 // those aren't things the lead can change, so /confirm isn't sent for
 // them; that routing decision lives in the GHL workflow, not here.
 async function handleConfirm(contactId, payload, env) {

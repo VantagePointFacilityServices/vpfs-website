@@ -61,13 +61,15 @@ describe("leadFlags", () => {
   it.each([
     [{ frequency: "weekly" }, ["low-frequency"]],
     [{ frequency: "fortnightly" }, ["low-frequency"]],
-    [{ facilityType: "medical" }, ["capability-gap"]],
+    [{ facilityType: "medical" }, []],
+    [{ facilityType: "education" }, []],
+    [{ facilityType: "childcare" }, []],
     [{ postcode: "4000" }, ["out-of-area"]],
     [{ postcode: "2485" }, []],
     [{ postcode: "4217" }, []],
     [{ postcode: "4556" }, ["out-of-area"]],
     [{ postcode: "2481" }, ["out-of-area"]],
-    [{ frequency: "weekly", facilityType: "education", postcode: "9999" }, ["low-frequency", "capability-gap", "out-of-area"]],
+    [{ frequency: "weekly", facilityType: "education", postcode: "9999" }, ["low-frequency", "out-of-area"]],
   ])("flags %j as %j for the team to review", (override, expected) => {
     expect(leadFlags({ ...clean, ...override })).toEqual(expected);
   });
@@ -78,6 +80,11 @@ describe("leadFlags", () => {
 });
 
 describe("calculateGateScore / tierFromScore", () => {
+  it.each(["childcare", "education", "medical"])("scores %s as 0 facility points", (facilityType) => {
+    const base = { monthlyBudget: 3000, frequency: "daily" };
+    expect(calculateGateScore({ ...base, facilityType })).toBe(calculateGateScore({ ...base, facilityType: "" }));
+  });
+
   it("scores the strongest lead at 100 — priority", () => {
     const score = calculateGateScore({ monthlyBudget: 6000, frequency: "daily", facilityType: "office" });
     expect(score).toBe(100);

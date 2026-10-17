@@ -682,7 +682,6 @@ describe("POST /gate — budget is the only thing that decides the calendar", ()
   it.each([
     ["an out-of-area postcode", { postcode: "4000" }, "out-of-area"],
     ["weekly cleaning", { cleaning_frequency: "weekly" }, "low-frequency"],
-    ["a medical facility", { facility_type: "medical" }, "capability-gap"],
   ])("still gives %s a calendar, and records the concern in lead_flags", async (_, override, flag) => {
     global.fetch = mockGhlOk();
     const req = makeRequest("/gate", {
@@ -704,6 +703,20 @@ describe("POST /gate — budget is the only thing that decides the calendar", ()
     const fields = fieldsFromLastCall(global.fetch);
     expect(fields.dq_flag).toBe("none");
     expect(fields.lead_flags).toBe(flag);
+  });
+
+  it.each(["education", "medical", "childcare"])("raises no flag for a %s facility", async (facility) => {
+    global.fetch = mockGhlOk();
+    const req = makeRequest("/gate", {
+      contact_id: "c-fac",
+      customFields: { facility_type: facility, monthly_budget: "6000", postcode: "4211", cleaning_frequency: "daily" },
+    });
+
+    const json = await (await worker.fetch(req, env)).json();
+
+    expect(json.tier).toBe("priority");
+    expect(json.lead_flags).toEqual([]);
+    expect(fieldsFromLastCall(global.fetch).lead_flags).toBe("none");
   });
 
   it("writes lead_flags: none when nothing needs reviewing", async () => {
@@ -731,7 +744,7 @@ describe("POST /gate — budget is the only thing that decides the calendar", ()
 
     expect(json.tier).toBe("nurture");
     expect(json.dq_flag).toBe("nurture-budget");
-    expect(json.lead_flags).toEqual(["low-frequency", "capability-gap", "out-of-area"]);
+    expect(json.lead_flags).toEqual(["low-frequency", "out-of-area"]);
   });
 });
 

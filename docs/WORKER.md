@@ -322,7 +322,7 @@ those plus the postcode from Step 1 and the `contact_id`.
 ```mermaid
 flowchart TD
     IN["POST /gate<br/>contact_id + facility_type,<br/>monthly_budget, cleaning_frequency, postcode"]
-    IN --> FL["Record lead_flags for review:<br/>low-frequency, capability-gap,<br/>out-of-area (never block booking)"]
+    IN --> FL["Record lead_flags for review:<br/>low-frequency,<br/>out-of-area (never block booking)"]
     FL --> D1{"Budget under $2,500/month?"}
     D1 -- yes --> N1["dq_flag: nurture-budget"]
     D1 -- no --> SC["Calculate score 0–100"]
@@ -353,7 +353,6 @@ booking:
 | Flag | When |
 |---|---|
 | `low-frequency` | Weekly or fortnightly (under 3 cleans a week) |
-| `capability-gap` | Education or medical — not serviced yet |
 | `out-of-area` | Postcode not in `LAUNCH_AREA_POSTCODES` |
 
 **The score** runs for every lead that isn't under the budget minimum:
@@ -771,7 +770,7 @@ All rules live at the top of `worker/worker.js` under `CONFIG`:
 | Priority budget (at or over → Priority) | `PRIORITY_MONTHLY_SPEND` |
 | Frequency options and their cleans per week | `FREQUENCY_TO_WEEKLY` — plus the radio buttons in `site/index.html` and `site/contact.html` |
 | Minimum cleans per week | `MIN_WEEKLY_CLEANS` |
-| Facility types you can service | `CAPABLE_FACILITY_TYPES` — add `"education"`, `"medical"` once the Blue Card / clinical bench is ready |
+| Facility type options and scores | The Step 2 `facility_type` select on each booking form (Office, Strata, Education, Childcare, Medical, Warehouse / industrial) — plus the facility points in `calculateGateScore()` (education, childcare and medical score 0) |
 | Contract-renewal bump window | `CONTRACT_RENEWAL_PRIORITY_THRESHOLD_MONTHS` |
 | Tier cut-offs | `tierFromScore()` (leads), `applicantTierFromScore()` (applicants) |
 | The website-lead tag name | `WEBSITE_LEAD_TAG` — and update the GHL workflow trigger to match |

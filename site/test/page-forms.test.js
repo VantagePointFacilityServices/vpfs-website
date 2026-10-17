@@ -17,7 +17,7 @@ const PAGES = ["index.html", "contact.html", ...LANDING_PAGES];
 
 // D14: facility_type each vertical page pre-selects ("" = precinct, nothing).
 const FACILITY_DEFAULT = {
-  office: "office", strata: "strata", school: "education", childcare: "education",
+  office: "office", strata: "strata", school: "education", childcare: "childcare",
   medical: "medical", warehouse: "construction",
 };
 const CTA = (key) => (key === "strata" ? "Request a Committee Proposal" : "Request a Facility Consultation");
@@ -51,6 +51,12 @@ describe.each(PAGES)("%s booking form", (page) => {
     );
     expect(msg.querySelector("h3").textContent).toContain("be in touch");
     expect(form.textContent).not.toContain("Request received");
+  });
+
+  it("offers childcare in the Step 2 facility type select", () => {
+    const form = mountPage(page);
+    const values = Array.from(form.querySelectorAll("select[name=facility_type] option"), (o) => o.value);
+    expect(values).toContain("childcare");
   });
 
   it("has no natively-required fields in the hidden Step 2", () => {
