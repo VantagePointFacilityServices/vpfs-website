@@ -225,3 +225,24 @@ describe("contact.html approved booking wording", () => {
     expect(text).not.toContain("We call to confirm a walkthrough time");
   });
 });
+
+// Every sales-form page (not the career/subcontractor interview flows) shares
+// the approved no-calendar fallback copy, including pages without a landing marker.
+const NO_CALENDAR_PAGES = readdirSync(SITE_DIR)
+  .filter((f) => f.endsWith(".html") && !["career.html", "subcontractor.html"].includes(f))
+  .filter((f) => /id="no-calendar-message"/.test(readFileSync(resolve(SITE_DIR, f), "utf8")));
+
+describe.each(NO_CALENDAR_PAGES)("%s no-calendar fallback", (page) => {
+  it("uses the approved body text and the dead 'Request received' panel is gone", () => {
+    mountPage(page);
+    const msg = document.querySelector("#no-calendar-message");
+    expect(msg.querySelector("p").textContent.trim()).toBe(
+      "We couldn’t load walkthrough times just now. One of the team will call you shortly to book one in — free, no obligation."
+    );
+    // The only legitimate "Request received" is locations.html's JS-revealed area-request panel.
+    const dead = [...document.querySelectorAll(".form-success")].filter(
+      (el) => el.textContent.includes("Request received") && !el.closest("#area-request-form, [id*='area']")
+    );
+    if (page !== "locations.html") expect(dead).toHaveLength(0);
+  });
+});
