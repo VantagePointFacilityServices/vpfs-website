@@ -241,8 +241,9 @@ describe.each(NO_CALENDAR_PAGES)("%s no-calendar fallback", (page) => {
     );
     // The only legitimate "Request received" is locations.html's JS-revealed area-request panel.
     const dead = [...document.querySelectorAll(".form-success")].filter(
-      (el) => el.textContent.includes("Request received") && !el.closest("#area-request-form, [id*='area']")
+      (el) => el.textContent.includes("Request received") && !el.closest("form[data-area-request]")
     );
-    if (page !== "locations.html") expect(dead).toHaveLength(0);
+    expect(dead).toHaveLength(0);
+    expect(document.body.textContent).not.toContain("arrange your walkthrough");
   });
 });
