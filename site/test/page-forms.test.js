@@ -42,6 +42,17 @@ describe.each(PAGES)("%s booking form", (page) => {
     expect(names.indexOf("email")).toBe(names.indexOf("company_name") + 1);
   });
 
+  it("uses the approved no-calendar fallback copy and has no dead 'Request received' panel", () => {
+    const form = mountPage(page);
+    const msg = document.querySelector("#no-calendar-message");
+    expect(msg).not.toBeNull();
+    expect(msg.querySelector("p").textContent.trim()).toBe(
+      "We couldn\u2019t load walkthrough times just now. One of the team will call you shortly to book one in \u2014 free, no obligation."
+    );
+    expect(msg.querySelector("h3").textContent).toContain("be in touch");
+    expect(form.textContent).not.toContain("Request received");
+  });
+
   it("has no natively-required fields in the hidden Step 2", () => {
     const form = mountPage(page);
     const required = form.querySelectorAll(".booking-step-2 [required]");
@@ -201,5 +212,38 @@ describe.each(CONVERSION_PAGES)("%s conversion form business name", (page) => {
     expect(field).not.toBeNull();
     expect(field.required).toBe(true);
     expect(field.getAttribute("autocomplete")).toBe("organization");
+  });
+});
+
+describe("contact.html approved booking wording", () => {
+  it("states instant SMS/email confirmation in the intro and step 1", () => {
+    mountPage("contact.html");
+    const text = document.body.textContent.replace(/\s+/g, " ");
+    expect(text).toContain("Send the form below and pick a walkthrough time that suits you \u2014 your booking is confirmed instantly by SMS and email.");
+    expect(text).toContain("You pick a walkthrough time online \u2014 confirmed by SMS and email");
+    expect(text).not.toContain("within one business day");
+    expect(text).not.toContain("We call to confirm a walkthrough time");
+  });
+});
+
+// Every sales-form page (not the career/subcontractor interview flows) shares
+// the approved no-calendar fallback copy, including pages without a landing marker.
+const NO_CALENDAR_PAGES = readdirSync(SITE_DIR)
+  .filter((f) => f.endsWith(".html") && !["career.html", "subcontractor.html"].includes(f))
+  .filter((f) => /id="no-calendar-message"/.test(readFileSync(resolve(SITE_DIR, f), "utf8")));
+
+describe.each(NO_CALENDAR_PAGES)("%s no-calendar fallback", (page) => {
+  it("uses the approved body text and the dead 'Request received' panel is gone", () => {
+    mountPage(page);
+    const msg = document.querySelector("#no-calendar-message");
+    expect(msg.querySelector("p").textContent.trim()).toBe(
+      "We couldn’t load walkthrough times just now. One of the team will call you shortly to book one in — free, no obligation."
+    );
+    // The only legitimate "Request received" is locations.html's JS-revealed area-request panel.
+    const dead = [...document.querySelectorAll(".form-success")].filter(
+      (el) => el.textContent.includes("Request received") && !el.closest("form[data-area-request]")
+    );
+    expect(dead).toHaveLength(0);
+    expect(document.body.textContent).not.toContain("arrange your walkthrough");
   });
 });
