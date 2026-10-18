@@ -62,4 +62,4 @@ The tests currently expect the `-temp.svg` files (`site/test/about.test.js`, `si
 
 Easiest route: put the finished photos in one folder and ask Claude to do steps 1–4.
 
-About goes public once at least A1 is in place and the other About cards are replaced or removed (`.scratch/about-and-why-us-rebuild/issues/open/05-about-and-why-us-go-live.md`), along with amaysim's OK to be named.
+About went public on 2026-10-18 (Blake's call) with the photo-needed cards still showing, so swapping in real photos is now the top priority for the page. amaysim's OK to be named is still outstanding; if it doesn't come, change the line to "a software engineer by trade".
