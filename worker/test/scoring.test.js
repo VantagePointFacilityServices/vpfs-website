@@ -8,9 +8,9 @@ import {
 } from "../worker.js";
 
 describe("checkDisqualifiers", () => {
-  it("passes a lead at the $2,500 minimum", () => {
+  it("passes a lead at the $1,500 minimum", () => {
     const result = checkDisqualifiers({
-      monthlyBudget: 2500,
+      monthlyBudget: 1500,
       frequency: "three_days_week",
       facilityType: "office",
       postcode: "4211",
@@ -18,14 +18,16 @@ describe("checkDisqualifiers", () => {
     expect(result).toEqual({ disqualified: false, reason: null });
   });
 
-  it("sends the old $2,000 minimum to nurture now the floor is $2,500", () => {
-    const result = checkDisqualifiers({ monthlyBudget: 2000, frequency: "daily", facilityType: "office", postcode: "4211" });
-    expect(result).toEqual({ disqualified: true, reason: "nurture-budget" });
+  it("passes the old $2,000 and $2,499 budgets now the floor is $1,500", () => {
+    for (const monthlyBudget of [2000, 2499]) {
+      const result = checkDisqualifiers({ monthlyBudget, frequency: "daily", facilityType: "office", postcode: "4211" });
+      expect(result).toEqual({ disqualified: false, reason: null });
+    }
   });
 
-  it("flags a budget under $2,500/month — the only disqualifier", () => {
+  it("flags a budget under $1,500/month — the only disqualifier", () => {
     const result = checkDisqualifiers({
-      monthlyBudget: 2499,
+      monthlyBudget: 1499,
       frequency: "daily",
       facilityType: "office",
       postcode: "4211",
@@ -101,15 +103,25 @@ describe("calculateGateScore / tierFromScore", () => {
     expect(tierFromScore(score)).toBe("priority");
   });
 
-  it("keeps a $2,500–$4,999 budget in standard, even at the strongest frequency and facility fit", () => {
+  it("keeps a $1,500–$4,999 budget in standard, even at the strongest frequency and facility fit", () => {
     const score = calculateGateScore({ monthlyBudget: 4999, frequency: "daily", facilityType: "strata" });
     expect(score).toBe(60);
     expect(tierFromScore(score)).toBe("standard");
   });
 
+  it("puts the budget boundaries in the right tier: 1,499 nurture; 1,500/2,499/4,999 standard; 5,000 priority", () => {
+    const f = { frequency: "daily", facilityType: "office" };
+    expect(checkDisqualifiers({ ...f, monthlyBudget: 1499 }).disqualified).toBe(true);
+    for (const monthlyBudget of [1500, 2499, 4999]) {
+      expect(checkDisqualifiers({ ...f, monthlyBudget }).disqualified).toBe(false);
+      expect(tierFromScore(calculateGateScore({ ...f, monthlyBudget }))).toBe("standard");
+    }
+    expect(tierFromScore(calculateGateScore({ ...f, monthlyBudget: 5000 }))).toBe("priority");
+  });
+
   it("scores the bare-minimum qualifying lead into standard", () => {
     const score = calculateGateScore({
-      monthlyBudget: 2500,
+      monthlyBudget: 1500,
       frequency: "three_days_week",
       facilityType: "construction",
     });
@@ -118,7 +130,7 @@ describe("calculateGateScore / tierFromScore", () => {
   });
 
   it("ranks 5 days a week between daily and 3 days a week", () => {
-    const base = { monthlyBudget: 2500, facilityType: "office" };
+    const base = { monthlyBudget: 1500, facilityType: "office" };
     const daily = calculateGateScore({ ...base, frequency: "daily" });
     const five = calculateGateScore({ ...base, frequency: "five_days_week" });
     const three = calculateGateScore({ ...base, frequency: "three_days_week" });
@@ -126,7 +138,7 @@ describe("calculateGateScore / tierFromScore", () => {
   });
 
   it("still scores the legacy few_times_week value as 3 days a week", () => {
-    const base = { monthlyBudget: 2500, facilityType: "office" };
+    const base = { monthlyBudget: 1500, facilityType: "office" };
     expect(calculateGateScore({ ...base, frequency: "few_times_week" })).toBe(
       calculateGateScore({ ...base, frequency: "three_days_week" })
     );

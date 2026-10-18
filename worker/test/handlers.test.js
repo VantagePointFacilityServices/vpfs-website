@@ -733,11 +733,11 @@ describe("POST /gate — budget is the only thing that decides the calendar", ()
     expect(fieldsFromLastCall(global.fetch).lead_flags).toBe("none");
   });
 
-  it("sends an under-$2,500 budget to nurture even with other flags", async () => {
+  it("sends an under-$1,500 budget to nurture even with other flags", async () => {
     global.fetch = mockGhlOk();
     const req = makeRequest("/gate", {
       contact_id: "c-nurture",
-      customFields: { facility_type: "medical", monthly_budget: "1500", postcode: "4000", cleaning_frequency: "weekly" },
+      customFields: { facility_type: "medical", monthly_budget: "1499", postcode: "4000", cleaning_frequency: "weekly" },
     });
 
     const json = await (await worker.fetch(req, env)).json();
@@ -769,7 +769,7 @@ describe("POST /gate — saves the Step 2 answers to the contact", () => {
     global.fetch = mockGhlOk();
     const req = makeRequest("/gate", {
       contact_id: "c-answers-nurture",
-      customFields: { facility_type: "strata", monthly_budget: "1500", postcode: "4211", cleaning_frequency: "weekly" },
+      customFields: { facility_type: "strata", monthly_budget: "1499", postcode: "4211", cleaning_frequency: "weekly" },
     });
 
     await worker.fetch(req, env);
@@ -777,7 +777,7 @@ describe("POST /gate — saves the Step 2 answers to the contact", () => {
     const fields = fieldsFromLastCall(global.fetch);
     expect(fields.lead_tier).toBe("nurture");
     expect(fields.facility_type).toBe("strata");
-    expect(fields.monthly_budget).toBe("1500");
+    expect(fields.monthly_budget).toBe("1499");
     expect(fields.cleaning_frequency).toBe("weekly");
   });
 
@@ -806,7 +806,7 @@ describe("POST /confirm", () => {
       customFields: {
         dq_flag: "nurture-budget",
         budget_flexible: "yes",
-        flexible_budget_amount: "2500",
+        flexible_budget_amount: "1500",
         cleaning_frequency: "daily",
         facility_type: "office",
       },
@@ -820,11 +820,11 @@ describe("POST /confirm", () => {
     expect(json.tier).toBe("standard");
   });
 
-  it("keeps a budget-DQ'd lead in nurture when the flexible amount is $2,000 (below the $2,500 floor)", async () => {
+  it("keeps a budget-DQ'd lead in nurture when the flexible amount is $1,400 (below the $1,500 floor)", async () => {
     global.fetch = mockGhlOk();
     const req = makeRequest("/confirm", {
       contact_id: "c6b",
-      customFields: { dq_flag: "nurture-budget", budget_flexible: "yes", flexible_budget_amount: "2000" },
+      customFields: { dq_flag: "nurture-budget", budget_flexible: "yes", flexible_budget_amount: "1400" },
     });
 
     const json = await (await worker.fetch(req, env)).json();
@@ -972,7 +972,7 @@ describe("field defaults and alternate payload shapes", () => {
     global.fetch = mockGhlOk();
     const req = makeRequest("/gate", {
       contact_id: "c13c",
-      customFields: { facility_type: "office", monthly_budget: "1500", postcode: "4211", cleaning_frequency: "daily" },
+      customFields: { facility_type: "office", monthly_budget: "1499", postcode: "4211", cleaning_frequency: "daily" },
     });
 
     const json = await (await worker.fetch(req, env)).json();
