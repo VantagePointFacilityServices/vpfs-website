@@ -253,6 +253,7 @@ describe("why-us.html how we start, straight answers, real person", () => {
     fol(doc.querySelector(".trust-strip"), doc.querySelector(".commitments-section"));
     const ids = ["how-we-start", "proof", "proof-of-work", "straight-answers", "reach-us", "reviews"];
     for (let i = 1; i < ids.length; i++) after(ids[i - 1], ids[i]);
+    fol(doc.getElementById("case-studies"), doc.querySelector(".testimonials-section"));
     const first = doc.querySelector(".commitments-section");
     expect(first.compareDocumentPosition(doc.getElementById("how-we-start")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
@@ -279,6 +280,9 @@ describe("why-us.html how we start, straight answers, real person", () => {
     expect(html.split("from $1,500 a month + GST").length - 1).toBe(2);
     expect(doc.querySelector(".hero-inner").textContent).toContain("Free, no-obligation walkthrough. Most sites start from $1,500 a month + GST.");
     expect(doc.getElementById("straight-answers").textContent).toContain("from $1,500 a month + GST");
+    // The hero is dark; only classed hero paragraphs get light text (style.css .hero-inverse .hero-response).
+    const heroPrice = Array.from(doc.querySelectorAll(".hero-inner p")).find((p) => p.textContent.includes("from $1,500 a month + GST"));
+    expect(heroPrice.classList.contains("hero-response")).toBe(true);
     expect(html.split("Price signal = Phase 1 lead-gate floor").length - 1).toBe(2);
   });
   it("price signal matches the Worker lead-gate floor", () => {
