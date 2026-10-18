@@ -1,24 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img" aria-label="Illustration of a surfer walking toward the waves on a Gold Coast beach, seen from behind">
-<rect width="1600" height="900" fill="#CFE3F2"/>
-<circle cx="1260" cy="190" r="90" fill="#F6D27A"/>
-<path d="M0 420 Q400 390 800 420 T1600 420 L1600 620 L0 620 Z" fill="#3B7FB6"/>
-<path d="M0 500 Q200 470 400 500 T800 500 T1200 500 T1600 500 L1600 640 L0 640 Z" fill="#5C9BCB"/>
-<path d="M0 560 Q200 530 400 560 T800 560 T1200 560 T1600 560" fill="none" stroke="#fff" stroke-width="10" opacity=".7"/>
-<path d="M0 600 Q800 570 1600 610 L1600 900 L0 900 Z" fill="#EBD9B4"/>
-<g transform="translate(700,820)">
-<rect x="-37.5" y="-150.0" width="32.5" height="150.0" rx="10.0" fill="#1E1E24"/>
-<rect x="5.0" y="-150.0" width="32.5" height="150.0" rx="10.0" fill="#1E1E24"/>
-<rect x="-42.5" y="-10.0" width="40.0" height="12.5" rx="6.25" fill="#1E1E24"/>
-<rect x="2.5" y="-10.0" width="40.0" height="12.5" rx="6.25" fill="#1E1E24"/>
-<path d="M-52.5 -147.5 L-47.5 -262.5 Q0 -282.5 47.5 -262.5 L52.5 -147.5 Z" fill="#2A2F3A"/>
-<rect x="45.0" y="-257.5" width="20.0" height="107.5" rx="10.0" fill="#2A2F3A"/>
-<circle cx="55.0" cy="-147.5" r="10.0" fill="#C68A5E"/>
-<rect x="-65.0" y="-257.5" width="20.0" height="107.5" rx="10.0" fill="#2A2F3A"/>
-<circle cx="-55.0" cy="-147.5" r="10.0" fill="#C68A5E"/>
-<rect x="-11.25" y="-290.0" width="22.5" height="20.0" fill="#C68A5E"/>
-<circle cx="0" cy="-315.0" r="32.5" fill="#2B1D14"/>
-<circle cx="-31.25" cy="-312.5" r="6.25" fill="#C68A5E"/><circle cx="31.25" cy="-312.5" r="6.25" fill="#C68A5E"/>
-</g>
-<rect x="790" y="430" width="70" height="380" rx="35" fill="#F2F2F2" stroke="#0F3060" stroke-width="6" transform="rotate(8 825 620)"/>
-<line x1="825" y1="440" x2="825" y2="800" stroke="#0F3060" stroke-width="4" transform="rotate(8 825 620)"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img" aria-label="Photo placeholder A1: Blake Warton with his surfboard at Currumbin beach">
+<!-- Photo placeholder A1. Replace with a real photo per docs/about-why-us/shot-list.md, then delete this file. -->
+<style>text{font-family:Manrope,"Segoe UI",Arial,sans-serif;fill:#0F3060}.k{font-size:30px;font-weight:700;letter-spacing:4px;opacity:.7}.t{font-size:64px;font-weight:800}.h{font-size:30px;font-weight:700;letter-spacing:2px;opacity:.7}.b{font-size:38px}.f{font-size:28px;opacity:.65}</style>
+<rect width="1600" height="900" fill="#EAF0F7"/>
+<rect x="40" y="40" width="1520" height="820" rx="28" fill="none" stroke="#0F3060" stroke-opacity=".35" stroke-width="4" stroke-dasharray="22 16"/>
+<g transform="translate(1340,120)" fill="none" stroke="#0F3060" stroke-opacity=".45" stroke-width="10" stroke-linejoin="round"><rect x="0" y="30" width="160" height="110" rx="18"/><path d="M45 30 l18-26 h34 l18 26"/><circle cx="80" cy="85" r="32"/></g>
+<text x="120" y="120" class="k">PHOTO NEEDED · A1</text>
+<text x="120" y="190" class="t">Blake at the beach</text>
+<text x="120" y="250" class="b">Blake Warton at Currumbin or Palm Beach with his surfboard,</text>
+<text x="120" y="300" class="b">walking to or from the water, or sitting on the sand. Face</text>
+<text x="120" y="350" class="b">visible. Morning light.</text>
+<text x="120" y="430" class="h">Avoid</text>
+<text x="120" y="478" class="b">No crowds with recognisable faces. No other brands on boards</text>
+<text x="120" y="528" class="b">or clothes.</text>
+<text x="120" y="810" class="f">Landscape 16:9 · export 1600 × 900 WebP under 250 KB · real photo only, no stock or AI</text>
 </svg>

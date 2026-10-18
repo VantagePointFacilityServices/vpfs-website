@@ -458,6 +458,12 @@ p{ margin:0 0 var(--space-4); font-size:var(--fs-p1); color:var(--text-body); }
 @media (max-width:720px){ .founder-section, .standard-section, .people-section{ padding-top:calc(var(--section-y) / 4); padding-bottom:calc(var(--section-y) / 4); } }
 .hero-details{ margin-top:16px; font-size:var(--fs-p2,14px); color:rgba(255,255,255,.82); }
 .hero-details a{ color:inherit; text-decoration:underline; }
+.hero-sectors{ margin-top:12px; color:rgba(255,255,255,.9); }
+.hero-sectors a{ color:inherit; text-decoration:underline; }
+.process-wrap.one-col{ grid-template-columns:1fr; }
+.paperwork-list{ margin-top:var(--space-4); }
+.paperwork-list li{ align-items:flex-start; font-weight:400; }
+.cta-callback{ font-weight:600; }
 .founder-section .eyebrow{ color:var(--text-muted); }
 .founder-section .eyebrow::before{ background:var(--vp-navy); }
 .standard-section .eyebrow{ color:var(--text-muted); }
