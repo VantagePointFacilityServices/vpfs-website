@@ -2263,6 +2263,31 @@ describe("POST /gate — tier tag, deal value, budget abandon", () => {
     expect(JSON.parse(puts(global.fetch)[0][1].body).status).toBe("abandoned");
   });
 
+  it("names a /gate-created deal from the contact (phone leads never call /lead)", async () => {
+    const base = mk({ open: false });
+    global.fetch = vi.fn(async (url, o) => {
+      if (url.endsWith("/contacts/c-1") && !o?.method) {
+        return json({ contact: { id: "c-1", firstName: "Sam", lastName: "Lee", companyName: "Acme" } });
+      }
+      return base(url, o);
+    });
+    await gate(6000);
+    const post = global.fetch.mock.calls.find(([u]) => u.endsWith("/opportunities/"));
+    expect(JSON.parse(post[1].body).name).toBe("Acme — Sam Lee");
+  });
+
+  it("falls back to a non-empty deal name when the contact lookup fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const base = mk({ open: false });
+    global.fetch = vi.fn(async (url, o) => {
+      if (url.endsWith("/contacts/c-1") && !o?.method) return json({}, 500);
+      return base(url, o);
+    });
+    await gate(6000);
+    const post = global.fetch.mock.calls.find(([u]) => u.endsWith("/opportunities/"));
+    expect(JSON.parse(post[1].body).name).toBeTruthy();
+  });
+
   it("failing tag/opportunity calls leave the body intact", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     global.fetch = mk({ failTag: true, failOpp: true });

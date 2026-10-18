@@ -88,7 +88,7 @@ targets, per Volume 4 Section 2.5c:
 `checkApplicantAreaDisqualifier`/`checkApplicantDisqualifiers`/
 `calculateApplicantScore`/`applicantTierFromScore` (applicants) have pure,
 network-free unit tests (`test/scoring.test.js`,
-`test/applicant-scoring.test.js`). All ten endpoints' handlers (`handleLead`,
+`test/applicant-scoring.test.js`). The handlers (`handleLead`,
 `handleGate`, `handleEnrich`, `handleConfirm`, `handleOutcome`, `handleApply`,
 `handleApplyScreen`) are exercised end-to-end through the exported `fetch`
 entry point in `test/handlers.test.js`, with `writeBackToGHL`'s `fetch`

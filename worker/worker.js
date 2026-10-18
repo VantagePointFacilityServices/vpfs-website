@@ -375,10 +375,21 @@ async function ensureNewLeadDeal(contactId, f, env) {
       return null;
     }
     const found = (await searchRes.json()).opportunities?.[0];
-    const person = `${f.firstName || ""} ${f.lastName || ""}`.trim();
-    const name = f.companyName ? `${f.companyName} — ${person}` : person;
+    const dealName = (c) => {
+      const person = `${c.firstName || ""} ${c.lastName || ""}`.trim();
+      return c.companyName ? `${c.companyName} — ${person}` : person;
+    };
+    let name = dealName(f);
 
     if (!found) {
+      // /gate passes no name (phone leads never call /lead) — read it from
+      // the contact, since GHL needs a non-empty deal name.
+      if (!name) {
+        const cRes = await fetch(`${GHL_API_BASE}/contacts/${contactId}`, { headers });
+        if (cRes.ok) name = dealName((await cRes.json()).contact || {});
+        else console.error(`contact lookup failed for contact ${contactId}: ${cRes.status}`);
+      }
+      name = name || "New lead";
       const res = await fetch(`${GHL_API_BASE}/opportunities/`, {
         method: "POST",
         headers,
