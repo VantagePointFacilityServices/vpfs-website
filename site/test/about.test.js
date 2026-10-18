@@ -92,8 +92,8 @@ describe("about.html founder story", () => {
     expect(raw).not.toMatch(/Review|AggregateRating/);
   });
 
-  it("is indexable", () => {
-    expect(html).not.toContain('name="robots"');
+  it("stays noindex", () => {
+    expect(html).toContain('<meta name="robots" content="noindex">');
   });
 });
 
