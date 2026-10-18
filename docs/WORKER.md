@@ -155,8 +155,8 @@ with exactly these keys:
 |---|---|
 | Captured at Step 1 | `postcode`, `conversion_page`, `lead_channel`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, plus `marketing_consent` (Yes) and `marketing_consent_at` (Date/time) when the visitor ticked the opt-in |
 | Written by `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `lead_flags`, `sla_flag`, `lead_captured_at`, plus the visitor's Step 2 answers `facility_type`, `monthly_budget`, `cleaning_frequency`, `switch_timing` (optional) |
-| Read/written by `/enrich` | `size_sqm`, `headcount`, `floor_count`, `lifts_present`, `bathroom_count`, `kitchen_count`, `breakroom_count`, `meeting_room_count`, `special_requests`, `supplies_provided`, `equipment_needed`, `lift_count`, `toilet_count`, `urinal_count`, `sink_count`, `bin_station_count`, `stair_flight_count`, `glass_entry_door_count`, `visit_days`, `cleaning_window`, `access_method`, `current_provider`, `current_contract_end_date`, `current_contract_months_out`, `switch_timing` and `lead_score` (re-scored). Never `contract_renewal_date` — that is *our* contract (Renewal pipeline) |
-| Read/written by `/confirm` | `budget_flexible`, `flexible_budget_amount`, `frequency_flexible`, `flexible_frequency`, `monthly_budget`, `cleaning_frequency`, `facility_type` |
+| Read/written by `/enrich` | `facility_type`, `size_sqm`, `headcount`, `floor_count`, `lifts_present`, `bathroom_count`, `kitchen_count`, `breakroom_count`, `meeting_room_count`, `special_requests`, `supplies_provided`, `equipment_needed`, `lift_count`, `toilet_count`, `urinal_count`, `sink_count`, `bin_station_count`, `stair_flight_count`, `glass_entry_door_count`, `visit_days`, `cleaning_window`, `access_method`, `current_provider`, `current_contract_end_date`, `current_contract_months_out`, `switch_timing` and `lead_score` (re-scored). Never `contract_renewal_date` — that is *our* contract (Renewal pipeline) |
+| Read/written by `/confirm` | `budget_flexible`, `flexible_budget_amount`, `frequency_flexible`, `flexible_frequency`, `monthly_budget`, `cleaning_frequency`, `facility_type`, `switch_timing` (read for the re-score's timing points — send it in the `/confirm` webhook body, or a requalified lead loses its timing points) |
 | Read/written by `/outcome` | `outcome_type`, `reschedule_attempts`, `loss_reason`, `noshow_attempts`, `lost_at_proposal_date` |
 | Applicants (**people** sub-account, not this one) | `engagement_track`, `postcode`, `lead_channel`, `utm_*`, `applicant_stage`, `applicant_tier`, `applicant_score`, `applicant_dq_flag`, `applicant_captured_at`, `applicant_screened_at`, `applicant_subcontractor_ready`, plus the Step 2 answers listed in [section 5](#5-the-job-applicant-journey). Full build steps: vpos `commercial/integrations/gohighlevel/pipelines/recruitment/people-subaccount-build-guide.md` |
 
@@ -432,6 +432,11 @@ under 3 months → `within_3_months`; 3–6 → `3_to_6_months`; 6–12 →
 months nor band. The contract date **never** changes `lead_tier` — only
 `size_sqm ≥ 2000` does. `contract_renewal_date` / `contract_renewal_months_out`
 in a payload are ignored.
+
+**Webhook body:** whenever the GHL `/enrich` webhook sends `lead_score`, it
+must also send the contact's current `switch_timing`. The re-score subtracts
+the old band's points before adding the new band's; without `switch_timing`
+the old points are never taken off and the score is inflated.
 
 `/enrich` can only move a lead **up** to Priority. It never disqualifies or
 demotes — that was settled at `/gate`.

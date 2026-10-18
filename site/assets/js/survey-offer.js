@@ -1,4 +1,8 @@
-// Vantage Point Facility Services — shared "add your experience" survey offer
+// Vantage Point Facility Services — shared post-step survey offer
+//
+// Used by the careers/subcontractor pages (experience survey) and the
+// commercial booking form (facility-details survey). Each caller passes its
+// own survey URL, panels and copy; only the offer/embed mechanics are shared.
 //
 // createSurveyOffer(config) returns an onResultRevealed(target, form) hook for
 // the two-step gate. When form[config.urlAttr]/config.getUrl yields a survey URL
