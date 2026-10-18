@@ -1,50 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img" aria-label="Illustration of a three-person cleaning team in navy uniforms beside a cleaning trolley, seen from behind">
-<rect width="1600" height="900" fill="#F4F6FA"/><rect y="680" width="1600" height="220" fill="#D3D6E0"/><rect x="96.0" y="90.0" width="448.00000000000006" height="342.0" rx="6" fill="#CFE3F2" stroke="#BCBFCC" stroke-width="6"/><line x1="320.0" y1="90.0" x2="320.0" y2="432.0" stroke="#BCBFCC" stroke-width="5"/><rect x="1152.0" y="108.0" width="320.0" height="72.0" rx="4" fill="#EDEFF7"/>
-<g transform="translate(1200,860)"><rect x="-70" y="-120" width="140" height="100" rx="10" fill="#6E7180"/><rect x="-60" y="-110" width="50" height="40" rx="6" fill="#D94A4A"/><rect x="0" y="-110" width="50" height="40" rx="6" fill="#3B7FB6"/><rect x="-6" y="-200" width="12" height="90" fill="#BCBFCC"/><rect x="-40" y="-60" width="80" height="34" rx="6" fill="#F2C94C"/><circle cx="-50" cy="-10" r="12" fill="#1E1E24"/><circle cx="50" cy="-10" r="12" fill="#1E1E24"/></g>
-<g transform="translate(470,850)">
-<rect x="-34.5" y="-138.0" width="29.9" height="138.0" rx="9.2" fill="#2A2F3A"/>
-<rect x="4.6" y="-138.0" width="29.9" height="138.0" rx="9.2" fill="#2A2F3A"/>
-<rect x="-39.099999999999994" y="-9.2" width="36.8" height="11.5" rx="5.75" fill="#1E1E24"/>
-<rect x="2.3" y="-9.2" width="36.8" height="11.5" rx="5.75" fill="#1E1E24"/>
-<path d="M-48.3 -135.7 L-43.699999999999996 -241.49999999999997 Q0 -259.9 43.699999999999996 -241.49999999999997 L48.3 -135.7 Z" fill="#0F3060"/>
-<rect x="-18.4" y="-225.39999999999998" width="36.8" height="9.2" rx="4.6" fill="#FFFFFF" opacity=".85"/>
-<rect x="41.4" y="-236.89999999999998" width="18.4" height="98.89999999999999" rx="9.2" fill="#0F3060"/>
-<circle cx="50.599999999999994" cy="-135.7" r="9.2" fill="#E8B990"/>
-<rect x="-59.8" y="-236.89999999999998" width="18.4" height="98.89999999999999" rx="9.2" fill="#0F3060"/>
-<circle cx="-50.599999999999994" cy="-135.7" r="9.2" fill="#E8B990"/>
-<rect x="-10.35" y="-266.79999999999995" width="20.7" height="18.4" fill="#E8B990"/>
-<circle cx="0" cy="-289.79999999999995" r="29.9" fill="#4A3426"/>
-<circle cx="-28.749999999999996" cy="-287.5" r="5.75" fill="#E8B990"/><circle cx="28.749999999999996" cy="-287.5" r="5.75" fill="#E8B990"/>
-</g>
-<g transform="translate(700,850)">
-<rect x="-36.0" y="-144.0" width="31.2" height="144.0" rx="9.6" fill="#2A2F3A"/>
-<rect x="4.8" y="-144.0" width="31.2" height="144.0" rx="9.6" fill="#2A2F3A"/>
-<rect x="-40.8" y="-9.6" width="38.4" height="12.0" rx="6.0" fill="#1E1E24"/>
-<rect x="2.4" y="-9.6" width="38.4" height="12.0" rx="6.0" fill="#1E1E24"/>
-<path d="M-50.4 -141.6 L-45.6 -252.0 Q0 -271.2 45.6 -252.0 L50.4 -141.6 Z" fill="#0F3060"/>
-<rect x="-19.2" y="-235.2" width="38.4" height="9.6" rx="4.8" fill="#FFFFFF" opacity=".85"/>
-<rect x="43.199999999999996" y="-247.2" width="19.2" height="103.2" rx="9.6" fill="#0F3060"/>
-<circle cx="52.8" cy="-141.6" r="9.6" fill="#8D5A3B"/>
-<rect x="-62.4" y="-247.2" width="19.2" height="103.2" rx="9.6" fill="#0F3060"/>
-<circle cx="-52.8" cy="-141.6" r="9.6" fill="#8D5A3B"/>
-<rect x="-10.799999999999999" y="-278.4" width="21.599999999999998" height="19.2" fill="#8D5A3B"/>
-<circle cx="0" cy="-302.4" r="31.2" fill="#1E1E24"/>
-<path d="M-31.2 -302.4 Q-36.0 -246.0 -16.8 -240.0 L16.8 -240.0 Q36.0 -246.0 31.2 -302.4 Z" fill="#1E1E24"/>
-<circle cx="-30.0" cy="-300.0" r="6.0" fill="#8D5A3B"/><circle cx="30.0" cy="-300.0" r="6.0" fill="#8D5A3B"/>
-</g>
-<g transform="translate(930,850)">
-<rect x="-34.5" y="-138.0" width="29.9" height="138.0" rx="9.2" fill="#2A2F3A"/>
-<rect x="4.6" y="-138.0" width="29.9" height="138.0" rx="9.2" fill="#2A2F3A"/>
-<rect x="-39.099999999999994" y="-9.2" width="36.8" height="11.5" rx="5.75" fill="#1E1E24"/>
-<rect x="2.3" y="-9.2" width="36.8" height="11.5" rx="5.75" fill="#1E1E24"/>
-<path d="M-48.3 -135.7 L-43.699999999999996 -241.49999999999997 Q0 -259.9 43.699999999999996 -241.49999999999997 L48.3 -135.7 Z" fill="#0F3060"/>
-<rect x="-18.4" y="-225.39999999999998" width="36.8" height="9.2" rx="4.6" fill="#FFFFFF" opacity=".85"/>
-<rect x="41.4" y="-236.89999999999998" width="18.4" height="98.89999999999999" rx="9.2" fill="#0F3060"/>
-<circle cx="50.599999999999994" cy="-135.7" r="9.2" fill="#F1C9A5"/>
-<rect x="-59.8" y="-236.89999999999998" width="18.4" height="98.89999999999999" rx="9.2" fill="#0F3060"/>
-<circle cx="-50.599999999999994" cy="-135.7" r="9.2" fill="#F1C9A5"/>
-<rect x="-10.35" y="-266.79999999999995" width="20.7" height="18.4" fill="#F1C9A5"/>
-<circle cx="0" cy="-289.79999999999995" r="29.9" fill="#7A5230"/>
-<circle cx="-28.749999999999996" cy="-287.5" r="5.75" fill="#F1C9A5"/><circle cx="28.749999999999996" cy="-287.5" r="5.75" fill="#F1C9A5"/>
-</g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900" role="img" aria-label="Photo placeholder B3: The Vantage Point cleaning team in uniform on site">
+<!-- Photo placeholder B3. Replace with a real photo per docs/about-why-us/shot-list.md, then delete this file. -->
+<style>text{font-family:Manrope,"Segoe UI",Arial,sans-serif;fill:#0F3060}.k{font-size:30px;font-weight:700;letter-spacing:4px;opacity:.7}.t{font-size:64px;font-weight:800}.h{font-size:30px;font-weight:700;letter-spacing:2px;opacity:.7}.b{font-size:38px}.f{font-size:28px;opacity:.65}</style>
+<rect width="1600" height="900" fill="#EAF0F7"/>
+<rect x="40" y="40" width="1520" height="820" rx="28" fill="none" stroke="#0F3060" stroke-opacity=".35" stroke-width="4" stroke-dasharray="22 16"/>
+<g transform="translate(1340,120)" fill="none" stroke="#0F3060" stroke-opacity=".45" stroke-width="10" stroke-linejoin="round"><rect x="0" y="30" width="160" height="110" rx="18"/><path d="M45 30 l18-26 h34 l18 26"/><circle cx="80" cy="85" r="32"/></g>
+<text x="120" y="120" class="k">PHOTO NEEDED · B3</text>
+<text x="120" y="190" class="t">The cleaning team in uniform</text>
+<text x="120" y="250" class="b">The cleaning team (2 or 3 people) in VPFS uniform with the</text>
+<text x="120" y="300" class="b">trolley, relaxed, in the office or lobby. Faces fine with</text>
+<text x="120" y="350" class="b">written consent.</text>
+<text x="120" y="430" class="h">Avoid</text>
+<text x="120" y="478" class="b">Stock-style posing or thumbs up. Client staff in the</text>
+<text x="120" y="528" class="b">background.</text>
+<text x="120" y="810" class="f">Landscape 16:9 · export 1600 × 900 WebP under 250 KB · real photo only, no stock or AI</text>
 </svg>

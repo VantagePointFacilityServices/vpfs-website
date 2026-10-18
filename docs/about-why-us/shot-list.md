@@ -1,6 +1,6 @@
 # About and Why us shot list
 
-The About and Why us pages currently use 13 temporary flat illustrations (`assets/img/*-temp.svg`, tagged `data-temp-image`). They stand in for real photos under a dated exception to C-MKT-05 (vpos, v0.3). This list is the brief for the real photos that replace them.
+The About and Why us pages currently use 14 temporary images (`assets/img/*-temp.svg`, tagged `data-temp-image`). Since 2026-10-18 the six About images are "photo needed" cards: each one shows its shot code (A1–A3, B1–B3), the scene and what to avoid, so you can see on the page what goes where. The Why us images are still flat illustrations. They stand in for real photos under a dated exception to C-MKT-05 (vpos, v0.3). This list is the brief for the real photos that replace them.
 
 A phone camera is fine. Most shots can be taken in **one morning on one client site** (Session B), plus a few personal shots of Blake (Session A).
 
@@ -30,6 +30,7 @@ Name each file as in the tables below, dropping `-temp` and changing the extensi
 |---|---|---|---|---|---|
 | A1 | `about-blake-beach-temp.svg` | About, Founder | Blake at Currumbin or Palm Beach with a surfboard, walking to or from the water, or sitting on the sand. Face visible is fine. Morning light. | Blake Warton with his surfboard at Currumbin beach | Crowds with recognisable faces, other brands' logos on boards or clothes |
 | A2 | `about-blake-boys-temp.svg` | About, In Blake's words | Blake and his two boys on the beach at sunset, **from behind** (walking away or watching the water). | Blake and his two boys watching the sunset on a Gold Coast beach, seen from behind | **Any view of the boys' faces**, names on clothing, school uniforms |
+| A3 | `about-blake-systems-temp.svg` | About, How we work | Blake at his desk or kitchen table with a laptop open on the procedure library or a cleaning plan, working. Side-on or over the shoulder. | Blake Warton working on the written cleaning procedures at his laptop | Readable client names, prices or private details on screen; posing at the camera |
 
 ## Session B — one client site, before or after hours (one morning)
 
@@ -61,4 +62,4 @@ The tests currently expect the `-temp.svg` files (`site/test/about.test.js`, `si
 
 Easiest route: put the finished photos in one folder and ask Claude to do steps 1–4.
 
-About goes public once at least A1 is in place (`.scratch/about-and-why-us-rebuild/issues/open/05-about-and-why-us-go-live.md`), along with amaysim's OK to be named.
+About goes public once at least A1 is in place and the other About cards are replaced or removed (`.scratch/about-and-why-us-rebuild/issues/open/05-about-and-why-us-go-live.md`), along with amaysim's OK to be named.

@@ -19,9 +19,9 @@ describe("about.html founder story", () => {
     expect(html.toLowerCase()).not.toContain(w.toLowerCase());
   });
 
-  it("has three founder-area photo slots, each a temp image; boys' alt says from behind", () => {
+  it("has four founder-area photo slots, each a temp image; boys' alt says from behind", () => {
     const slots = Array.from(doc.querySelectorAll(".founder-section .image-slot"));
-    expect(slots).toHaveLength(3);
+    expect(slots).toHaveLength(4);
     for (const s of slots) {
       const img = s.querySelector("img[data-temp-image]");
       expect(img).not.toBeNull();
@@ -39,12 +39,32 @@ describe("about.html founder story", () => {
     expect(doc.body.textContent).not.toMatch(/to be added/i);
   });
 
-  it("hero details line has Pty Ltd, Reedy Creek, a tel: link and no ABN", () => {
-    const hero = doc.querySelector(".page-hero");
-    expect(hero.textContent).toContain("Pty Ltd");
-    expect(hero.textContent).toContain("Reedy Creek");
-    expect(hero.querySelector('a[href^="tel:"]')).not.toBeNull();
-    expect(hero.textContent).not.toContain("ABN");
+  it("hero details line has Pty Ltd, the ABN linked to ABN Lookup, Reedy Creek and a tel: link", () => {
+    const details = doc.querySelector(".page-hero .hero-details");
+    expect(details.textContent).toContain("Pty Ltd");
+    expect(details.textContent).toContain("ABN 89 700 018 775");
+    expect(details.querySelector('a[href="https://abr.business.gov.au/ABN/View?abn=89700018775"]')).not.toBeNull();
+    expect(details.textContent).toContain("Reedy Creek");
+    expect(details.querySelector('a[href^="tel:"]')).not.toBeNull();
+  });
+
+  it("hero sectors line links each service anchor", () => {
+    const links = Array.from(doc.querySelectorAll(".page-hero .hero-sectors a"), (a) => a.getAttribute("href"));
+    expect(links).toEqual(["offices", "strata", "education", "medical", "industrial"].map((k) => `services.html#${k}`));
+  });
+
+  it("every About image is a photo-needed card that names its shot-list code", () => {
+    const imgs = Array.from(doc.querySelectorAll("img[data-temp-image]"));
+    expect(imgs).toHaveLength(6);
+    const codes = imgs.map((img) => {
+      expect(img.getAttribute("alt")).toMatch(/^Photo placeholder: /);
+      const svg = readFileSync(resolve(__dirname, "..", img.getAttribute("src")), "utf8");
+      expect(svg).toContain("PHOTO NEEDED");
+      return svg.match(/PHOTO NEEDED · ([AB]\d)/)[1];
+    });
+    expect(codes).toEqual(["A1", "A2", "B1", "A3", "B2", "B3"]);
+    const shots = readFileSync(resolve(__dirname, "..", "..", "docs/about-why-us/shot-list.md"), "utf8");
+    for (const c of codes) expect(shots).toContain(`| ${c} |`);
   });
 
   it("How we work section mentions amaysim", () => {
@@ -84,7 +104,7 @@ describe("about.html lower half", () => {
     expect(sections.at(-1).classList.contains("final-cta")).toBe(true);
     expect(sections.at(-1).textContent).toContain("Talk to the Founder");
     const eyebrows = Array.from(doc.querySelectorAll("body > section:not(.page-hero):not([hidden]) .eyebrow"), (e) => e.textContent.trim());
-    expect(eyebrows).toEqual(["Founder", "How we work", "Our standard", "In Blake's words", "What we stand for", "Local families", "Paperwork", "Partner with us"]);
+    expect(eyebrows).toEqual(["Founder", "In Blake's words", "How we work", "Our standard", "What we stand for", "Local families", "Paperwork", "Partner with us"]);
   });
 
   it("keeps the Local families text out of the photo placeholder", () => {
@@ -114,19 +134,31 @@ describe("about.html lower half", () => {
     expect(s.textContent).toMatch(/award-equivalent rates/i);
   });
 
-  it("Paperwork copy: $20M cover and certificate, no insurer, ABN or memberships", () => {
+  it("Paperwork copy: $20M cover and certificate, ABN with lookup link, guarantee link; no insurer or memberships", () => {
     const s = section("Paperwork");
     expect(s.textContent).toContain("$20 million public liability");
     expect(s.textContent).toContain("certificate of currency");
-    expect(s.textContent).not.toMatch(/ABN|member|insurer|QBE|Allianz|CGU|WHS/i);
+    expect(s.textContent).toContain("ABN 89 700 018 775");
+    expect(s.querySelector('a[href="https://abr.business.gov.au/ABN/View?abn=89700018775"]')).not.toBeNull();
+    expect(s.querySelector('a[href="why-us.html#proof-guarantee"]')).not.toBeNull();
+    expect(s.textContent).not.toMatch(/re-clean|credit/i);
+    expect(s.textContent).not.toMatch(/member|insurer|QBE|Allianz|CGU|WHS/i);
   });
 
-  it("#team is hidden exactly while it has no .team-entry items, after Paperwork and before Partner", () => {
+  it("people, then hidden Team and Clients, then Paperwork and Partner", () => {
     const team = doc.querySelector("section#team");
     expect(team.hasAttribute("hidden")).toBe(team.querySelectorAll(".team-entry").length === 0);
-    const order = Array.from(doc.querySelectorAll("body > section")).map((x) => x.id === "team" ? "Team" : x.querySelector(".eyebrow")?.textContent);
-    expect(order.indexOf("Team")).toBe(order.indexOf("Paperwork") + 1);
-    expect(order.indexOf("Partner with us")).toBe(order.indexOf("Team") + 1);
+    const clients = doc.querySelector("section#clients");
+    expect(clients.hasAttribute("hidden")).toBe(clients.querySelectorAll(".client-entry").length === 0);
+    const order = Array.from(doc.querySelectorAll("body > section")).map((x) => x.id === "team" ? "Team" : x.id === "clients" ? "Clients" : x.querySelector(".eyebrow")?.textContent);
+    expect(order.indexOf("Team")).toBe(order.indexOf("Local families") + 1);
+    expect(order.indexOf("Clients")).toBe(order.indexOf("Team") + 1);
+    expect(order.indexOf("Paperwork")).toBe(order.indexOf("Clients") + 1);
+    expect(order.indexOf("Partner with us")).toBe(order.indexOf("Paperwork") + 1);
+  });
+
+  it("final CTA states the same-day call-back", () => {
+    expect(doc.querySelector(".final-cta .cta-callback").textContent).toBe("Enquire by 5pm on a business day and we'll call you back the same day.");
   });
 
   it("partner block links contact, names audiences, no money", () => {
