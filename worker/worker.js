@@ -1,7 +1,7 @@
 /**
  * Vantage Point — GHL Lead Scoring Worker (v3, two-stage lead gate + two-stage applicant funnel)
  *
- * Nine endpoints, routed by path. Most fire on GHL workflow webhooks, but
+ * Ten endpoints, routed by path. Most fire on GHL workflow webhooks, but
  * /lead, /gate and /slots are also called directly by the public browser (the
  * website's own two-step booking-gate JS), and /gate is additionally
  * called live by the AI Receptionist mid-call — see corsHeaders()/
@@ -14,7 +14,12 @@
  *                    contact_id, which the browser carries into /gate.
  *                    Never scores anything; conversion_page is a
  *                    pass-through tag and lead_channel is derived from
- *                    the visitor's utms/click ids/referrer.
+ *                    the visitor's utms/click ids/referrer. Then, best
+ *                    effort, ensures one open Sales Pipeline deal in New
+ *                    Lead (SALES_PIPELINE_ID / STAGE_NEW_LEAD_ID; needs the
+ *                    opportunities.readonly + opportunities.write scopes).
+ *                    Existing deals keep their stage; failures are only
+ *                    logged. /apply and /area-request never create deals.
  *
  *   POST /area-request — the Locations page's "Request a new area" form
  *                    (name, email, phone, postcode). Upserts the GHL
@@ -59,14 +64,10 @@
  *                    the relevant minimum, re-routes the contact out
  *                    of nurture into Standard/Priority scoring.
  *
- *   POST /outcome  — fires on two distinct pipeline events:
- *                      - walkthrough no-show (after reschedule
- *                        attempts are exhausted)
- *                      - proposal marked Lost after a completed
- *                        walkthrough
- *                    Both route the contact into their own nurture
- *                    segment, distinct from gate-stage DQ segments,
- *                    since these leads already passed qualification.
+ *   POST /outcome  — fires when a proposal is marked Lost after a
+ *                    completed walkthrough, routing the contact into
+ *                    its own nurture segment, distinct from gate-stage
+ *                    DQ segments. (No-show /outcome is retired.)
  *
  *   POST /apply    — fires from the browser on the careers and
  *                    subcontractor pages' Step 1 form (name, email,
@@ -343,7 +344,120 @@ async function handleLead(payload, env, request) {
   if (turnstile === "unverified") tags.push(TURNSTILE_UNVERIFIED_TAG);
   await addTagsInGHL(result.contactId, tags, env);
 
+  // Best-effort: never changes the response (see ensureNewLeadDeal).
+  await ensureNewLeadDeal(result.contactId, f, env);
+
   return jsonResponse({ contact_id: result.contactId });
+}
+
+// Every /lead ends with exactly one open Sales Pipeline deal in New Lead.
+// Search first (no duplicates); an existing deal keeps its stage — the
+// Worker never sends pipelineStageId on update — and only gets a name if
+// it has none. Any failure (incl. 401/403 before the token has
+// opportunities.* scopes) is logged and swallowed.
+async function ensureNewLeadDeal(contactId, f, env) {
+  try {
+    if (!env.SALES_PIPELINE_ID || !env.STAGE_NEW_LEAD_ID) return null;
+    const headers = {
+      Authorization: `Bearer ${env.GHL_VPFS_API_KEY}`,
+      "Content-Type": "application/json",
+      Version: GHL_API_VERSION,
+    };
+    const qs = new URLSearchParams({
+      location_id: env.GHL_VPFS_LOCATION_ID,
+      contact_id: contactId,
+      pipeline_id: env.SALES_PIPELINE_ID,
+      status: "open",
+    });
+    const searchRes = await fetch(`${GHL_API_BASE}/opportunities/search?${qs}`, { headers });
+    if (!searchRes.ok) {
+      console.error(`opportunity search failed for contact ${contactId}: ${searchRes.status}`);
+      return null;
+    }
+    const found = (await searchRes.json()).opportunities?.[0];
+    const person = `${f.firstName || ""} ${f.lastName || ""}`.trim();
+    const name = f.companyName ? `${f.companyName} — ${person}` : person;
+
+    if (!found) {
+      const res = await fetch(`${GHL_API_BASE}/opportunities/`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          pipelineId: env.SALES_PIPELINE_ID,
+          locationId: env.GHL_VPFS_LOCATION_ID,
+          contactId,
+          pipelineStageId: env.STAGE_NEW_LEAD_ID,
+          name,
+          status: "open",
+        }),
+      });
+      if (!res.ok) {
+        console.error(`opportunity create failed for contact ${contactId}: ${res.status}`);
+        return null;
+      }
+      const created = await res.json().catch(() => ({}));
+      return created?.opportunity?.id || created?.id || null;
+    } else if (!found.name && name) {
+      const res = await fetch(`${GHL_API_BASE}/opportunities/${found.id}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({ name }),
+      });
+      if (!res.ok) console.error(`opportunity update failed for contact ${contactId}: ${res.status}`);
+    }
+    return found?.id || null;
+  } catch (err) {
+    console.error(`opportunity call errored for contact ${contactId}: ${err?.message}`);
+    return null;
+  }
+}
+
+// /gate's GHL side: the tier tag (replaces the retired "Website Gate Tag
+// Mapping" workflow), the deal's value (budget x 12) and, for budget
+// nurture, status "abandoned". Best-effort — never throws, never changes
+// the /gate response. pipelineStageId is never sent on update.
+async function applyGateOutcomeToGHL(contactId, tier, dqReason, monthlyBudget, env) {
+  try {
+    const tag =
+      tier === "priority"
+        ? "priority-hot"
+        : tier === "standard" || tier === "standard-flagged"
+          ? "priority-warm"
+          : dqReason === "nurture-budget"
+            ? "nurture-budget"
+            : null;
+    if (tag) {
+      const r = await addTagsInGHL(contactId, [tag], env);
+      if (!r.success) console.error(`gate tag failed for contact ${contactId}: ${r.status}`);
+    }
+  } catch (err) {
+    console.error(`gate tag errored for contact ${contactId}: ${err?.message}`);
+  }
+  try {
+    const abandon = tier === "nurture" && dqReason === "nurture-budget";
+    if (!abandon && !(monthlyBudget > 0)) {
+      // Nothing to write — still make sure a deal exists (phone leads).
+      await ensureNewLeadDeal(contactId, {}, env);
+      return;
+    }
+    const dealId = await ensureNewLeadDeal(contactId, {}, env);
+    if (!dealId) return;
+    const body = {};
+    if (monthlyBudget > 0) body.monetaryValue = monthlyBudget * 12;
+    if (abandon) body.status = "abandoned";
+    const res = await fetch(`${GHL_API_BASE}/opportunities/${dealId}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${env.GHL_VPFS_API_KEY}`,
+        "Content-Type": "application/json",
+        Version: GHL_API_VERSION,
+      },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) console.error(`gate opportunity update failed for contact ${contactId}: ${res.status}`);
+  } catch (err) {
+    console.error(`gate opportunity errored for contact ${contactId}: ${err?.message}`);
+  }
 }
 
 // ---- /area-request — "REQUEST A NEW AREA" ------------------------------
@@ -833,6 +947,9 @@ async function handleGate(contactId, payload, env) {
       : tier === "standard" || tier === "standard-flagged"
         ? "call-within-15min"
         : "none";
+
+  // Before the write-back so the custom-field write stays the last GHL call.
+  await applyGateOutcomeToGHL(contactId, tier, dq.reason, f.monthlyBudget, env);
 
   const result = await writeBackToGHL(
     contactId,
