@@ -18,11 +18,16 @@
 // fits into the rest of the site/Worker/GHL flow.
 
 import { readAttribution, sessionStore } from "./utm.js";
+import { createSurveyOffer } from "./survey-offer.js";
 import { initTwoStepGate, pickerState, drawPicker } from "./two-step-gate.js";
 
 export { pickerState, drawPicker };
 
 var WORKER_BASE = "https://worker.vantagepointfacilityservices.com.au";
+
+// GHL facility-details survey base URL. Empty = no offer at all (ships dark;
+// the real URL is pasted here at go-live).
+export var FACILITY_SURVEY_URL = "";
 
 function marketingConsent(form) {
   var box = form.querySelector('input[name="marketing_consent"]');
@@ -54,14 +59,19 @@ function buildGatePayload(form, step2, helpers) {
   var get = helpers.fieldGetter(step2);
   var getFromForm = helpers.fieldGetter(form);
 
+  var customFields = {
+    facility_type: get("facility_type"),
+    monthly_budget: get("monthly_budget"),
+    postcode: getFromForm("postcode"),
+    cleaning_frequency: get("cleaning_frequency"),
+  };
+  // Optional: sent only when chosen.
+  var switchTiming = get("switch_timing");
+  if (switchTiming) customFields.switch_timing = switchTiming;
+
   return {
     contact_id: step2.dataset.contactId || "",
-    customFields: {
-      facility_type: get("facility_type"),
-      monthly_budget: get("monthly_budget"),
-      postcode: getFromForm("postcode"),
-      cleaning_frequency: get("cleaning_frequency"),
-    },
+    customFields: customFields,
   };
 }
 
@@ -91,8 +101,26 @@ function handleGateResult(data, ctx) {
   ctx.loadPicker(ctx.step2, ctx.submitBtn);
 }
 
-export function initBookingGate(form) {
+// Optional facility-details offer under the booking-confirmed panel only
+// (covers a fresh booking and the 409 already_booked path).
+function facilityOffer(surveyUrl) {
+  return createSurveyOffer({
+    getUrl: function () { return surveyUrl; },
+    panelIds: ["booking-confirmed"],
+    offerHeading: "Want a faster, more accurate quote?",
+    offerBody: "Share your facility details now and we\u2019ll arrive prepared. About 4 minutes, totally optional.",
+    nowLabel: "Add facility details now",
+    laterLabel: "Later \u2014 send me the link",
+    heading: "Your facility details",
+    subHeading: "about 4 minutes \u2014 skip anything you\u2019re unsure of",
+    frameTitle: "Facility details survey",
+  });
+}
+
+export function initBookingGate(form, opts) {
+  var surveyUrl = ((opts && opts.surveyUrl) || FACILITY_SURVEY_URL || "").trim();
   initTwoStepGate(form, {
+    onResultRevealed: surveyUrl ? facilityOffer(surveyUrl) : undefined,
     workerBase: WORKER_BASE,
     step1Endpoint: "/lead",
     step2Endpoint: "/gate",

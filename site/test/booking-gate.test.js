@@ -286,9 +286,10 @@ function mockGateOk(tier, dqFlag, { slots = SLOTS, slotsFail = false, token = "t
   return fn;
 }
 
+let surveyUrl = "";
 async function submitStep2(form, step2, fetchMock) {
   step2.dataset.contactId = "contact-abc";
-  initBookingGate(form);
+  initBookingGate(form, surveyUrl ? { surveyUrl } : undefined);
   global.fetch = fetchMock;
   step2.querySelector(".step2-submit").click();
   await flush();
@@ -401,6 +402,19 @@ describe("Step 2 submit", () => {
     expect(body.customFields.postcode).toBe("4211");
     expect(body.customFields.monthly_budget).toBe("3000");
     expect(body.customFields.cleaning_frequency).toBe("three_days_week");
+  });
+
+  it("omits switch_timing when blank and sends it when chosen", async () => {
+    const form = mountHomepageForm();
+    const step2 = form.querySelector(".booking-step-2");
+    await submitStep2(form, step2, mockGateOk("priority"));
+    expect(JSON.parse(global.fetch.mock.calls[0][1].body).customFields).not.toHaveProperty("switch_timing");
+
+    const form2 = mountHomepageForm();
+    const step2b = form2.querySelector(".booking-step-2");
+    step2b.insertAdjacentHTML("beforeend", '<input type="radio" name="switch_timing" value="ready_now" checked>');
+    await submitStep2(form2, step2b, mockGateOk("priority"));
+    expect(JSON.parse(global.fetch.mock.calls[0][1].body).customFields.switch_timing).toBe("ready_now");
   });
 
   it.each(["priority", "standard", "standard-flagged"])(
@@ -968,5 +982,73 @@ describe("Book walkthrough", () => {
     book.disabled = false;
     book.click();
     expect(global.fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe("Facility-details offer", () => {
+  const T = "2026-03-04T13:30:00+10:00";
+  const err = (status, body) => ({ ok: false, status, json: () => Promise.resolve(body) });
+  const URL_BASE = "https://survey.test/facility";
+  let form, step2;
+
+  async function openAndBook(bookResponse) {
+    form = mountHomepageForm();
+    step2 = form.querySelector(".booking-step-2");
+    await submitStep2(form, step2, mockGateOk("priority"));
+    step2.querySelector('.picker-day[data-date="2026-03-04"]').click();
+    step2.querySelector(`.picker-time[data-start="${T}"]`).click();
+    step2.querySelector('[name="site_address"]').value = "1 A St";
+    global.fetch = vi.fn().mockResolvedValue(bookResponse);
+    step2.querySelector(".picker-book").click();
+    await flush();
+  }
+  afterEach(() => { surveyUrl = ""; document.querySelectorAll('script[src*="form_embed.js"]').forEach((s) => s.remove()); });
+
+  it("offers after a booking with the PRD copy and no turnaround", async () => {
+    surveyUrl = URL_BASE;
+    await openAndBook(respond({ booked: true, start_time: T, end_time: "x" }));
+    const cta = step2.querySelector("#booking-confirmed .enrich-cta");
+    expect(cta.querySelector("h3").textContent).toBe("Want a faster, more accurate quote?");
+    expect(cta.querySelector("p").textContent).toBe("Share your facility details now and we\u2019ll arrive prepared. About 4 minutes, totally optional.");
+    expect(cta.querySelector(".enrich-now").textContent).toBe("Add facility details now");
+    expect(cta.querySelector(".enrich-skip").textContent).toBe("Later \u2014 send me the link");
+    expect(document.querySelectorAll('script[src*="form_embed.js"]').length).toBe(0);
+  });
+
+  it("offers after a 409 already_booked", async () => {
+    surveyUrl = URL_BASE;
+    await openAndBook(err(409, { error: "already_booked", start_time: "2026-03-10T09:00:00+10:00" }));
+    expect(step2.querySelector("#booking-confirmed .enrich-cta")).not.toBeNull();
+  });
+
+  it("Add now opens the prefilled survey, loads form_embed.js once, focuses the heading", async () => {
+    surveyUrl = URL_BASE;
+    await openAndBook(respond({ booked: true, start_time: T, end_time: "x" }));
+    step2.querySelector(".enrich-now").click();
+    const frame = step2.querySelector("iframe.enrich-frame");
+    expect(frame.getAttribute("src")).toBe(URL_BASE + "?email=alex%40example.com&phone=0400000000");
+    expect(step2.querySelector(".enrich-screen h3").textContent).toBe("Your facility details");
+    expect(document.activeElement).toBe(step2.querySelector(".enrich-screen h3"));
+    expect(document.querySelectorAll('script[src*="form_embed.js"]').length).toBe(1);
+  });
+
+  it("Later closes the dialog", async () => {
+    surveyUrl = URL_BASE;
+    await openAndBook(respond({ booked: true, start_time: T, end_time: "x" }));
+    step2.querySelector(".enrich-skip").click();
+    expect(form.querySelector(".booking-dialog").hasAttribute("open")).toBe(false);
+  });
+
+  it("empty URL constant shows no offer", async () => {
+    await openAndBook(respond({ booked: true, start_time: T, end_time: "x" }));
+    expect(step2.querySelector(".enrich-cta")).toBeNull();
+  });
+
+  it("never offers on the budget-nurture panel", async () => {
+    surveyUrl = URL_BASE;
+    form = mountHomepageForm();
+    step2 = form.querySelector(".booking-step-2");
+    await submitStep2(form, step2, mockGateOk("nurture", "nurture-budget"));
+    expect(step2.querySelector(".enrich-cta")).toBeNull();
   });
 });

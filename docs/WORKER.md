@@ -105,7 +105,7 @@ There are **two ways in**:
 | `/gate` | Website (Step 2), AI Receptionist | Visitor answers facility type / budget / frequency | Checks disqualifiers, scores, sets the tier, returns a signed `booking_token` for Priority / Standard leads |
 | `/slots` | Website (after Step 2) | Qualified visitor's Step 2 dialog opens the picker | Verifies the `booking_token`, reads GHL free slots (next 30 days, Brisbane time) from the calendar matching the token's tier, returns `{ timezone, window_days, days: [{ date, slots }] }`. 403 bad/expired token, 503 if `BOOKING_TOKEN_SECRET` unset, 502 `slots_unavailable` on a GHL error |
 | `/book` | Website (picker) | Visitor clicks Book on a chosen time | Body `{ booking_token, start_time, site_address }`. Verifies the token, then checks `start_time` is within now → now + 30 days (the same window `/slots` offers). If the contact already has an upcoming, non-cancelled appointment it creates nothing. Otherwise reads the calendar's slot length (GHL does not work out `endTime`) and creates a confirmed "Walkthrough" appointment on the tier's calendar for the token's contact with `toNotify: true` and `address` set to the trimmed `site_address`, then saves it to the contact with `PUT /contacts/{cid}` `{ address1 }` (best effort: if that call fails the booking still returns 200, with `contact_address_saved: false` added). Responses: `200 { booked: true, start_time, end_time }`; `400` missing/invalid/past/beyond-30-day `start_time`, or a missing, blank or over-200-character `site_address` (checked before any GHL call); `403` bad/expired token; `409 { error: "already_booked", start_time }`; `409 { error: "slot_unavailable" }` (GHL refused the slot); `502 { error: "booking_failed" }` (other GHL failure); `503` if `BOOKING_TOKEN_SECRET` unset |
-| `/enrich` | GHL workflow | Booked lead returns the optional facility-detail survey | Saves facility detail; can bump Standard → Priority |
+| `/enrich` | GHL workflow | Booked lead returns the optional facility-detail survey | Saves facility detail, derives `switch_timing` and re-scores; can bump Standard → Priority (large site only) |
 | `/confirm` | GHL workflow | Disqualified lead answers "is your budget/frequency flexible?" | Re-qualifies them if their flexed answer clears the minimum |
 | `/outcome` | GHL workflow | Proposal marked Lost (no-show is retired — handled in GHL) | Moves them to the right nurture segment |
 | `/apply` | Website (careers and subcontractor pages, Step 1) | Applicant submits first name, last name, email, phone, postcode and `engagement_track` (`employee` or `subcontractor`) | Creates or updates the contact in the **people** sub-account (via `peopleEnv`), writes `engagement_track`, `postcode`, `applicant_stage: "started"`, `applicant_captured_at`, tags `applicant-employee` / `applicant-subcontractor` (+ `turnstile-unverified`), returns `{ contact_id }`. Honeypot filled → `200 {ok:true}`, nothing created; Turnstile rejected → `403`; missing email/phone/postcode or bad track → `400`; `GHL_VPP_API_KEY` or `GHL_VPP_LOCATION_ID` unset → `503` (never falls back to the commercial account); upsert failure → `502` |
@@ -154,8 +154,8 @@ with exactly these keys:
 | Group | Custom field keys |
 |---|---|
 | Captured at Step 1 | `postcode`, `conversion_page`, `lead_channel`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_term`, `utm_content`, plus `marketing_consent` (Yes) and `marketing_consent_at` (Date/time) when the visitor ticked the opt-in |
-| Written by `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `lead_flags`, `sla_flag`, `lead_captured_at`, plus the visitor's Step 2 answers `facility_type`, `monthly_budget`, `cleaning_frequency` |
-| Read/written by `/enrich` | `size_sqm`, `headcount`, `floor_count`, `lifts_present`, `bathroom_count`, `kitchen_count`, `breakroom_count`, `meeting_room_count`, `special_requests`, `supplies_provided`, `equipment_needed`, `contract_renewal_date`, `contract_renewal_months_out` |
+| Written by `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `lead_flags`, `sla_flag`, `lead_captured_at`, plus the visitor's Step 2 answers `facility_type`, `monthly_budget`, `cleaning_frequency`, `switch_timing` (optional) |
+| Read/written by `/enrich` | `size_sqm`, `headcount`, `floor_count`, `lifts_present`, `bathroom_count`, `kitchen_count`, `breakroom_count`, `meeting_room_count`, `special_requests`, `supplies_provided`, `equipment_needed`, `lift_count`, `toilet_count`, `urinal_count`, `sink_count`, `bin_station_count`, `stair_flight_count`, `glass_entry_door_count`, `visit_days`, `cleaning_window`, `access_method`, `current_provider`, `current_contract_end_date`, `current_contract_months_out`, `switch_timing` and `lead_score` (re-scored). Never `contract_renewal_date` — that is *our* contract (Renewal pipeline) |
 | Read/written by `/confirm` | `budget_flexible`, `flexible_budget_amount`, `frequency_flexible`, `flexible_frequency`, `monthly_budget`, `cleaning_frequency`, `facility_type` |
 | Read/written by `/outcome` | `outcome_type`, `reschedule_attempts`, `loss_reason`, `noshow_attempts`, `lost_at_proposal_date` |
 | Applicants (**people** sub-account, not this one) | `engagement_track`, `postcode`, `lead_channel`, `utm_*`, `applicant_stage`, `applicant_tier`, `applicant_score`, `applicant_dq_flag`, `applicant_captured_at`, `applicant_screened_at`, `applicant_subcontractor_ready`, plus the Step 2 answers listed in [section 5](#5-the-job-applicant-journey). Full build steps: vpos `commercial/integrations/gohighlevel/pipelines/recruitment/people-subaccount-build-guide.md` |
@@ -197,7 +197,7 @@ stateDiagram-v2
     Captured --> StandardFlagged: /gate<br/>score under 30
     Captured --> Nurture: /gate<br/>failed a disqualifier
 
-    Standard --> Priority: /enrich<br/>large site or contract<br/>renewing within 6 months
+    Standard --> Priority: /enrich<br/>large site (2,000 m²+)
     StandardFlagged --> Priority: /enrich
     Nurture --> Priority: /confirm<br/>budget/frequency is flexible
     Nurture --> Standard: /confirm
@@ -367,6 +367,8 @@ booking:
 | Office or strata | 10 |
 | Construction / industrial | 5 |
 
+The optional **switch timing** answer adds to the *stored* `lead_score` only (capped at 100): `ready_now` +15, `within_3_months` +15, `3_to_6_months` +10, `6_to_12_months` +5, `12_plus_months` / `not_sure` +0. Tier, `sla_flag` and the booking token are worked out from the score *without* timing, so timing can never move a lead between calendars. `/confirm` re-scores use the same rule; `switchTimingPoints()` is exported for `/enrich`.
+
 **Budget alone decides the calendar.** Any $5,000+ budget scores at least
 70 + 10 + 5 = **85 → Priority**; a $1,500–$4,999 budget scores at most
 30 + 20 + 10 = **60 → Standard**. Frequency and facility type only rank
@@ -408,19 +410,28 @@ so phone and web leads are judged by identical rules.
 ### Stage 3 — `/enrich`: optional facility detail after booking
 
 After a Priority/Standard lead books, GHL can send them an optional survey
-(size, headcount, floors, bathrooms, kitchens, current contract renewal
-date, etc.). When it comes back, a GHL workflow webhooks `/enrich`.
+(size, headcount, floors, fixtures, access, current provider, current
+contract end date, etc.). When it comes back, a GHL workflow webhooks `/enrich`.
 
 ```mermaid
 flowchart TD
-    IN["POST /enrich<br/>facility detail survey answers"] --> SAVE["Save all detail fields<br/>+ months until contract renewal"]
+    IN["POST /enrich<br/>facility detail survey answers"] --> SAVE["Save all detail fields (absent keys not written)"]
+    SAVE --> DATE{"current_contract_end_date<br/>parseable?"}
+    DATE -- yes --> BAND["Write current_contract_months_out<br/>+ switch_timing band"]
+    BAND --> SC{"Payload has lead_score?"}
+    SC -- yes --> RESCORE["lead_score = min(100, score − old band pts + new band pts)"]
+    SC -- no --> NOSCORE["Score untouched"]
     SAVE --> Q1{"Site 2,000 m²+?"}
-    SAVE --> Q2{"Existing contract renews<br/>within 6 months?"}
     Q1 -- yes --> BUMP["lead_tier → priority"]
-    Q2 -- yes --> BUMP
     Q1 -- no --> KEEP["Tier unchanged"]
-    Q2 -- no --> KEEP
 ```
+
+`current_contract_end_date` maps to `switch_timing`: past date → `ready_now`;
+under 3 months → `within_3_months`; 3–6 → `3_to_6_months`; 6–12 →
+`6_to_12_months`; 12+ → `12_plus_months`. An unparseable date writes neither
+months nor band. The contract date **never** changes `lead_tier` — only
+`size_sqm ≥ 2000` does. `contract_renewal_date` / `contract_renewal_months_out`
+in a payload are ignored.
 
 `/enrich` can only move a lead **up** to Priority. It never disqualifies or
 demotes — that was settled at `/gate`.
@@ -600,8 +611,8 @@ To finish step 3:
 | Endpoint | Fields written |
 |---|---|
 | `/lead` | first/last name, `companyName` (only when non-blank), email, phone, `postcode`, `conversion_page`, `lead_channel` (always), `utm_*` (only those present), `marketing_consent` = `Yes` + `marketing_consent_at` (ISO timestamp) **only when the payload has `marketing_consent: true`** (strict boolean; unticked/missing/`"on"`/`1` send neither, so earlier consent is never cleared; withdrawal is GHL unsubscribe / DND), tag `website-lead` (plus `turnstile-unverified` if Cloudflare couldn't be reached) |
-| `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `lead_flags`, `sla_flag`, `lead_captured_at`, the Step 2 answers `facility_type` / `monthly_budget` / `cleaning_frequency` (only those given — blanks never overwrite), `utm_*` if sent |
-| `/enrich` | the facility detail fields, `contract_renewal_months_out`, and `lead_tier: priority` if bumped |
+| `/gate` | `lead_score`, `lead_tier`, `dq_flag`, `lead_flags`, `sla_flag`, `lead_captured_at`, the Step 2 answers `facility_type` / `monthly_budget` / `cleaning_frequency` / `switch_timing` (only those given; unknown `switch_timing` values are dropped) — blanks never overwrite), `utm_*` if sent |
+| `/enrich` | the facility detail fields, `current_contract_months_out`, `switch_timing`, re-scored `lead_score` (when sent), and `lead_tier: priority` if bumped |
 | `/confirm` | `dq_flag` (confirmed nurture), or `lead_score`, `lead_tier`, `dq_flag: none` plus the flexed `monthly_budget` / `cleaning_frequency` |
 | `/outcome` | `lead_tier: nurture`, `dq_flag`, `noshow_attempts` or `lost_at_proposal_date` |
 | `/apply` | (people sub-account) `engagement_track`, `postcode`, `applicant_stage: started`, `applicant_captured_at`, `utm_*` / `lead_channel` if sent |
@@ -771,7 +782,7 @@ All rules live at the top of `worker/worker.js` under `CONFIG`:
 | Frequency options and their cleans per week | `FREQUENCY_TO_WEEKLY` — plus the radio buttons in `site/index.html` and `site/contact.html` |
 | Minimum cleans per week | `MIN_WEEKLY_CLEANS` |
 | Facility type options and scores | The Step 2 `facility_type` select on each booking form (Office, Strata, Education, Childcare, Medical, Warehouse / industrial) — plus the facility points in `calculateGateScore()` (education, childcare and medical score 0) |
-| Contract-renewal bump window | `CONTRACT_RENEWAL_PRIORITY_THRESHOLD_MONTHS` |
+| Contract end date → switch-timing bands | `switchTimingFromMonths()` |
 | Tier cut-offs | `tierFromScore()` (leads), `applicantTierFromScore()` (applicants) |
 | The website-lead tag name | `WEBSITE_LEAD_TAG` — and update the GHL workflow trigger to match |
 
