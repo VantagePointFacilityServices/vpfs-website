@@ -226,7 +226,7 @@ describe("contact.html approved booking wording", () => {
     mountPage("contact.html");
     const text = document.body.textContent.replace(/\s+/g, " ");
     expect(text).toContain("Send the form below and pick a walkthrough time that suits you \u2014 your booking is confirmed instantly by SMS and email.");
-    expect(text).toContain("You pick a walkthrough time online \u2014 confirmed by SMS and email");
+    expect(text).toContain("You pick a walkthrough time online, confirmed by SMS and email");
     expect(text).not.toContain("within one business day");
     expect(text).not.toContain("We call to confirm a walkthrough time");
   });
