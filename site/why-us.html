@@ -105,8 +105,10 @@
       <div class="hero-inner">
         <h1>Why Gold Coast Businesses Choose Vantage Point for Commercial Cleaning</h1>
         <p class="lead">Plenty of companies can clean your building once. The real test is month seven: same team, same checklist, same result. That&rsquo;s what we&rsquo;ve built the business around.</p>
+        <!-- Price signal = Phase 1 lead-gate floor (vpos first-client-launch D9). Change both together; review at the 5-contract gate. -->
+        <p>Free, no-obligation walkthrough. Most sites start from $1,500 a month + GST.</p>
       </div>
-      <form class="assessment-form" data-conversion-page="website-why-us">
+      <form class="assessment-form" id="top-booking" data-conversion-page="website-why-us">
         <div class="form-fields contact-form">
           <h3 class="mt-0">Book a Walkthrough</h3>
           <div class="booking-error" role="alert"></div>
@@ -177,7 +179,7 @@
               </div>
             </div>
             <div class="form-row single">
-              <div><label for="hero-monthly-budget">Approx. monthly cleaning budget</label><input id="hero-monthly-budget" name="monthly_budget" type="number" min="0" aria-required="true"></div>
+              <div><label for="hero-monthly-budget">Approx. monthly cleaning budget (ex GST)</label><input id="hero-monthly-budget" name="monthly_budget" type="number" min="0" aria-required="true"></div>
             </div>
             <label>Cleaning frequency required</label>
             <div class="radio-row">
@@ -230,13 +232,30 @@
   </div>
 </section>
 
+<!-- ============ TRUST STRIP ============ -->
+<section class="trust-strip-section">
+  <div class="wrap">
+    <ul class="hero-checks on-light trust-strip">
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Police-checked team</span></li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Written cleaning plan before you sign</span></li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Next-business-day re-clean guarantee</span></li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Monthly report card</span></li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>Gold Coast &amp; Tweed</span></li>
+      <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>ABN <a href="https://abr.business.gov.au/ABN/View?abn=89700018775" rel="noopener" target="_blank">89 700 018 775</a></span></li>
+    </ul>
+  </div>
+</section>
+
 <!-- ============ DIFFERENTIATORS ============ -->
 <section class="commitments-section">
   <div class="wrap">
     <div class="section-head">
-      <span class="eyebrow">What you get</span>    </div>
+      <span class="eyebrow">Why businesses switch to us</span>
+      <h2>What usually goes wrong with cleaners, and what we do instead</h2>
+    </div>
     <div class="commitment-grid">
       <div class="commitment-card">
+        <p class="commitment-problem">Things get missed</p>
         <div class="commitment-head">
           <div class="commitment-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg></div>
           <h4>Every room, written down</h4>
@@ -244,25 +263,28 @@
         <p>Before we start, you get a room-by-room list of every task and how often it&rsquo;s done, like &ldquo;Restrooms: full clean, restock and polish fixtures, daily.&rdquo; It&rsquo;s what your team works to and what your price is based on. If it&rsquo;s not on the list, it&rsquo;s not in the price, and we&rsquo;ll tell you before we start. <a href="#proof-scope">See a sample below &darr;</a></p>
       </div>
       <div class="commitment-card">
+        <p class="commitment-problem">A different cleaner every few weeks</p>
         <div class="commitment-head">
           <div class="commitment-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
           <h4>The same faces on site</h4>
         </div>
-        <p>A dedicated team who know your building, police checked and inducted on your site, plus a direct line to us when something needs sorting.</p>
+        <p>We aim to keep the same team on your site, police checked and inducted on your site and scope, so they know your building and what matters to you.</p>
       </div>
       <div class="commitment-card">
+        <p class="commitment-problem">You&rsquo;re left chasing your cleaner</p>
         <div class="commitment-head">
           <div class="commitment-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.35 8.75a1 1 0 0 1-.65.01C8.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></div>
           <h4>A monthly report card</h4>
         </div>
-        <p>A schedule recap and before-and-after photos, sent by the 5th business day of each month. You shouldn&rsquo;t have to wonder whether the cleaning technicians came.</p>
+        <p>A schedule recap and before-and-after photos, sent by the 5th business day of each month. You shouldn&rsquo;t have to wonder whether the cleaning technicians came. And when you call or email, you reach the people who run the business.</p>
       </div>
       <div class="commitment-card">
+        <p class="commitment-problem">A new cleaner who doesn&rsquo;t know your building</p>
         <div class="commitment-head">
-          <div class="commitment-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg></div>
-          <h4>Products that suit the building</h4>
+          <div class="commitment-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.5-6.2L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.5 6.2L3 16"/><path d="M3 21v-5h5"/></svg></div>
+          <h4>Covered when someone&rsquo;s away</h4>
         </div>
-        <p>Chemicals chosen for your site and used to the label. Documented either way, so you always know what&rsquo;s being used around your people.</p>
+        <p>If your usual cleaner is away, their back-up has passed the same checks and works from the same written cleaning plan.</p>
       </div>
     </div>
   </div>
@@ -282,6 +304,7 @@
       <li><strong>We check in after your first two cleans.</strong> We&rsquo;ll ask how it&rsquo;s going and sort out anything that isn&rsquo;t right before we settle into the routine.</li>
       <li><strong>Every month, you hear from us.</strong> Your report card lands by the 5th business day.</li>
     </ol>
+    <p class="start-cta"><a class="btn btn-primary" href="#top-booking">Book a walkthrough</a> <span class="small">Free, no obligation.</span></p>
   </div>
 </section>
 
@@ -384,7 +407,8 @@
       <h3>Who has keys to our building?</h3>
       <p>Only the team inducted on your site.</p>
       <h3>What will it cost?</h3>
-      <p>We quote after a walkthrough, in writing, with the cleaning plan attached, so you know exactly what you&rsquo;re paying for.</p>
+      <!-- Price signal = Phase 1 lead-gate floor (vpos first-client-launch D9). Change both together; review at the 5-contract gate. -->
+      <p>Most sites start from $1,500 a month + GST. We quote after a walkthrough, in writing, with the cleaning plan attached, so you know exactly what you&rsquo;re paying for.</p>
     </div>
   </div>
 </section>

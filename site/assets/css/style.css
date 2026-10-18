@@ -716,6 +716,7 @@ a.suburb-tag:hover,a.suburb-tag:focus-visible{ border-color:currentColor; color:
 .commitment-icon svg{ width:100%; height:100%; }
 .commitment-card h4, .commitment-card h3{ margin:0; font-size:1.3rem; }
 .commitment-card p{ margin:0; color:var(--text-muted); }
+.commitment-card p.commitment-problem{ margin:0 0 var(--space-3); font-size:.8125rem; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
 @media (max-width:760px){ .commitment-grid{ grid-template-columns:1fr; } }
 .how-we-clean-section{ padding-bottom:calc(var(--section-y-lg) / 4); }
 @media (max-width:720px){ .how-we-clean-section{ padding-bottom:calc(var(--section-y) / 4); } }
@@ -1040,3 +1041,9 @@ a[href^="mailto:"]{ overflow-wrap:anywhere; }
 .enrich-actions{ display:flex; flex-wrap:wrap; gap:var(--space-3); align-items:center; }
 .enrich-cta .enrich-actions{ flex-direction:column; align-items:stretch; }
 .enrich-screen{ text-align:left; }
+
+/* Why us trust strip: one wrapping row of check-marked facts under the hero */
+.trust-strip-section{ background:var(--surface-wash); padding:var(--space-5) 0; }
+.trust-strip{ grid-template-columns:repeat(auto-fit,minmax(15rem,1fr)); gap:var(--space-3) var(--space-5); }
+.trust-strip li{ min-width:0; overflow-wrap:anywhere; }
+.start-cta{ margin-top:var(--space-6); display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-3); }

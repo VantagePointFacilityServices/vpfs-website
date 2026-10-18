@@ -34,3 +34,26 @@ describe("guarantee wording", () => {
     );
   });
 });
+
+describe("site-wide insurance claim guard", () => {
+  const exempt = ["subcontractor.html", "privacy.html", "terms.html"];
+  const checked = pages.filter((f) => !exempt.includes(f));
+  const claim = /\$20M|20 million|Insured for|public liability insurance\./i;
+  it("no visible element states the insurance claim", () => {
+    for (const f of checked) {
+      const doc = parse(f);
+      for (const el of doc.body.querySelectorAll("*")) {
+        if (el.closest("[hidden]") || ["SCRIPT", "STYLE", "NOSCRIPT"].includes(el.tagName)) continue;
+        const own = Array.from(el.childNodes).filter((n) => n.nodeType === 3).map((n) => n.textContent).join(" ");
+        expect(own, `${f} <${el.tagName.toLowerCase()}> shows an insurance claim`).not.toMatch(claim);
+      }
+    }
+  });
+  it("no meta description mentions the $20M claim", () => {
+    for (const f of checked) {
+      const doc = parse(f);
+      for (const m of doc.querySelectorAll('meta[name="description"], meta[property="og:description"], meta[name="twitter:description"]'))
+        expect(m.getAttribute("content"), `${f} meta`).not.toMatch(/\$20M|20 million/i);
+    }
+  });
+});

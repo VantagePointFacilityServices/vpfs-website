@@ -134,13 +134,20 @@ describe("about.html lower half", () => {
     expect(s.textContent).toMatch(/award-equivalent rates/i);
   });
 
-  it("Paperwork copy: $20M cover and certificate, ABN with lookup link, guarantee link; no insurer or memberships", () => {
+  it("Paperwork copy: insurance item kept but hidden; ABN with lookup link and guarantee link visible; no insurer or memberships", () => {
     const s = section("Paperwork");
-    expect(s.textContent).toContain("$20 million public liability");
-    expect(s.textContent).toContain("certificate of currency");
+    const hidden = s.querySelectorAll("[hidden]");
+    expect(hidden).toHaveLength(1);
+    expect(hidden[0].tagName).toBe("LI");
+    expect(hidden[0].textContent).toContain("$20 million public liability");
+    expect(hidden[0].textContent).toContain("certificate of currency");
+    const visible = Array.from(s.querySelectorAll("li")).filter((li) => !li.closest("[hidden]"));
+    expect(visible).toHaveLength(2);
+    expect(visible.map((li) => li.textContent).join(" ")).not.toContain("public liability");
+    expect(s.hasAttribute("hidden")).toBe(false);
     expect(s.textContent).toContain("ABN 89 700 018 775");
-    expect(s.querySelector('a[href="https://abr.business.gov.au/ABN/View?abn=89700018775"]')).not.toBeNull();
-    expect(s.querySelector('a[href="why-us.html#proof-guarantee"]')).not.toBeNull();
+    expect(s.querySelector('li:not([hidden]) a[href="https://abr.business.gov.au/ABN/View?abn=89700018775"]')).not.toBeNull();
+    expect(s.querySelector('li:not([hidden]) a[href="why-us.html#proof-guarantee"]')).not.toBeNull();
     expect(s.textContent).not.toMatch(/re-clean|credit/i);
     expect(s.textContent).not.toMatch(/member|insurer|QBE|Allianz|CGU|WHS/i);
   });

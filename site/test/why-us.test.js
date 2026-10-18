@@ -247,7 +247,10 @@ describe("why-us.html proof of work", () => {
 
 describe("why-us.html how we start, straight answers, real person", () => {
   const after = (a, b) => expect(doc.getElementById(a).compareDocumentPosition(doc.getElementById(b)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  it("orders sections W2, W3, W4, W4b, W5, W6, reviews, next step", () => {
+  it("orders sections: hero, trust strip, commitments, W2, W3, W4, W4b, W5, W6, reviews, next step", () => {
+    const fol = (a, b) => expect(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fol(doc.querySelector(".hero-inverse"), doc.querySelector(".trust-strip"));
+    fol(doc.querySelector(".trust-strip"), doc.querySelector(".commitments-section"));
     const ids = ["how-we-start", "proof", "proof-of-work", "straight-answers", "reach-us", "reviews"];
     for (let i = 1; i < ids.length; i++) after(ids[i - 1], ids[i]);
     const first = doc.querySelector(".commitments-section");
@@ -265,11 +268,25 @@ describe("why-us.html how we start, straight answers, real person", () => {
   });
   it("straight answers wording, no details or FAQPage", () => {
     const sec = doc.getElementById("straight-answers");
-    for (const w of ["12-month", "Flexible", "signature"]) expect(sec.textContent).toContain(w);
+    for (const w of ["12-month", "Flexible", "signature", "Most sites start from $1,500 a month + GST. We quote after a walkthrough, in writing, with the cleaning plan attached, so you know exactly what you\u2019re paying for."]) expect(sec.textContent).toContain(w);
     expect(Array.from(sec.querySelectorAll("h3"), (h) => h.textContent)).toHaveLength(4);
     expect(sec.querySelector("details")).toBeNull();
     expect(read("why-us.html")).not.toContain("<details");
     expect(read("why-us.html")).not.toContain("FAQPage");
+  });
+  it("price signal appears once in the hero and once in straight answers", () => {
+    const html = read("why-us.html");
+    expect(html.split("from $1,500 a month + GST").length - 1).toBe(2);
+    expect(doc.querySelector(".hero-inner").textContent).toContain("Free, no-obligation walkthrough. Most sites start from $1,500 a month + GST.");
+    expect(doc.getElementById("straight-answers").textContent).toContain("from $1,500 a month + GST");
+    expect(html.split("Price signal = Phase 1 lead-gate floor").length - 1).toBe(2);
+  });
+  it("price signal matches the Worker lead-gate floor", () => {
+    const worker = readFileSync(resolve(SITE, "..", "worker", "worker.js"), "utf8");
+    const m = worker.match(/const MIN_MONTHLY_SPEND = (\d+)/);
+    expect(m).not.toBeNull();
+    const figure = "$" + Number(m[1]).toLocaleString("en-US");
+    expect(text).toContain(`from ${figure} a month + GST`);
   });
   it("reach block has tel and mailto links and hours, no response time", () => {
     const sec = doc.getElementById("reach-us");
@@ -277,5 +294,66 @@ describe("why-us.html how we start, straight answers, real person", () => {
     expect(sec.querySelector('a[href="mailto:booking@vantagepointfacilityservices.com.au"]')).not.toBeNull();
     expect(sec.textContent).toContain("Mon\u2013Sun 7am\u20139pm");
     expect(sec.textContent).not.toMatch(/within|minutes|response/i);
+  });
+});
+
+describe("why-us.html switch-reasons cards", () => {
+  const sec = doc.querySelector(".commitments-section");
+  const cards = Array.from(sec.querySelectorAll(".commitment-card"));
+  it("has eyebrow and H2", () => {
+    expect(sec.querySelector(".eyebrow").textContent).toBe("Why businesses switch to us");
+    expect(sec.querySelector("h2").textContent).toBe("What usually goes wrong with cleaners, and what we do instead");
+  });
+  it("has 4 cards with H4s in order", () => {
+    expect(cards).toHaveLength(4);
+    expect(cards.map((c) => c.querySelector("h4").textContent)).toEqual(["Every room, written down", "The same faces on site", "A monthly report card", "Covered when someone\u2019s away"]);
+  });
+  it("each card has a non-empty problem line above its H4", () => {
+    for (const c of cards) {
+      const p = c.querySelector("p.commitment-problem");
+      expect(p.textContent.trim().length).toBeGreaterThan(0);
+      expect(p.compareDocumentPosition(c.querySelector("h4")) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+  });
+  it("drops 'Products that suit' and keeps proof row 3", () => {
+    for (const c of cards) expect(c.textContent).not.toContain("Products that suit");
+    expect(text).toContain("The right cloth and the right chemical");
+  });
+  it("card 2 says aim to keep the same team", () => {
+    expect(cards[1].textContent).toContain("aim to keep the same team");
+  });
+});
+
+describe("why-us.html trust strip and mid-page CTA", () => {
+  const strip = doc.querySelector("ul.trust-strip");
+  it("sits between hero and commitments", () => {
+    expect(strip).not.toBeNull();
+    const hero = doc.querySelector(".hero-inverse"), com = doc.querySelector(".commitments-section");
+    expect(hero.compareDocumentPosition(strip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(strip.compareDocumentPosition(com) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+  it("has six items in order", () => {
+    expect(Array.from(strip.querySelectorAll("li"), (li) => li.textContent.trim())).toEqual([
+      "Police-checked team", "Written cleaning plan before you sign", "Next-business-day re-clean guarantee",
+      "Monthly report card", "Gold Coast & Tweed", "ABN 89 700 018 775"]);
+  });
+  it("links the ABN to ABN Lookup", () => {
+    const a = strip.querySelector("a");
+    expect(a.textContent).toBe("89 700 018 775");
+    expect(a.getAttribute("href")).toBe("https://abr.business.gov.au/ABN/View?abn=89700018775");
+    expect(a.getAttribute("rel")).toBe("noopener");
+    expect(a.getAttribute("target")).toBe("_blank");
+  });
+  it("makes no insurance or price claims", () => {
+    expect(strip.textContent).not.toMatch(/insur|public liability|\$/i);
+  });
+  it("hero form is #top-booking and the CTA links to it", () => {
+    expect(doc.getElementById("top-booking")).not.toBeNull();
+    const sec = doc.getElementById("how-we-start");
+    const a = sec.querySelector('a[href="#top-booking"]');
+    expect(a.textContent).toBe("Book a walkthrough");
+    expect(a.classList.contains("btn-primary")).toBe(true);
+    expect(sec.querySelector("ol").contains(a)).toBe(false);
+    expect(sec.textContent).toContain("Free, no obligation.");
   });
 });
