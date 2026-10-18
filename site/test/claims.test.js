@@ -30,7 +30,7 @@ describe("guarantee wording", () => {
   });
   it("home page shows the re-clean/credit wording", () => {
     expect(parse("index.html").body.textContent.replace(/\s+/g, " ")).toContain(
-      "Not right? We re-clean within 24 hours — or credit the visit."
+      "Not right? We re-clean by the next business day — or credit the visit."
     );
   });
 });
