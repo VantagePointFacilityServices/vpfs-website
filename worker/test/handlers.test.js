@@ -666,6 +666,17 @@ describe("POST /enrich", () => {
       env,
     );
     expect(fieldsFromLastCall(global.fetch).lead_score).toBe("100");
+
+    // A contract that has already ended -> ready_now (+20) replaces within_3_months (+15).
+    global.fetch = mockGhlOk();
+    await worker.fetch(
+      makeRequest("/enrich", {
+        contact_id: "cr",
+        customFields: { lead_score: "75", switch_timing: "within_3_months", current_contract_end_date: isoIn(-10) },
+      }),
+      env,
+    );
+    expect(fieldsFromLastCall(global.fetch).lead_score).toBe("80");
   });
 
   it("leaves the score untouched without lead_score", async () => {
@@ -2172,7 +2183,7 @@ describe("switch_timing — ranks the lead_score only (PRD D15-D16)", () => {
   const base = { facility_type: "office", monthly_budget: "3000", postcode: "4211", cleaning_frequency: "daily" }; // base 60
 
   it.each([
-    ["ready_now", 75], ["within_3_months", 75], ["3_to_6_months", 70],
+    ["ready_now", 80], ["within_3_months", 75], ["3_to_6_months", 70],
     ["6_to_12_months", 65], ["12_plus_months", 60], ["not_sure", 60],
   ])("%s -> lead_score %i", async (value, expected) => {
     global.fetch = mockGhlOk();
@@ -2187,7 +2198,7 @@ describe("switch_timing — ranks the lead_score only (PRD D15-D16)", () => {
     const tEnv = { ...env, BOOKING_TOKEN_SECRET: "s3cret" };
     const json = await (await worker.fetch(
       makeRequest("/gate", { contact_id: "t2", customFields: { ...base, switch_timing: "ready_now" } }), tEnv)).json();
-    expect(json.score).toBe(75);
+    expect(json.score).toBe(80);
     expect(json.tier).toBe("standard");
     expect(json.sla_flag).toBe("call-within-15min");
     const token = await verifyBookingToken(json.booking_token, tEnv);
@@ -2225,7 +2236,7 @@ describe("switch_timing — ranks the lead_score only (PRD D15-D16)", () => {
       customFields: { dq_flag: "nurture-budget", budget_flexible: "yes", flexible_budget_amount: "3000",
         cleaning_frequency: "daily", facility_type: "office", switch_timing: "ready_now" },
     }), env)).json();
-    expect(json.score).toBe(75);
+    expect(json.score).toBe(80);
     expect(json.tier).toBe("standard");
   });
 });

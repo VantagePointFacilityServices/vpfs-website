@@ -367,7 +367,7 @@ booking:
 | Office or strata | 10 |
 | Construction / industrial | 5 |
 
-The optional **switch timing** answer adds to the *stored* `lead_score` only (capped at 100): `ready_now` +15, `within_3_months` +15, `3_to_6_months` +10, `6_to_12_months` +5, `12_plus_months` / `not_sure` +0. Tier, `sla_flag` and the booking token are worked out from the score *without* timing, so timing can never move a lead between calendars. `/confirm` re-scores use the same rule; `switchTimingPoints()` is exported for `/enrich`.
+The optional **switch timing** answer adds to the *stored* `lead_score` only (capped at 100): `ready_now` +20, `within_3_months` +15, `3_to_6_months` +10, `6_to_12_months` +5, `12_plus_months` / `not_sure` +0. Tier, `sla_flag` and the booking token are worked out from the score *without* timing, so timing can never move a lead between calendars. `/confirm` re-scores use the same rule; `switchTimingPoints()` is exported for `/enrich`.
 
 **Budget alone decides the calendar.** Any $5,000+ budget scores at least
 70 + 10 + 5 = **85 → Priority**; a $1,500–$4,999 budget scores at most

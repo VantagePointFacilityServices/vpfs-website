@@ -947,7 +947,7 @@ function calculateGateScore(f) {
 // stored lead_score ONLY — tier, SLA flag and booking token come from the
 // base score, so the budget-only calendar rule holds.
 const SWITCH_TIMING_POINTS = {
-  ready_now: 15,
+  ready_now: 20,
   within_3_months: 15,
   "3_to_6_months": 10,
   "6_to_12_months": 5,
