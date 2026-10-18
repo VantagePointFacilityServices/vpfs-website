@@ -28,9 +28,9 @@ describe("guarantee wording", () => {
   it("no page contains '100% Satisfaction Guarantee'", () => {
     for (const f of pages) expect(readFileSync(resolve(dir, f), "utf8")).not.toMatch(/100% Satisfaction Guarantee/i);
   });
-  it("home page shows the re-clean/credit wording", () => {
+  it("home page shows the fixed-or-on-us wording", () => {
     expect(parse("index.html").body.textContent.replace(/\s+/g, " ")).toContain(
-      "Not right? We re-clean by the next business day — or credit the visit."
+      "Not right? Fixed by the next business day, or that visit's on us."
     );
   });
 });
