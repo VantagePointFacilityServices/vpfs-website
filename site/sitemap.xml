@@ -85,6 +85,10 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://www.vantagepointfacilityservices.com.au/about.html</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://www.vantagepointfacilityservices.com.au/privacy.html</loc>
     <priority>0.3</priority>
   </url>
