@@ -73,13 +73,14 @@ reads. Setup runbooks live elsewhere — this file points to them.
 - **Add tags through `POST /contacts/{id}/tags`**, not in the upsert body
   (the upsert can overwrite a returning contact's tags). **Tag Added fires
   only the first time** a contact gets a tag.
+- **`/gate` now writes the tier tag and deal itself** (`priority-hot` / `priority-warm` / `nurture-budget` via add-tags; deal `monetaryValue` = budget × 12; budget nurture → deal `status: abandoned`, found or created in New Lead). The GHL "Website Gate Tag Mapping" workflow was never built and is retired — do not build it. All best effort.
 - **`/gate` returns the tier as `tier`**, not `lead_tier` — the GHL voice
   agent's webhook action has to map it.
 - **Inbound Webhook triggers are premium (per-run cost) and can't hand a
   contact ID back** to the website — that's why the site goes through the
   Worker instead.
 - **Private Integration tokens:** create them inside the *sub-account*, not
-  agency view; scopes `contacts.write` + `contacts.readonly`; shown once.
+  agency view; scopes `contacts.write` + `contacts.readonly` + `opportunities.readonly` + `opportunities.write` (the latter two let `/lead` create the New Lead deal; vars `SALES_PIPELINE_ID`, `STAGE_NEW_LEAD_ID` in `wrangler.toml`); shown once.
   Name the Worker's one "Cloudflare Worker – Lead Scoring".
 - **Ask AI** is good for fields, tags and workflow drafts but may not
   finish Voice AI settings (webhook response mapping, call routing) — check

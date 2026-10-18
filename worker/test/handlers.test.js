@@ -513,8 +513,8 @@ describe("POST /gate", () => {
     expect(json.sla_flag).toBe("call-within-5min");
     expect(json.dq_flag).toBe("none");
 
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-    const [url, options] = global.fetch.mock.calls[0];
+    expect(global.fetch).toHaveBeenCalledTimes(2); // tag add + custom-field write
+    const [url, options] = global.fetch.mock.calls[1];
     expect(url).toBe("https://services.leadconnectorhq.com/contacts/c1");
     expect(options.method).toBe("PUT");
     expect(options.headers.Authorization).toBe("Bearer test-key");
@@ -546,7 +546,7 @@ describe("POST /gate", () => {
   });
 
   it("surfaces a failed GHL write without throwing", async () => {
-    global.fetch = vi.fn().mockResolvedValue(new Response("server error", { status: 500 }));
+    global.fetch = vi.fn(async () => new Response("server error", { status: 500 }));
     const req = makeRequest("/gate", {
       contact_id: "c3",
       customFields: {
@@ -1613,7 +1613,7 @@ describe("booking token", () => {
     expect(json).not.toHaveProperty("booking_token");
     expect(json.tier).toBe("priority");
     expect(json.stage).toBe("gate");
-    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(global.fetch).toHaveBeenCalledTimes(2); // tag add + custom-field write
   });
 
   it("signBookingToken returns null without a secret", async () => {
@@ -2106,5 +2106,208 @@ describe("Step 3 — applicant interview booking (/slots, /book)", () => {
       expect((await bookFor(await tok(claims))).status).toBe(403);
     }
     expect(global.fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe("POST /lead — Sales Pipeline deal", () => {
+  const oenv = { ...env, SALES_PIPELINE_ID: "pipe-1", STAGE_NEW_LEAD_ID: "stage-new" };
+  const lead = { first_name: "Alex", last_name: "Rowe", email: "a@example.com", phone: "0400000000", company_name: "Acme" };
+  const json = (b, status = 200) => new Response(JSON.stringify(b), { status });
+  const oppCalls = (m) => m.mock.calls.filter(([u]) => u.includes("/opportunities"));
+
+  function mockWith(searchResult) {
+    return vi.fn(async (url) => {
+      if (url.includes("/contacts/upsert")) return json({ contact: { id: "c-9" } });
+      if (url.includes("/tags")) return json({});
+      if (url.includes("/opportunities/search")) return searchResult();
+      return json({});
+    });
+  }
+
+  it("creates one New Lead deal when none is open", async () => {
+    global.fetch = mockWith(() => json({ opportunities: [] }));
+    const res = await worker.fetch(makeRequest("/lead", lead), oenv);
+    expect(await res.json()).toEqual({ contact_id: "c-9" });
+    const calls = oppCalls(global.fetch);
+    expect(calls).toHaveLength(2);
+    const search = new URL(calls[0][0]);
+    expect(search.searchParams.get("contact_id")).toBe("c-9");
+    expect(search.searchParams.get("pipeline_id")).toBe("pipe-1");
+    expect(search.searchParams.get("status")).toBe("open");
+    expect(calls[1][0]).toBe("https://services.leadconnectorhq.com/opportunities/");
+    expect(calls[1][1].method).toBe("POST");
+    expect(JSON.parse(calls[1][1].body)).toEqual({
+      pipelineId: "pipe-1", locationId: "loc-123", contactId: "c-9",
+      pipelineStageId: "stage-new", name: "Acme — Alex Rowe", status: "open",
+    });
+  });
+
+  it("names the deal with just the person when company is blank", async () => {
+    global.fetch = mockWith(() => json({ opportunities: [] }));
+    await worker.fetch(makeRequest("/lead", { ...lead, company_name: "" }), oenv);
+    expect(JSON.parse(oppCalls(global.fetch)[1][1].body).name).toBe("Alex Rowe");
+  });
+
+  it("creates nothing and never sends a stage when a deal is open", async () => {
+    global.fetch = mockWith(() => json({ opportunities: [{ id: "o-1", name: "Existing" }] }));
+    await worker.fetch(makeRequest("/lead", lead), oenv);
+    const calls = oppCalls(global.fetch);
+    expect(calls).toHaveLength(1);
+    expect(global.fetch.mock.calls.some(([, o]) => o?.body?.includes("pipelineStageId"))).toBe(false);
+  });
+
+  it("fills a blank name on the existing deal without a stage", async () => {
+    global.fetch = mockWith(() => json({ opportunities: [{ id: "o-1", name: "" }] }));
+    await worker.fetch(makeRequest("/lead", lead), oenv);
+    const calls = oppCalls(global.fetch);
+    expect(calls[1][0]).toBe("https://services.leadconnectorhq.com/opportunities/o-1");
+    expect(calls[1][1].method).toBe("PUT");
+    expect(JSON.parse(calls[1][1].body)).toEqual({ name: "Acme — Alex Rowe" });
+  });
+
+  it.each([
+    ["403", () => json({ message: "forbidden" }, 403)],
+    ["500", () => json({}, 500)],
+    ["network", () => { throw new Error("down"); }],
+  ])("still returns the normal success when search fails (%s)", async (_n, fail) => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    global.fetch = mockWith(fail);
+    const res = await worker.fetch(makeRequest("/lead", lead), oenv);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ contact_id: "c-9" });
+  });
+
+  it("still succeeds when the create call fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    global.fetch = vi.fn(async (url, o) => {
+      if (url.includes("/contacts/upsert")) return json({ contact: { id: "c-9" } });
+      if (url.includes("/opportunities/search")) return json({ opportunities: [] });
+      if (url.endsWith("/opportunities/")) return json({}, 422);
+      return json({});
+    });
+    const res = await worker.fetch(makeRequest("/lead", lead), oenv);
+    expect(await res.json()).toEqual({ contact_id: "c-9" });
+  });
+
+  it("writes nothing to GHL on honeypot or Turnstile rejection", async () => {
+    global.fetch = mockWith(() => json({ opportunities: [] }));
+    await worker.fetch(makeRequest("/lead", { ...lead, url: "spam" }), oenv);
+    const r = await worker.fetch(makeRequest("/lead", lead), { ...oenv, TURNSTILE_SECRET_KEY: "s" });
+    expect(r.status).toBe(403);
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it("/apply and /area-request make no opportunity calls", async () => {
+    global.fetch = mockWith(() => json({ opportunities: [] }));
+    const penv = { ...oenv, GHL_VPP_API_KEY: "k", GHL_VPP_LOCATION_ID: "p" };
+    await worker.fetch(makeRequest("/area-request", { ...lead, postcode: "4870" }), penv);
+    await worker.fetch(makeRequest("/apply", { ...lead, postcode: "4870", engagement_track: "employee" }), penv);
+    expect(global.fetch).toHaveBeenCalled();
+    expect(oppCalls(global.fetch)).toHaveLength(0);
+  });
+});
+
+describe("POST /gate — tier tag, deal value, budget abandon", () => {
+  const oenv = { ...env, SALES_PIPELINE_ID: "pipe-1", STAGE_NEW_LEAD_ID: "stage-new" };
+  const json = (b, status = 200) => new Response(JSON.stringify(b), { status });
+  const gate = (budget, extra = {}) =>
+    worker.fetch(
+      makeRequest("/gate", { contact_id: "c-1", customFields: { facility_type: "office", monthly_budget: budget, cleaning_frequency: "daily", postcode: "4217", ...extra } }),
+      oenv
+    );
+  const mk = ({ open = true, failTag = false, failOpp = false } = {}) =>
+    vi.fn(async (url, o) => {
+      if (url.includes("/opportunities/search")) return json({ opportunities: open ? [{ id: "o-1", name: "X" }] : [] });
+      if (url.endsWith("/opportunities/")) return failOpp ? json({}, 500) : json({ opportunity: { id: "o-new" } });
+      if (url.includes("/opportunities/")) return failOpp ? json({}, 500) : json({});
+      if (url.includes("/tags")) return failTag ? json({}, 500) : json({});
+      return json({ contact: { id: "c-1" } });
+    });
+  const tagBodies = (m) => m.mock.calls.filter(([u]) => u.includes("/tags")).map(([, o]) => JSON.parse(o.body).tags);
+  const puts = (m) => m.mock.calls.filter(([u, o]) => u.includes("/opportunities/") && o?.method === "PUT");
+
+  it("tags per tier via add-tags", async () => {
+    for (const [b, tag] of [[6000, "priority-hot"], [2000, "priority-warm"], [1000, "nurture-budget"]]) {
+      global.fetch = mk();
+      await gate(b);
+      expect(tagBodies(global.fetch)).toEqual([[tag]]);
+    }
+    global.fetch = mk();
+    await gate(0, { cleaning_frequency: "monthly", facility_type: "x" });
+    expect(tagBodies(global.fetch)).toEqual([["priority-warm"]]);
+  });
+
+  it("sets monetaryValue = budget x 12; none without a budget", async () => {
+    global.fetch = mk();
+    await gate(6000);
+    expect(JSON.parse(puts(global.fetch)[0][1].body)).toEqual({ monetaryValue: 72000 });
+    global.fetch = mk();
+    await gate(0);
+    expect(puts(global.fetch)).toHaveLength(0);
+  });
+
+  it("budget nurture abandons the open deal, no stage", async () => {
+    global.fetch = mk();
+    await gate(1000);
+    const body = JSON.parse(puts(global.fetch)[0][1].body);
+    expect(body).toEqual({ monetaryValue: 12000, status: "abandoned" });
+    expect(body.pipelineStageId).toBeUndefined();
+  });
+
+  it("creates a New Lead deal when none is open, then abandons it", async () => {
+    global.fetch = mk({ open: false });
+    await gate(1000);
+    const post = global.fetch.mock.calls.find(([u]) => u.endsWith("/opportunities/"));
+    expect(JSON.parse(post[1].body).pipelineStageId).toBe("stage-new");
+    expect(puts(global.fetch)[0][0]).toContain("/opportunities/o-new");
+    expect(JSON.parse(puts(global.fetch)[0][1].body).status).toBe("abandoned");
+  });
+
+  it("names a /gate-created deal from the contact (phone leads never call /lead)", async () => {
+    const base = mk({ open: false });
+    global.fetch = vi.fn(async (url, o) => {
+      if (url.endsWith("/contacts/c-1") && !o?.method) {
+        return json({ contact: { id: "c-1", firstName: "Sam", lastName: "Lee", companyName: "Acme" } });
+      }
+      return base(url, o);
+    });
+    await gate(6000);
+    const post = global.fetch.mock.calls.find(([u]) => u.endsWith("/opportunities/"));
+    expect(JSON.parse(post[1].body).name).toBe("Acme — Sam Lee");
+  });
+
+  it("falls back to a non-empty deal name when the contact lookup fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const base = mk({ open: false });
+    global.fetch = vi.fn(async (url, o) => {
+      if (url.endsWith("/contacts/c-1") && !o?.method) return json({}, 500);
+      return base(url, o);
+    });
+    await gate(6000);
+    const post = global.fetch.mock.calls.find(([u]) => u.endsWith("/opportunities/"));
+    expect(JSON.parse(post[1].body).name).toBeTruthy();
+  });
+
+  it("failing tag/opportunity calls leave the body intact", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    global.fetch = mk({ failTag: true, failOpp: true });
+    const res = await worker.fetch(
+      makeRequest("/gate", { contact_id: "c-1", customFields: { facility_type: "office", monthly_budget: 6000, cleaning_frequency: "daily", postcode: "4217" } }),
+      { ...oenv, BOOKING_TOKEN_SECRET: "s3cret" }
+    );
+    const body = await res.json();
+    expect(body.tier).toBe("priority");
+    expect(body.booking_token).toBeTruthy();
+  });
+
+  it("thrown tag/opportunity errors are swallowed", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const base = mk();
+    global.fetch = vi.fn(async (url, o) => {
+      if (url.includes("/tags") || (url.includes("/opportunities/o-1") && o?.method === "PUT")) throw new Error("boom");
+      return base(url, o);
+    });
+    const res = await gate(6000);
+    expect((await res.json()).tier).toBe("priority");
   });
 });

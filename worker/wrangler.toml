@@ -34,6 +34,11 @@ CALENDAR_INTERVIEW_EMPLOYEE_ID = "yhSvwfjksy7UlEWYW94A"
 CALENDAR_INTERVIEW_SUBCONTRACTOR_ID = "CJrzOKAkqowJzzzlkh5w"
 BOOKING_TIMEZONE = "Australia/Brisbane"
 
+# Sales Pipeline + its New Lead stage: /lead creates the web deal here
+# (needs opportunities.readonly + opportunities.write on the GHL token).
+SALES_PIPELINE_ID = "4l7XRdVyg4b7nnd5sfHY"
+STAGE_NEW_LEAD_ID = "5e5094a0-6609-4694-9e3e-bfba5adf23ac"
+
 # Cloudflare provisions and manages the DNS record for this automatically
 # on deploy — do not also add it to dns/zones/*.yaml (see dns/README.md).
 [[routes]]

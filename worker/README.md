@@ -75,6 +75,7 @@ targets, per Volume 4 Section 2.5c:
   Secrets and variables → Actions), scoped to just
   `Account:Workers Scripts:Edit` for this account — it needs no zone-level
   or DNS permissions.
+- The Worker has 10 endpoints. `/lead` also creates the contact's New Lead deal in the Sales Pipeline (best effort; vars `SALES_PIPELINE_ID` / `STAGE_NEW_LEAD_ID`), which needs the `opportunities.readonly` + `opportunities.write` scopes on `GHL_VPFS_API_KEY`.
 - Set the `GHL_VPFS_API_KEY` Worker secret directly with Wrangler (not a GitHub
   secret — this is the Worker's own runtime credential):
   `wrangler secret put GHL_VPFS_API_KEY`.
@@ -87,7 +88,7 @@ targets, per Volume 4 Section 2.5c:
 `checkApplicantAreaDisqualifier`/`checkApplicantDisqualifiers`/
 `calculateApplicantScore`/`applicantTierFromScore` (applicants) have pure,
 network-free unit tests (`test/scoring.test.js`,
-`test/applicant-scoring.test.js`). All seven handlers (`handleLead`,
+`test/applicant-scoring.test.js`). The handlers (`handleLead`,
 `handleGate`, `handleEnrich`, `handleConfirm`, `handleOutcome`, `handleApply`,
 `handleApplyScreen`) are exercised end-to-end through the exported `fetch`
 entry point in `test/handlers.test.js`, with `writeBackToGHL`'s `fetch`
