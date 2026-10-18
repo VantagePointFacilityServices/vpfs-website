@@ -104,14 +104,6 @@ const MIN_MONTHLY_SPEND = 1500; // under this -> nurture-budget
 const PRIORITY_MONTHLY_SPEND = 5000; // at or over this -> always Priority (see calculateGateScore)
 const MIN_WEEKLY_CLEANS = 3; // hard floor — anything under this is DQ'd
 
-// A lead's EXISTING cleaning contract (with another provider) renewing
-// within this many months means they're actually free to switch soon —
-// worth prioritising ahead of leads locked into a longer term, even if
-// otherwise similarly scored. Stage 2a only (see handleEnrich) — never
-// gates Stage 1 booking, since not knowing this yet (or not having an
-// existing contract at all) isn't a reason to deprioritise anyone.
-const CONTRACT_RENEWAL_PRIORITY_THRESHOLD_MONTHS = 6;
-
 const GHL_API_BASE = "https://services.leadconnectorhq.com";
 const GHL_API_VERSION = "2021-07-28";
 // Calendars API (free-slots) is versioned separately from the Contacts API.
@@ -819,8 +811,10 @@ async function handleGate(contactId, payload, env) {
     tier = "nurture";
     score = 0;
   } else {
-    score = calculateGateScore(f);
-    tier = tierFromScore(score);
+    // Tier comes from the base score; timing only lifts the stored score.
+    const base = calculateGateScore(f);
+    tier = tierFromScore(base);
+    score = Math.min(100, base + switchTimingPoints(f.switchTiming));
   }
 
   // Speed-to-lead: the SLA flag written to the contact drives GHL workflow
@@ -850,6 +844,7 @@ async function handleGate(contactId, payload, env) {
         facility_type: f.facilityType,
         monthly_budget: f.monthlyBudget || undefined,
         cleaning_frequency: f.frequency,
+        switch_timing: f.switchTiming || undefined,
       }),
       ...stripUndefined(utm),
     },
@@ -896,6 +891,7 @@ function extractGateFields(payload) {
     monthlyBudget: Number(cf.monthly_budget) || 0,
     postcode: cf.postcode || "",
     frequency: (cf.cleaning_frequency || "").toLowerCase(),
+    switchTiming: normalizeSwitchTiming(cf.switch_timing),
   };
 }
 
@@ -947,6 +943,28 @@ function calculateGateScore(f) {
   return Math.min(score, 100);
 }
 
+// Switch-timing ranking (PRD D15-D16): optional Step 2 answer. Adds to the
+// stored lead_score ONLY — tier, SLA flag and booking token come from the
+// base score, so the budget-only calendar rule holds.
+const SWITCH_TIMING_POINTS = {
+  ready_now: 20,
+  within_3_months: 15,
+  "3_to_6_months": 10,
+  "6_to_12_months": 5,
+  "12_plus_months": 0,
+  not_sure: 0,
+};
+
+// Returns the normalised value, or "" for blank/unknown.
+function normalizeSwitchTiming(value) {
+  const v = String(value || "").toLowerCase();
+  return Object.hasOwn(SWITCH_TIMING_POINTS, v) ? v : "";
+}
+
+function switchTimingPoints(value) {
+  return SWITCH_TIMING_POINTS[normalizeSwitchTiming(value)] ?? 0;
+}
+
 function tierFromScore(score) {
   if (score >= 70) return "priority";
   if (score >= 30) return "standard";
@@ -960,46 +978,33 @@ function tierFromScore(score) {
 async function handleEnrich(contactId, payload, env) {
   const cf = payload.customFields || payload.custom_fields || {};
 
-  const monthsUntilRenewal = monthsUntilContractRenewal(cf.contract_renewal_date);
+  // Incumbent's contract end date (PRD D4). `contract_renewal_date` is OUR
+  // contract (Renewal pipeline) and is deliberately never read or written.
+  const monthsOut = monthsUntilContractRenewal(cf.current_contract_end_date);
+  const newTiming = monthsOut === null ? "" : switchTimingFromMonths(monthsOut);
 
-  const detailFields = {
-    size_sqm: cf.size_sqm,
-    headcount: cf.headcount,
-    floor_count: cf.floor_count,
-    lifts_present: cf.lifts_present,
-    bathroom_count: cf.bathroom_count,
-    kitchen_count: cf.kitchen_count,
-    breakroom_count: cf.breakroom_count,
-    meeting_room_count: cf.meeting_room_count,
-    special_requests: cf.special_requests,
-    supplies_provided: cf.supplies_provided,
-    equipment_needed: cf.equipment_needed,
-    // Raw date kept for the walkthrough team's reference; the rounded
-    // months-out figure is what GHL views/reports can actually sort or
-    // filter on to prioritise the closest renewals first.
-    contract_renewal_date: cf.contract_renewal_date,
-    contract_renewal_months_out:
-      monthsUntilRenewal === null ? undefined : Math.round(monthsUntilRenewal),
-  };
+  const detailFields = {};
+  for (const key of ENRICH_PASSTHROUGH_KEYS) detailFields[key] = cf[key];
+  if (monthsOut !== null) {
+    detailFields.current_contract_months_out = Math.round(monthsOut);
+    detailFields.switch_timing = newTiming;
+    // Re-score only when the payload carries a score: swap old band points
+    // for the new band's. Tier is never recomputed from this.
+    const leadScore = Number(cf.lead_score);
+    if (cf.lead_score !== undefined && cf.lead_score !== null && cf.lead_score !== "" && Number.isFinite(leadScore)) {
+      detailFields.lead_score = Math.max(
+        0,
+        Math.min(100, leadScore - switchTimingPoints(cf.switch_timing) + switchTimingPoints(newTiming)),
+      );
+    }
+  }
 
-  // Optional score bump: either a large facility OR an existing cleaning
-  // contract (with another provider) renewing soon can independently
-  // justify Standard -> Priority. A near-term renewal means the prospect
-  // is actually free to switch providers soon — the whole reason this
-  // signal is worth reprioritising for, same as size_sqm already does for
-  // facility scale. Neither DQ's nor demotes; DQ was already decided at
-  // the gate.
+  // Tier bump: only a large facility. Contract timing never moves the tier.
+  // Never demotes; DQ was already decided at the gate.
   const sizeSqm = Number(cf.size_sqm) || 0;
   const bumpReasons = [];
   if (sizeSqm >= 2000) {
     bumpReasons.push("large-facility");
-  }
-  if (
-    monthsUntilRenewal !== null &&
-    monthsUntilRenewal >= 0 &&
-    monthsUntilRenewal <= CONTRACT_RENEWAL_PRIORITY_THRESHOLD_MONTHS
-  ) {
-    bumpReasons.push("near-term-contract-renewal");
   }
   const tierBump = bumpReasons.length > 0 ? "priority" : null;
 
@@ -1017,6 +1022,30 @@ async function handleEnrich(contactId, payload, env) {
     bump_reasons: bumpReasons,
     ghl_update: result,
   });
+}
+
+// Facility-details survey keys (PRD D1) saved as received; absent keys are
+// not written. site_photos is stored by GHL itself.
+const ENRICH_PASSTHROUGH_KEYS = [
+  "facility_type", "size_sqm", "headcount", "floor_count", "lift_count",
+  "toilet_count", "urinal_count", "sink_count", "kitchen_count",
+  "breakroom_count", "meeting_room_count", "bin_station_count",
+  "stair_flight_count", "glass_entry_door_count", "visit_days",
+  "cleaning_window", "access_method", "supplies_provided",
+  "equipment_needed", "special_requests", "current_provider",
+  "current_contract_end_date",
+  // legacy fields, still accepted
+  "lifts_present", "bathroom_count",
+];
+
+// Maps months-until-contract-end to a switch_timing band. A past date
+// (negative months) means they're free to switch now.
+function switchTimingFromMonths(months) {
+  if (months < 0) return "ready_now";
+  if (months < 3) return "within_3_months";
+  if (months < 6) return "3_to_6_months";
+  if (months < 12) return "6_to_12_months";
+  return "12_plus_months";
 }
 
 // Months (fractional) between now and a stated contract renewal date —
@@ -1083,11 +1112,12 @@ async function handleBudgetConfirm(contactId, cf, env) {
     facilityType: (cf.facility_type || "").toLowerCase(),
   });
   const tier = tierFromScore(score);
+  const finalScore = Math.min(100, score + switchTimingPoints(cf.switch_timing));
 
   const result = await writeBackToGHL(
     contactId,
     {
-      lead_score: score,
+      lead_score: finalScore,
       lead_tier: tier,
       dq_flag: "none",
       monthly_budget: flexibleAmount,
@@ -1100,7 +1130,7 @@ async function handleBudgetConfirm(contactId, cf, env) {
     stage: "confirm",
     dimension: "budget",
     requalified: true,
-    score,
+    score: finalScore,
     tier,
     ghl_update: result,
   });
@@ -1147,11 +1177,12 @@ async function handleFrequencyConfirm(contactId, cf, env) {
     facilityType: (cf.facility_type || "").toLowerCase(),
   });
   const tier = tierFromScore(score);
+  const finalScore = Math.min(100, score + switchTimingPoints(cf.switch_timing));
 
   const result = await writeBackToGHL(
     contactId,
     {
-      lead_score: score,
+      lead_score: finalScore,
       lead_tier: tier,
       dq_flag: "none",
       cleaning_frequency: flexibleFrequency,
@@ -1164,7 +1195,7 @@ async function handleFrequencyConfirm(contactId, cf, env) {
     stage: "confirm",
     dimension: "frequency",
     requalified: true,
-    score,
+    score: finalScore,
     tier,
     ghl_update: result,
   });
@@ -1609,8 +1640,10 @@ export {
   checkDisqualifiers,
   leadFlags,
   calculateGateScore,
+  switchTimingPoints,
   tierFromScore,
   monthsUntilContractRenewal,
+  switchTimingFromMonths,
   checkApplicantAreaDisqualifier,
   checkApplicantDisqualifiers,
   applicantScore,

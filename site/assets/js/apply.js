@@ -12,7 +12,8 @@
 // conversion page: applicants are not marketing leads.
 
 import { readAttribution, sessionStore } from "./utm.js";
-import { initTwoStepGate, fieldGetter } from "./two-step-gate.js";
+import { initTwoStepGate } from "./two-step-gate.js";
+import { createSurveyOffer } from "./survey-offer.js";
 
 var WORKER_BASE = "https://worker.vantagepointfacilityservices.com.au";
 
@@ -89,90 +90,17 @@ function handleScreenResult(data, ctx) {
   }
 }
 
-// ---- Embedded experience survey -------------------------------------------
 // Offer (two buttons) under the shortlist, no-calendar and booking-confirmed
-// panels when form[data-enrich-survey-url] is set. The survey screen (iframe
-// and GHL's form_embed.js) is created only when the applicant opts in.
-var EMBED_SCRIPT = "https://link.msgsndr.com/js/form_embed.js";
-var SURVEY_PANELS = ["shortlist-message", "no-calendar-message", "booking-confirmed"];
-
-function surveyUrl(form) {
-  return (form.getAttribute("data-enrich-survey-url") || "").trim();
-}
-
-function loadEmbedScript() {
-  if (document.querySelector('script[src="' + EMBED_SCRIPT + '"]')) return;
-  var s = document.createElement("script");
-  s.src = EMBED_SCRIPT;
-  s.async = true;
-  document.body.appendChild(s);
-}
-
-function el(tag, cls, text) {
-  var e = document.createElement(tag);
-  if (cls) e.className = cls;
-  if (text) e.textContent = text;
-  return e;
-}
-
-function closeDialog(form) {
-  var dialog = form.querySelector(".booking-dialog");
-  if (dialog) dialog.close();
-}
-
-// The survey screen replaces the panel's content; iframe and form_embed.js
-// are created only here, when the applicant opts in.
-function openSurveyScreen(target, form, src) {
-  // Wrap everything (including bare text nodes, which .children skips) and hide it.
-  var prev = el("div", "enrich-prev");
-  while (target.firstChild) prev.appendChild(target.firstChild);
-  prev.hidden = true;
-  target.appendChild(prev);
-  var screen = el("div", "enrich-screen");
-  var heading = el("h3", "", "Add your experience");
-  heading.setAttribute("tabindex", "-1");
-  screen.appendChild(heading);
-  screen.appendChild(el("p", "small", "about 3 minutes, helps us prepare for your interview"));
-  var frame = el("iframe", "enrich-frame");
-  frame.src = src;
-  frame.title = "Experience survey";
-  var actions = el("div", "enrich-actions");
-  var link = el("a", "small enrich-newtab", "Open in a new tab");
-  link.href = src;
-  link.target = "_blank";
-  link.rel = "noopener";
-  var done = el("button", "btn btn-secondary enrich-skip", "Close");
-  done.type = "button";
-  done.addEventListener("click", function () { closeDialog(form); });
-  actions.appendChild(link);
-  actions.appendChild(done);
-  screen.appendChild(frame);
-  screen.appendChild(actions);
-  target.appendChild(screen);
-  // The button that had focus is now hidden — move focus to what replaced it.
-  heading.focus();
-  loadEmbedScript();
-}
-
-function showSurvey(target, form) {
-  var base = surveyUrl(form);
-  if (!base || SURVEY_PANELS.indexOf(target.id) === -1 || target.querySelector(".enrich-cta")) return;
-  var get = fieldGetter(form);
-  var src = base + "?email=" + encodeURIComponent(get("email")) + "&phone=" + encodeURIComponent(get("phone"));
-
-  var box = el("div", "enrich-cta");
-  var actions = el("div", "enrich-actions");
-  var now = el("button", "btn btn-primary enrich-now", "Add your experience now (3 min)");
-  now.type = "button";
-  now.addEventListener("click", function () { openSurveyScreen(target, form, src); });
-  var later = el("button", "btn btn-secondary enrich-skip", "I\u2019ll do it later, text me the link");
-  later.type = "button";
-  later.addEventListener("click", function () { closeDialog(form); });
-  actions.appendChild(now);
-  actions.appendChild(later);
-  box.appendChild(actions);
-  target.appendChild(box);
-}
+// panels when form[data-enrich-survey-url] is set (shared survey-offer.js).
+var showSurvey = createSurveyOffer({
+  urlAttr: "data-enrich-survey-url",
+  panelIds: ["shortlist-message", "no-calendar-message", "booking-confirmed"],
+  nowLabel: "Add your experience now (3 min)",
+  laterLabel: "I\u2019ll do it later, text me the link",
+  heading: "Add your experience",
+  subHeading: "about 3 minutes, helps us prepare for your interview",
+  frameTitle: "Experience survey",
+});
 
 export function initApply(form) {
   initTwoStepGate(form, {

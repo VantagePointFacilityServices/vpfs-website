@@ -89,6 +89,23 @@ describe.each(PAGES)("%s booking form", (page) => {
     ]);
   });
 
+  it("offers the optional switch-timing question with the six values", () => {
+    const form = mountPage(page);
+    const options = Array.from(form.querySelectorAll('[name="switch_timing"]'), (el) => [
+      el.value,
+      el.closest("label").textContent.trim(),
+    ]);
+    expect(options).toEqual([
+      ["ready_now", "No current cleaner / ready now"],
+      ["within_3_months", "Within 3 months"],
+      ["3_to_6_months", "3\u20136 months"],
+      ["6_to_12_months", "6\u201312 months"],
+      ["12_plus_months", "12+ months (locked in)"],
+      ["not_sure", "Not sure"],
+    ]);
+    expect(form.querySelector('[name="switch_timing"][required]')).toBeNull();
+  });
+
   it("has a budget nurture message in the Step 2 results", () => {
     const form = mountPage(page);
     const message = form.querySelector(".booking-result #budget-nurture-message");

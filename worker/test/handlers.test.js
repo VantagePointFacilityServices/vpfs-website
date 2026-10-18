@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import worker, { signBookingToken, verifyBookingToken, calendarIdForTier } from "../worker.js";
+import worker, { signBookingToken, verifyBookingToken, calendarIdForTier, switchTimingFromMonths } from "../worker.js";
 
 const env = { GHL_VPFS_API_KEY: "test-key", GHL_VPFS_LOCATION_ID: "loc-123" };
 
@@ -599,82 +599,152 @@ describe("POST /enrich", () => {
     expect(json.bump_reasons).toEqual([]);
   });
 
-  it("bumps standard to priority when the existing contract renews soon", async () => {
+  const isoIn = (days) => new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
+
+  it("never changes lead_tier for a near-term contract end date", async () => {
     global.fetch = mockGhlOk();
-    const soon = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000); // ~2 months out
     const req = makeRequest("/enrich", {
       contact_id: "c25",
-      customFields: { size_sqm: "300", contract_renewal_date: soon.toISOString().slice(0, 10) },
+      customFields: { size_sqm: "300", current_contract_end_date: isoIn(60) },
     });
-
-    const res = await worker.fetch(req, env);
-    const json = await res.json();
-
-    expect(json.tier_bump).toBe("priority");
-    expect(json.bump_reasons).toEqual(["near-term-contract-renewal"]);
+    const json = await (await worker.fetch(req, env)).json();
+    expect(json.tier_bump).toBeNull();
+    expect(json.bump_reasons).toEqual([]);
+    expect(json.stage).toBe("enrich");
     const fields = fieldsFromLastCall(global.fetch);
-    expect(fields.lead_tier).toBe("priority");
-    expect(fields.contract_renewal_months_out).toBe("2");
+    expect(fields.lead_tier).toBeUndefined();
+    expect(fields.current_contract_months_out).toBe("2");
+    expect(fields.switch_timing).toBe("within_3_months");
   });
 
-  it("does not bump tier for a contract renewing over a year out", async () => {
+  it.each([
+    [-400, "ready_now"],
+    [45, "within_3_months"],
+    [120, "3_to_6_months"],
+    [250, "6_to_12_months"],
+    [500, "12_plus_months"],
+  ])("derives the switch_timing band for a contract ending in %i days", async (days, band) => {
     global.fetch = mockGhlOk();
-    const farOut = new Date(Date.now() + 400 * 24 * 60 * 60 * 1000); // > 12 months out
     const req = makeRequest("/enrich", {
-      contact_id: "c26",
-      customFields: { contract_renewal_date: farOut.toISOString().slice(0, 10) },
+      contact_id: "cb",
+      customFields: { current_contract_end_date: isoIn(days) },
     });
-
-    const res = await worker.fetch(req, env);
-    const json = await res.json();
-
-    expect(json.tier_bump).toBeNull();
-    expect(json.bump_reasons).toEqual([]);
+    await worker.fetch(req, env);
+    expect(fieldsFromLastCall(global.fetch).switch_timing).toBe(band);
   });
 
-  it("does not bump tier for a contract renewal date already in the past", async () => {
-    global.fetch = mockGhlOk();
-    const req = makeRequest("/enrich", {
-      contact_id: "c27",
-      customFields: { contract_renewal_date: "2020-01-01" },
-    });
-
-    const res = await worker.fetch(req, env);
-    const json = await res.json();
-
-    expect(json.tier_bump).toBeNull();
-    expect(json.bump_reasons).toEqual([]);
+  it.each([
+    [-0.01, "ready_now"],
+    [0, "within_3_months"],
+    [2.99, "within_3_months"],
+    [3, "3_to_6_months"],
+    [5.99, "3_to_6_months"],
+    [6, "6_to_12_months"],
+    [11.99, "6_to_12_months"],
+    [12, "12_plus_months"],
+  ])("switchTimingFromMonths(%f) -> %s at band boundaries", (months, band) => {
+    expect(switchTimingFromMonths(months)).toBe(band);
   });
 
-  it("ignores an unparseable contract_renewal_date rather than bumping or erroring", async () => {
+  it("re-scores: swaps old band points for new, capped at 100", async () => {
     global.fetch = mockGhlOk();
-    const req = makeRequest("/enrich", {
-      contact_id: "c28",
-      customFields: { contract_renewal_date: "not-a-real-date" },
-    });
+    await worker.fetch(
+      makeRequest("/enrich", {
+        contact_id: "cr",
+        customFields: { lead_score: "60", switch_timing: "12_plus_months", current_contract_end_date: isoIn(30) },
+      }),
+      env,
+    );
+    expect(fieldsFromLastCall(global.fetch).lead_score).toBe("75");
 
-    const res = await worker.fetch(req, env);
-    const json = await res.json();
+    global.fetch = mockGhlOk();
+    await worker.fetch(
+      makeRequest("/enrich", {
+        contact_id: "cr",
+        customFields: { lead_score: "95", switch_timing: "3_to_6_months", current_contract_end_date: isoIn(30) },
+      }),
+      env,
+    );
+    expect(fieldsFromLastCall(global.fetch).lead_score).toBe("100");
 
+    // A contract that has already ended -> ready_now (+20) replaces within_3_months (+15).
+    global.fetch = mockGhlOk();
+    await worker.fetch(
+      makeRequest("/enrich", {
+        contact_id: "cr",
+        customFields: { lead_score: "75", switch_timing: "within_3_months", current_contract_end_date: isoIn(-10) },
+      }),
+      env,
+    );
+    expect(fieldsFromLastCall(global.fetch).lead_score).toBe("80");
+  });
+
+  it("leaves the score untouched without lead_score", async () => {
+    global.fetch = mockGhlOk();
+    await worker.fetch(
+      makeRequest("/enrich", { contact_id: "cn", customFields: { current_contract_end_date: isoIn(30) } }),
+      env,
+    );
+    expect(fieldsFromLastCall(global.fetch).lead_score).toBeUndefined();
+  });
+
+  it("ignores an unparseable current_contract_end_date without throwing", async () => {
+    global.fetch = mockGhlOk();
+    const res = await worker.fetch(
+      makeRequest("/enrich", {
+        contact_id: "c28",
+        customFields: { current_contract_end_date: "not-a-real-date", lead_score: "50" },
+      }),
+      env,
+    );
     expect(res.status).toBe(200);
-    expect(json.tier_bump).toBeNull();
     const fields = fieldsFromLastCall(global.fetch);
+    expect(fields.current_contract_months_out).toBeUndefined();
+    expect(fields.switch_timing).toBeUndefined();
+    expect(fields.lead_score).toBeUndefined();
+  });
+
+  it("does not write contract_renewal_date or its months-out", async () => {
+    global.fetch = mockGhlOk();
+    await worker.fetch(
+      makeRequest("/enrich", {
+        contact_id: "cx",
+        customFields: { size_sqm: "100", contract_renewal_date: isoIn(30), contract_renewal_months_out: "1" },
+      }),
+      env,
+    );
+    const fields = fieldsFromLastCall(global.fetch);
+    expect(fields.contract_renewal_date).toBeUndefined();
     expect(fields.contract_renewal_months_out).toBeUndefined();
   });
 
-  it("reports both bump reasons when a large facility AND a near-term renewal both apply", async () => {
+  it("passes through D1 keys when present and omits absent ones", async () => {
     global.fetch = mockGhlOk();
-    const soon = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    const req = makeRequest("/enrich", {
-      contact_id: "c29",
-      customFields: { size_sqm: "2200", contract_renewal_date: soon.toISOString().slice(0, 10) },
-    });
+    await worker.fetch(
+      makeRequest("/enrich", {
+        contact_id: "cp",
+        customFields: { toilet_count: "6", lift_count: "2", visit_days: "mon,wed", access_method: "lockbox", current_provider: "Acme" },
+      }),
+      env,
+    );
+    const fields = fieldsFromLastCall(global.fetch);
+    expect(fields).toMatchObject({ toilet_count: "6", lift_count: "2", visit_days: "mon,wed", access_method: "lockbox", current_provider: "Acme" });
+    expect(fields.urinal_count).toBeUndefined();
+  });
 
-    const res = await worker.fetch(req, env);
-    const json = await res.json();
-
+  it("still bumps to priority for a large facility alongside a near-term contract", async () => {
+    global.fetch = mockGhlOk();
+    const json = await (
+      await worker.fetch(
+        makeRequest("/enrich", {
+          contact_id: "c29",
+          customFields: { size_sqm: "2200", current_contract_end_date: isoIn(30) },
+        }),
+        env,
+      )
+    ).json();
     expect(json.tier_bump).toBe("priority");
-    expect(json.bump_reasons).toEqual(["large-facility", "near-term-contract-renewal"]);
+    expect(json.bump_reasons).toEqual(["large-facility"]);
   });
 });
 
@@ -2106,5 +2176,67 @@ describe("Step 3 — applicant interview booking (/slots, /book)", () => {
       expect((await bookFor(await tok(claims))).status).toBe(403);
     }
     expect(global.fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe("switch_timing — ranks the lead_score only (PRD D15-D16)", () => {
+  const base = { facility_type: "office", monthly_budget: "3000", postcode: "4211", cleaning_frequency: "daily" }; // base 60
+
+  it.each([
+    ["ready_now", 80], ["within_3_months", 75], ["3_to_6_months", 70],
+    ["6_to_12_months", 65], ["12_plus_months", 60], ["not_sure", 60],
+  ])("%s -> lead_score %i", async (value, expected) => {
+    global.fetch = mockGhlOk();
+    await worker.fetch(makeRequest("/gate", { contact_id: "t1", customFields: { ...base, switch_timing: value } }), env);
+    const fields = fieldsFromLastCall(global.fetch);
+    expect(Number(fields.lead_score)).toBe(expected);
+    expect(fields.switch_timing).toBe(value);
+  });
+
+  it("keeps a Standard-budget lead Standard even when timing lifts the score to 70+", async () => {
+    global.fetch = mockGhlOk();
+    const tEnv = { ...env, BOOKING_TOKEN_SECRET: "s3cret" };
+    const json = await (await worker.fetch(
+      makeRequest("/gate", { contact_id: "t2", customFields: { ...base, switch_timing: "ready_now" } }), tEnv)).json();
+    expect(json.score).toBe(80);
+    expect(json.tier).toBe("standard");
+    expect(json.sla_flag).toBe("call-within-15min");
+    const token = await verifyBookingToken(json.booking_token, tEnv);
+    expect(token.tier).toBe("standard");
+  });
+
+  it("caps the score at 100", async () => {
+    global.fetch = mockGhlOk();
+    const json = await (await worker.fetch(
+      makeRequest("/gate", { contact_id: "t3", customFields: { ...base, monthly_budget: "9000", switch_timing: "ready_now" } }), env)).json();
+    expect(json.score).toBe(100);
+    expect(json.tier).toBe("priority");
+  });
+
+  it("nurture keeps score 0 but saves switch_timing", async () => {
+    global.fetch = mockGhlOk();
+    await worker.fetch(makeRequest("/gate", { contact_id: "t4", customFields: { ...base, monthly_budget: "1000", switch_timing: "ready_now" } }), env);
+    const fields = fieldsFromLastCall(global.fetch);
+    expect(Number(fields.lead_score)).toBe(0);
+    expect(fields.switch_timing).toBe("ready_now");
+  });
+
+  it("ignores an invalid value", async () => {
+    global.fetch = mockGhlOk();
+    await worker.fetch(makeRequest("/gate", { contact_id: "t5", customFields: { ...base, switch_timing: "tomorrow" } }), env);
+    const fields = fieldsFromLastCall(global.fetch);
+    expect(fields).not.toHaveProperty("switch_timing");
+    expect(Number(fields.lead_score)).toBe(60);
+  });
+
+  it("/confirm requalification adds the same points without affecting tier", async () => {
+    global.fetch = mockGhlOk();
+    const json = await (await worker.fetch(makeRequest("/confirm", {
+      contact_id: "t6",
+      customFields: { dq_flag: "nurture-budget", budget_flexible: "yes", flexible_budget_amount: "3000",
+        cleaning_frequency: "daily", facility_type: "office", switch_timing: "ready_now" },
+    }), env)).json();
+    expect(json.score).toBe(80);
+    expect(json.tier).toBe("standard");
   });
 });
