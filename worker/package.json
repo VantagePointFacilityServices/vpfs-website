@@ -9,6 +9,6 @@
   "devDependencies": {
     "@vitest/coverage-v8": "^2.1.0",
     "vitest": "^2.1.0",
-    "wrangler": "^3.78.0"
+    "wrangler": "^4.151.1"
   }
 }
